@@ -88,6 +88,9 @@
 ; expressions
 ;
 
+(defmethod asm-analyze-ast ::unary-op-expr [node ctx]
+	(asm-analyze-ast (node :expr) ,,,))
+
 (defmethod asm-analyze-ast ::binary-op-expr [node ctx]
 	(->> ctx
 		(asm-analyze-ast (node :left) ,,,)
@@ -289,6 +292,29 @@
   (.visitInsn mw Opcodes/DDIV)
   (.visitMethodInsn mw Opcodes/INVOKESPECIAL, "mug/JSNumber", "<init>", "(D)V"))
 
+(defmethod asm-compile-closure-ast ::mul-op-expr [node closure ctx mw]
+  (.visitTypeInsn mw Opcodes/NEW, "mug/JSNumber")
+  (.visitInsn mw Opcodes/DUP)
+  (asm-compile-closure-ast (node :left) closure ctx mw)
+  (.visitMethodInsn mw Opcodes/INVOKESTATIC, "mug/JSUtils", "asNumber", "(Lmug/JSPrimitive;)D")
+  (asm-compile-closure-ast (node :right) closure ctx mw)
+  (.visitMethodInsn mw Opcodes/INVOKESTATIC, "mug/JSUtils", "asNumber", "(Lmug/JSPrimitive;)D")
+  (.visitInsn mw Opcodes/DMUL)
+  (.visitMethodInsn mw Opcodes/INVOKESPECIAL, "mug/JSNumber", "<init>", "(D)V"))
+
+(defmethod asm-compile-closure-ast ::lsh-op-expr [node closure ctx mw]
+  (.visitTypeInsn mw Opcodes/NEW, "mug/JSNumber")
+  (.visitInsn mw Opcodes/DUP)
+  (asm-compile-closure-ast (node :left) closure ctx mw)
+  (.visitMethodInsn mw Opcodes/INVOKESTATIC, "mug/JSUtils", "asNumber", "(Lmug/JSPrimitive;)D")
+  (.visitInsn mw Opcodes/D2I)
+  (asm-compile-closure-ast (node :right) closure ctx mw)
+  (.visitMethodInsn mw Opcodes/INVOKESTATIC, "mug/JSUtils", "asNumber", "(Lmug/JSPrimitive;)D")
+  (.visitInsn mw Opcodes/D2I)
+  (.visitInsn mw Opcodes/ISHL)
+  (.visitInsn mw Opcodes/I2D)
+  (.visitMethodInsn mw Opcodes/INVOKESPECIAL, "mug/JSNumber", "<init>", "(D)V"))
+
 (defmethod asm-compile-closure-ast ::eqs-op-expr [node closure ctx mw]
   (asm-compile-closure-ast (node :left) closure ctx mw)
   (asm-compile-closure-ast (node :right) closure ctx mw)
@@ -314,6 +340,59 @@
 		  (.visitFieldInsn Opcodes/GETSTATIC, "mug/compiled/JSConstants", "FALSE", "Lmug/JSBoolean;")
 		  (.visitLabel true-case))))
 
+(defmethod asm-compile-closure-ast ::lte-op-expr [node closure ctx mw]
+  (let [false-case (new Label) true-case (new Label)]
+    (asm-compile-closure-ast (node :left) closure ctx mw)
+    (.visitMethodInsn mw Opcodes/INVOKESTATIC, "mug/JSUtils", "asNumber", "(Lmug/JSPrimitive;)D")
+    (asm-compile-closure-ast (node :right) closure ctx mw)
+    (.visitMethodInsn mw Opcodes/INVOKESTATIC, "mug/JSUtils", "asNumber", "(Lmug/JSPrimitive;)D")
+    (doto mw
+      (.visitInsn Opcodes/DCMPG)
+      (.visitJumpInsn Opcodes/IFGT, false-case)
+      (.visitFieldInsn Opcodes/GETSTATIC, "mug/compiled/JSConstants", "TRUE", "Lmug/JSBoolean;")
+      (.visitJumpInsn Opcodes/GOTO, true-case)
+		  (.visitLabel false-case)
+		  (.visitFieldInsn Opcodes/GETSTATIC, "mug/compiled/JSConstants", "FALSE", "Lmug/JSBoolean;")
+		  (.visitLabel true-case))))
+
+(defmethod asm-compile-closure-ast ::gt-op-expr [node closure ctx mw]
+  (let [false-case (new Label) true-case (new Label)]
+    (asm-compile-closure-ast (node :left) closure ctx mw)
+    (.visitMethodInsn mw Opcodes/INVOKESTATIC, "mug/JSUtils", "asNumber", "(Lmug/JSPrimitive;)D")
+    (asm-compile-closure-ast (node :right) closure ctx mw)
+    (.visitMethodInsn mw Opcodes/INVOKESTATIC, "mug/JSUtils", "asNumber", "(Lmug/JSPrimitive;)D")
+    (doto mw
+      (.visitInsn Opcodes/DCMPG)
+      (.visitJumpInsn Opcodes/IFLE, false-case)
+      (.visitFieldInsn Opcodes/GETSTATIC, "mug/compiled/JSConstants", "TRUE", "Lmug/JSBoolean;")
+      (.visitJumpInsn Opcodes/GOTO, true-case)
+		  (.visitLabel false-case)
+		  (.visitFieldInsn Opcodes/GETSTATIC, "mug/compiled/JSConstants", "FALSE", "Lmug/JSBoolean;")
+		  (.visitLabel true-case))))
+
+(defmethod asm-compile-closure-ast ::gte-op-expr [node closure ctx mw]
+  (let [false-case (new Label) true-case (new Label)]
+    (asm-compile-closure-ast (node :left) closure ctx mw)
+    (.visitMethodInsn mw Opcodes/INVOKESTATIC, "mug/JSUtils", "asNumber", "(Lmug/JSPrimitive;)D")
+    (asm-compile-closure-ast (node :right) closure ctx mw)
+    (.visitMethodInsn mw Opcodes/INVOKESTATIC, "mug/JSUtils", "asNumber", "(Lmug/JSPrimitive;)D")
+    (doto mw
+      (.visitInsn Opcodes/DCMPG)
+      (.visitJumpInsn Opcodes/IFLT, false-case)
+      (.visitFieldInsn Opcodes/GETSTATIC, "mug/compiled/JSConstants", "TRUE", "Lmug/JSBoolean;")
+      (.visitJumpInsn Opcodes/GOTO, true-case)
+		  (.visitLabel false-case)
+		  (.visitFieldInsn Opcodes/GETSTATIC, "mug/compiled/JSConstants", "FALSE", "Lmug/JSBoolean;")
+		  (.visitLabel true-case))))
+
+(defmethod asm-compile-closure-ast ::neg-op-expr [node closure ctx mw]
+  (.visitTypeInsn mw Opcodes/NEW, "mug/JSNumber")
+  (.visitInsn mw Opcodes/DUP)
+  (asm-compile-closure-ast (node :expr) closure ctx mw)
+  (.visitMethodInsn mw Opcodes/INVOKESTATIC, "mug/JSUtils", "asNumber", "(Lmug/JSPrimitive;)D")
+  (.visitInsn mw Opcodes/DNEG)
+  (.visitMethodInsn mw Opcodes/INVOKESPECIAL, "mug/JSNumber", "<init>", "(D)V"))
+    
 (defmethod asm-compile-closure-ast ::this-expr [node closure ctx mw]
   (.visitVarInsn mw Opcodes/ALOAD, 1))
 
@@ -458,6 +537,12 @@
 				(.visitVarInsn Opcodes/ALOAD, 6)
 				(.visitVarInsn Opcodes/ALOAD, (+ i 2))
 				(.visitMethodInsn Opcodes/INVOKEVIRTUAL, (asm-compile-closure-scope-qn closure ctx), (str "set_" arg), "(Lmug/JSPrimitive;)V")))
+    ; initialize self
+    (when (not (nil? (closure :name)))
+      (doto mw
+				(.visitVarInsn Opcodes/ALOAD, 6)
+				(.visitVarInsn Opcodes/ALOAD, 0)
+				(.visitMethodInsn Opcodes/INVOKEVIRTUAL, (asm-compile-closure-scope-qn closure ctx), (str "set_" (closure :name)), "(Lmug/JSPrimitive;)V")))
 		
 		; compile body
 		(doseq [stat (closure :stats)]
@@ -567,7 +652,7 @@
 ;
 
 (defn asm-compile-object-methods [name accessors cw]
-  (doseq [k (vec accessors)]
+  (doseq [k (filter (fn [x] (not= x "prototype")) (vec accessors))]
 		(doto (.visitMethod cw, Opcodes/ACC_PUBLIC, (str "get_" k), "()Lmug/JSPrimitive;", nil, nil)
 			(.visitCode)
 			(.visitVarInsn Opcodes/ALOAD, 0)
@@ -654,12 +739,12 @@
 	(into {}
 		(map-indexed (fn [i closure] 
 			(let [cw (new ClassWriter ClassWriter/COMPUTE_MAXS)
-				scope (into (closure :vars) (closure :args))
-				name (str "mug/compiled/JSScope_" i)]
-				(.visit cw, Opcodes/V1_6, (+ Opcodes/ACC_SUPER Opcodes/ACC_PUBLIC), name, nil, "java/lang/Object", nil)
-				(asm-compile-scope-fields name scope cw)
-				(asm-compile-scope-methods name scope cw)
-				(asm-compile-scope-init name scope cw)
+				scope (into (into (closure :vars) (closure :args)) (if (nil? (closure :name)) [] [(closure :name)]))
+				qn (str "mug/compiled/JSScope_" i)]
+				(.visit cw, Opcodes/V1_6, (+ Opcodes/ACC_SUPER Opcodes/ACC_PUBLIC), qn, nil, "java/lang/Object", nil)
+				(asm-compile-scope-fields qn scope cw)
+				(asm-compile-scope-methods qn scope cw)
+				(asm-compile-scope-init qn scope cw)
 				(.visitEnd cw)
 				[(str "JSScope_" i ".class") (.toByteArray cw)]))
 		(ctx :closures))))
@@ -685,6 +770,10 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;
 ; examples
+;
+
+;
+; josephus problem
 ;
 
 (def josephus-ast (func-closure nil ["print", "nanoTime"] #{"ITER", "Chain", "Person", "chain", "start", "end", "i"}
@@ -738,31 +827,129 @@
 	(expr-stat (scope-assign-expr "start" (call-expr (scope-ref-expr "nanoTime"))))
 	(expr-stat (scope-assign-expr "ITER" (num-literal 500000)))
 ;;  (expr-stat (scope-assign-expr "ITER" (num-literal 50)))
-	(for-in-stat "i" (num-literal 0) (scope-ref-expr "ITER") (num-literal 1) (block-stat
+  (expr-stat (scope-assign-expr "i" (num-literal 0)))
+  (while-stat (lt-op-expr (scope-ref-expr "i") (scope-ref-expr "ITER")) (block-stat
 ;;    (expr-stat (call-expr (scope-ref-expr "print") (scope-ref-expr "i")))
 ;;		(expr-stat (scope-assign-expr "chain" (new-expr (scope-ref-expr "Chain") (num-literal 40) (scope-ref-expr "Person"))))
     (expr-stat (scope-assign-expr "chain" (new-expr (scope-ref-expr "Chain") (num-literal 40) (scope-ref-expr "Person") (scope-ref-expr "print"))))
-		(expr-stat (static-method-call-expr (scope-ref-expr "chain") "kill" (num-literal 3)))))
+		(expr-stat (static-method-call-expr (scope-ref-expr "chain") "kill" (num-literal 3)))
+    (expr-stat (scope-assign-expr "i" (add-op-expr (scope-ref-expr "i") (num-literal 1))))))
 	(expr-stat (call-expr (scope-ref-expr "print") (str-literal "Ended.")))
 	(expr-stat (scope-assign-expr "end" (call-expr (scope-ref-expr "nanoTime"))))
 	(expr-stat (call-expr (scope-ref-expr "print") (add-op-expr (add-op-expr (str-literal "Time per iteration = ") (div-op-expr (sub-op-expr (scope-ref-expr "end") (scope-ref-expr "start")) (scope-ref-expr "ITER"))) (str-literal " nanoseconds."))))
 ))
 
-(let [ast josephus-ast
+;
+; binary trees
+;
+
+; WHY DOESN'T THIS WORK
+;(def binary-ast (neg-op-expr (num-literal 5)))
+
+(def binary-ast (func-closure nil ["print", "nanoTime"]
+  #{"TreeNode" "bottomUpTree" "minDepth" "n" "maxDepth" "stretchDepth" "check" "longLivedTree" "depth" "iterations" "i"}
+
+  (expr-stat (scope-assign-expr "TreeNode" (func-literal (func-closure "TreeNode" ["left" "right" "item"] #{}
+    (expr-stat (static-assign-expr (this-expr) "left" (scope-ref-expr "left")))
+    (expr-stat (static-assign-expr (this-expr) "right" (scope-ref-expr "right")))
+    (expr-stat (static-assign-expr (this-expr) "item" (scope-ref-expr "item")))))))
+
+  (expr-stat (static-assign-expr (static-ref-expr (scope-ref-expr "TreeNode") "prototype") "itemCheck" (func-literal (func-closure nil [] #{}
+    (if-stat (eqs-op-expr (static-ref-expr (this-expr) "left") (null-literal))
+      (ret-stat (static-ref-expr (this-expr) "item"))
+      (ret-stat (sub-op-expr (add-op-expr
+                               (static-ref-expr (this-expr) "item")
+                               (static-method-call-expr (static-ref-expr (this-expr) "left") "itemCheck"))
+                  (static-method-call-expr (static-ref-expr (this-expr) "right") "itemCheck"))))))))
+
+  (expr-stat (scope-assign-expr "bottomUpTree" (func-literal (func-closure "bottomUpTree" ["TreeNode" "item" "depth"] #{}
+    (if-stat (gt-op-expr (scope-ref-expr "depth") (num-literal 0))
+      (ret-stat (new-expr (scope-ref-expr "TreeNode")
+                  (call-expr (scope-ref-expr "bottomUpTree") (scope-ref-expr "TreeNode")
+                    (sub-op-expr (mul-op-expr (num-literal 2) (scope-ref-expr "item")) (num-literal 1))
+                    (sub-op-expr (scope-ref-expr "depth") (num-literal 1)))
+                  (call-expr (scope-ref-expr "bottomUpTree") (scope-ref-expr "TreeNode")
+                    (mul-op-expr (num-literal 2) (scope-ref-expr "item"))
+                    (sub-op-expr (scope-ref-expr "depth") (num-literal 1)))
+                  (scope-ref-expr "item")))
+      (ret-stat (new-expr (scope-ref-expr "TreeNode")
+                  (null-literal)
+                  (null-literal)
+                  (scope-ref-expr "item")))
+  )))))
+
+  (expr-stat (scope-assign-expr "minDepth" (num-literal 4)))
+  (expr-stat (scope-assign-expr "n" (num-literal 16)))
+  (expr-stat (scope-assign-expr "maxDepth" (scope-ref-expr "n")))
+  (expr-stat (scope-assign-expr "stretchDepth" (add-op-expr (scope-ref-expr "maxDepth") (num-literal 1))))
+  
+  (expr-stat (scope-assign-expr "check" (static-method-call-expr (call-expr (scope-ref-expr "bottomUpTree") (scope-ref-expr "TreeNode") (num-literal 0) (scope-ref-expr "stretchDepth")) "itemCheck")))
+  (expr-stat (call-expr (scope-ref-expr "print") (add-op-expr (add-op-expr (add-op-expr
+                                                                             (str-literal "stretch tree of depth ")
+                                                                             (scope-ref-expr "stretchDepth"))
+                                                                (str-literal "\t check: "))
+                                                   (scope-ref-expr "check"))))
+  
+  (expr-stat (scope-assign-expr "longLivedTree" (call-expr (scope-ref-expr "bottomUpTree") (scope-ref-expr "TreeNode") (num-literal 0) (scope-ref-expr "maxDepth"))))
+  (expr-stat (scope-assign-expr "depth" (scope-ref-expr "minDepth")))
+  (while-stat (lte-op-expr (scope-ref-expr "depth") (scope-ref-expr "maxDepth")) (block-stat
+    (expr-stat (scope-assign-expr "iterations" (lsh-op-expr (num-literal 1) (add-op-expr (sub-op-expr (scope-ref-expr "maxDepth") (scope-ref-expr "depth")) (scope-ref-expr "minDepth")))))
+    (expr-stat (scope-assign-expr "check" (num-literal 0)))
+    (expr-stat (scope-assign-expr "i" (num-literal 1)))
+    (while-stat (lte-op-expr (scope-ref-expr "i") (scope-ref-expr "depth")) (block-stat
+      (expr-stat (scope-assign-expr "check" (add-op-expr (scope-ref-expr "check")
+        (add-op-expr
+          (static-method-call-expr (call-expr (scope-ref-expr "bottomUpTree") (scope-ref-expr "TreeNode") (scope-ref-expr "i") (scope-ref-expr "depth")) "itemCheck")
+          (static-method-call-expr (call-expr (scope-ref-expr "bottomUpTree") (scope-ref-expr "TreeNode") (sub-op-expr (num-literal 0) (scope-ref-expr "i")) (scope-ref-expr "depth")) "itemCheck"))
+      )))
+      (expr-stat (scope-assign-expr "i" (add-op-expr (scope-ref-expr "i") (num-literal 1))))
+    ))
+    (expr-stat (call-expr (scope-ref-expr "print")
+      (add-op-expr (add-op-expr (add-op-expr (add-op-expr
+        (mul-op-expr (scope-ref-expr "iterations") (num-literal 2))
+        (str-literal "\t trees of depth "))
+        (scope-ref-expr "depth"))
+        (str-literal "\t check: "))
+        (scope-ref-expr "check"))))
+    
+    (expr-stat (scope-assign-expr "depth" (add-op-expr (scope-ref-expr "depth") (num-literal 2))))
+  ))
+
+  (expr-stat (call-expr (scope-ref-expr "print")
+    (add-op-expr (add-op-expr (add-op-expr
+      (str-literal "long lived tree of depth ")
+      (scope-ref-expr "maxDepth"))
+      (str-literal "\t check: "))
+      (static-method-call-expr (scope-ref-expr "longLivedTree") "itemCheck"))))
+))
+
+;
+; output
+;
+
+(let [ast binary-ast
       ctx (asm-analyze-ast ast (new-asm-ctx))]
   ; closures
+  (println "Closures...")
 	(doseq [[path bytes] (asm-compile-closure-classes ctx)]
 		(write-file (str "out/" path) bytes))
 	
   ; constants
+  (println "Constants...")
 	(write-file "out/JSConstants.class" (asm-compile-constants-class ctx))
 	
   ; object shim
+  (println "Objects...")
 	(write-file "out/JSObject.class" (asm-compile-object-class ctx))
 	
   ; scopes
+  (println "Scopes...")
 	(doseq [[path bytes] (asm-compile-scope-classes ctx)]
 		(write-file (str "out/" path) bytes))
 	
   ; script entry point
-	(write-file "out/JSScript.class" (asm-compile-script-class (index-of (ctx :closures) ast))))
+  (println "Script...")
+	(write-file "out/JSScript.class" (asm-compile-script-class (index-of (ctx :closures) ast)))
+ 
+  (println "Done.")
+ )
