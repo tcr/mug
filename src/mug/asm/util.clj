@@ -8,3 +8,13 @@
 
 (defn index-of [s x]
 	((zipmap (vec s) (iterate inc 0)) x))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;
+; naming
+;
+
+(def qn-classes-undefined "mug/JSUndefined")
+(def qn-classes-boolean "mug/JSBoolean")
+(def qn-classes-string "mug/JSString")
+(def qn-classes-number "mug/JSNumber")

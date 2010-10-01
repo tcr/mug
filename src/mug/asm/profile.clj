@@ -58,7 +58,7 @@
 ;
 
 (defmethod asm-analyze-ast :mug/unary-op-expr [node closure profile]
-	(asm-analyze-ast (node :expr) closure ,,,))
+	(asm-analyze-ast (node :expr) closure profile))
 
 (defmethod asm-analyze-ast :mug/binary-op-expr [node closure profile]
 	(->> profile

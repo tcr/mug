@@ -86,9 +86,6 @@
 ; binary trees
 ;
 
-; WHY DOESN'T THIS WORK
-;(def binary-ast (neg-op-expr (num-literal 5)))
-
 (def binary-ast
 (func-closure nil ["print"]  #{"TreeNode" "bottomUpTree" "minDepth" "n" "maxDepth" "stretchDepth" "check" "longLivedTree" "iterations" "i" "depth"} (block-stat 
     (expr-stat (scope-assign-expr "TreeNode" (func-literal (func-closure "TreeNode" ["left" "right" "item"]  #{} (block-stat 
@@ -114,7 +111,7 @@
  (while-stat (lte-op-expr (scope-ref-expr "i") (scope-ref-expr "iterations") )(block-stat 
                 (block-stat 
                     (expr-stat (scope-assign-expr "check" (add-op-expr (scope-ref-expr "check") (static-method-call-expr (call-expr (scope-ref-expr "bottomUpTree") (scope-ref-expr "i") (scope-ref-expr "depth")) "itemCheck" ) ) ))
-                    (expr-stat (scope-assign-expr "check" (add-op-expr (scope-ref-expr "check") (static-method-call-expr (call-expr (scope-ref-expr "bottomUpTree") (sub-op-expr (num-literal 0) (scope-ref-expr "i") ) (scope-ref-expr "depth")) "itemCheck" ) ) ))
+                    (expr-stat (scope-assign-expr "check" (add-op-expr (scope-ref-expr "check") (static-method-call-expr (call-expr (scope-ref-expr "bottomUpTree") (neg-op-expr (scope-ref-expr "i") ) (scope-ref-expr "depth")) "itemCheck" ) ) ))
                 )
                 (expr-stat (scope-assign-expr "i" (add-op-expr (scope-ref-expr "i") (num-literal 1) ) ))
             ))
