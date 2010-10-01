@@ -72,6 +72,11 @@
 	(->> (asm-profile-add :accessors (node :value) profile)
 		(asm-analyze-ast (node :base) closure ,,,)))
 
+(defmethod asm-analyze-ast :mug/dyn-ref-expr [node closure profile]
+	(->> profile
+    (asm-analyze-ast (node :index) closure ,,,)
+		(asm-analyze-ast (node :base) closure ,,,)))
+
 (defmethod asm-analyze-ast :mug/static-method-call-expr [node closure profile]
 	(->> (asm-profile-add :accessors (node :value) profile)
 		(asm-analyze-ast (node :base) closure ,,,)
@@ -85,6 +90,12 @@
 	(->> profile
     (asm-profile-add :accessors (node :value) ,,,)
 		(asm-analyze-ast (node :base) closure ,,,)
+    (asm-analyze-ast (node :expr) closure ,,,)))
+
+(defmethod asm-analyze-ast :mug/dyn-assign-expr [node closure profile]
+	(->> profile
+		(asm-analyze-ast (node :base) closure ,,,)
+    (asm-analyze-ast (node :index) closure ,,,)
     (asm-analyze-ast (node :expr) closure ,,,)))
 
 (defmethod asm-analyze-ast :mug/new-expr [node closure profile]

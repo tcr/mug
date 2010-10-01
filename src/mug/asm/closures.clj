@@ -71,6 +71,13 @@
     (.visitTypeInsn Opcodes/CHECKCAST, "mug/compiled/JSObject")
 		(.visitMethodInsn Opcodes/INVOKEVIRTUAL, "mug/compiled/JSObject", (str "get_" (node :value)), "()Lmug/JSPrimitive;")))
 
+(defmethod asm-compile-closure-ast :mug/dyn-ref-expr [node closure profile mw]
+  (asm-compile-closure-ast (node :base) closure profile mw)
+  (.visitTypeInsn mw, Opcodes/CHECKCAST, "mug/compiled/JSObject")
+  (asm-compile-closure-ast (node :index) closure profile mw)
+  (.visitMethodInsn mw Opcodes/INVOKESTATIC, "mug/JSUtils", "asString", "(Lmug/JSPrimitive;)Ljava/lang/String;")
+	(.visitMethodInsn mw Opcodes/INVOKEVIRTUAL, "mug/compiled/JSObject", "get", "(Ljava/lang/String;)Lmug/JSPrimitive;"))
+
 (defmethod asm-compile-closure-ast :mug/static-method-call-expr [node closure profile mw]
   (asm-compile-closure-ast (node :base) closure profile mw)
 	(doto mw
@@ -109,6 +116,17 @@
   (.visitTypeInsn mw, Opcodes/CHECKCAST, "mug/compiled/JSObject")
   (.visitInsn mw Opcodes/SWAP)
 	(.visitMethodInsn mw Opcodes/INVOKEVIRTUAL, "mug/compiled/JSObject", (str "set_" (node :value)), "(Lmug/JSPrimitive;)V"))
+
+(defmethod asm-compile-closure-ast :mug/dyn-assign-expr [node closure profile mw]
+	(asm-compile-closure-ast (node :expr) closure profile mw)
+  (.visitInsn mw Opcodes/DUP)
+  (asm-compile-closure-ast (node :base) closure profile mw)
+  (.visitTypeInsn mw, Opcodes/CHECKCAST, "mug/compiled/JSObject")
+  (.visitInsn mw Opcodes/SWAP)
+  (asm-compile-closure-ast (node :index) closure profile mw)
+  (.visitMethodInsn mw Opcodes/INVOKESTATIC, "mug/JSUtils", "asString", "(Lmug/JSPrimitive;)Ljava/lang/String;")
+  (.visitInsn mw Opcodes/SWAP)
+	(.visitMethodInsn mw Opcodes/INVOKEVIRTUAL, "mug/compiled/JSObject", "set", "(Ljava/lang/String;Lmug/JSPrimitive;)V"))
 
 (defmethod asm-compile-closure-ast :mug/add-op-expr [node closure profile mw]
   (asm-compile-closure-ast (node :left) closure profile mw)

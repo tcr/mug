@@ -123,10 +123,26 @@
 ) ))
 
 ;
+; testing ast
+;
+
+(def test-ast
+(func-closure nil ["print" "Math" "Array"]  #{"a"} (block-stat 
+    (expr-stat (call-expr (scope-ref-expr "print") (static-method-call-expr (scope-ref-expr "Math") "sqrt" (num-literal 2))))
+    (expr-stat (scope-assign-expr "a" (call-expr (scope-ref-expr "Array") )))
+    (expr-stat (dyn-assign-expr (scope-ref-expr "a") (num-literal 0) (str-literal "First entry") ))
+    (expr-stat (call-expr (scope-ref-expr "print") (dyn-ref-expr (scope-ref-expr "a") (num-literal 0))))
+    (expr-stat (dyn-assign-expr (scope-ref-expr "a") (num-literal 10) (str-literal "Tenth entry") ))
+    (expr-stat (call-expr (scope-ref-expr "print") (dyn-ref-expr (scope-ref-expr "a") (num-literal 10))))
+    (expr-stat (call-expr (scope-ref-expr "print") (add-op-expr (str-literal "Length: ") (static-ref-expr (scope-ref-expr "a") "length") )))
+) )
+)
+
+;
 ; output
 ;
 
-(let [ast binary-ast
+(let [ast test-ast
       profile (asm-analyze-ast ast nil (new-asm-profile))]
   ; closures
   (println "Closures...")
