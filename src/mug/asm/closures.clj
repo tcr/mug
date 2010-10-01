@@ -88,9 +88,11 @@
     (.visitInsn Opcodes/SWAP))
 	(doseq [arg (node :args)]
 		(asm-compile-closure-ast arg closure profile mw))
-	(doseq [_ (range (count (node :args)) 4)]
-		(.visitInsn mw Opcodes/ACONST_NULL))
-	(.visitMethodInsn mw Opcodes/INVOKEVIRTUAL, "mug/JSFunction", "invoke", "(Lmug/compiled/JSObject;Lmug/JSPrimitive;Lmug/JSPrimitive;Lmug/JSPrimitive;Lmug/JSPrimitive;)Lmug/JSPrimitive;"))
+	(doseq [_ (range (count (node :args)) arg-limit)]
+    (if (= _ (count (node :args)))
+          (.visitInsn mw Opcodes/ACONST_NULL)
+          (.visitInsn mw Opcodes/DUP)))
+	(.visitMethodInsn mw Opcodes/INVOKEVIRTUAL, "mug/JSFunction", "invoke", sig-invoke))
 
 (defmethod asm-compile-closure-ast :mug/call-expr [node closure profile mw]
 	(asm-compile-closure-ast (node :ref) closure profile mw)
@@ -98,9 +100,11 @@
 	(.visitInsn mw Opcodes/ACONST_NULL)
 	(doseq [arg (node :args)]
 		(asm-compile-closure-ast arg closure profile mw))
-	(doseq [_ (range (count (node :args)) 4)]
-		(.visitInsn mw Opcodes/ACONST_NULL))
-	(.visitMethodInsn mw Opcodes/INVOKEVIRTUAL, "mug/JSFunction", "invoke", "(Lmug/compiled/JSObject;Lmug/JSPrimitive;Lmug/JSPrimitive;Lmug/JSPrimitive;Lmug/JSPrimitive;)Lmug/JSPrimitive;"))
+	(doseq [_ (range (count (node :args)) arg-limit)]
+    (if (= _ (count (node :args)))
+          (.visitInsn mw Opcodes/ACONST_NULL)
+          (.visitInsn mw Opcodes/DUP)))
+	(.visitMethodInsn mw Opcodes/INVOKEVIRTUAL, "mug/JSFunction", "invoke", sig-invoke))
 
 (defmethod asm-compile-closure-ast :mug/scope-assign-expr [node closure profile mw]
 	(asm-compile-closure-ast (node :expr) closure profile mw)
@@ -262,9 +266,9 @@
 	(.visitTypeInsn mw, Opcodes/CHECKCAST, "mug/JSFunction")
 	(doseq [arg (node :args)]
 		(asm-compile-closure-ast arg closure profile mw))
-	(doseq [_ (range (count (node :args)) 4)]
+	(doseq [_ (range (count (node :args)) arg-limit)]
 		(.visitInsn mw Opcodes/ACONST_NULL))
-	(.visitMethodInsn mw Opcodes/INVOKEVIRTUAL, "mug/JSFunction", "instantiate", "(Lmug/JSPrimitive;Lmug/JSPrimitive;Lmug/JSPrimitive;Lmug/JSPrimitive;)Lmug/JSPrimitive;"))
+	(.visitMethodInsn mw Opcodes/INVOKEVIRTUAL, "mug/JSFunction", "instantiate", sig-instantiate))
 
 ;
 ; statements
@@ -391,7 +395,7 @@
 		(.visitEnd mw)))
 		
 (defn asm-compile-closure-method [closure profile cw]
-	(let [mw (.visitMethod cw, Opcodes/ACC_PUBLIC, "invoke", "(Lmug/compiled/JSObject;Lmug/JSPrimitive;Lmug/JSPrimitive;Lmug/JSPrimitive;Lmug/JSPrimitive;)Lmug/JSPrimitive;", nil, (into-array ["java/lang/Exception"]))]
+	(let [mw (.visitMethod cw, Opcodes/ACC_PUBLIC, "invoke", sig-invoke, nil, (into-array ["java/lang/Exception"]))]
 		(.visitCode mw)
 		
 		; create scope object

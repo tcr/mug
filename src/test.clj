@@ -126,7 +126,7 @@
 ; testing ast
 ;
 
-(def test-ast
+(def test-ast-2
 (func-closure nil ["print" "Math" "Array"]  #{"a"} (block-stat 
     (expr-stat (call-expr (scope-ref-expr "print") (static-method-call-expr (scope-ref-expr "Math") "sqrt" (num-literal 2))))
     (expr-stat (scope-assign-expr "a" (call-expr (scope-ref-expr "Array") )))
@@ -138,11 +138,132 @@
 ) )
 )
 
+(def test-ast
+(func-closure nil ["print" "Math" "Array"]  #{"PI" "SOLAR_MASS" "DAYS_PER_YEAR" "Body" "Jupiter" "Saturn" "Uranus" "Neptune" "Sun" "NBodySystem" "n" "bodies" "i"} (block-stat 
+    (expr-stat (scope-assign-expr "PI" (num-literal 3.141592653589793)))
+    (expr-stat (scope-assign-expr "SOLAR_MASS" (mul-op-expr (mul-op-expr (num-literal 4) (scope-ref-expr "PI") ) (scope-ref-expr "PI") )))
+    (expr-stat (scope-assign-expr "DAYS_PER_YEAR" (num-literal 365.24)))
+    (expr-stat (scope-assign-expr "Body" (func-literal (func-closure "Body" ["x" "y" "z" "vx" "vy" "vz" "mass"]  #{} (block-stat 
+        (expr-stat (static-assign-expr (this-expr) "x" (scope-ref-expr "x") ))
+        (expr-stat (static-assign-expr (this-expr) "y" (scope-ref-expr "y") ))
+        (expr-stat (static-assign-expr (this-expr) "z" (scope-ref-expr "z") ))
+        (expr-stat (static-assign-expr (this-expr) "vx" (scope-ref-expr "vx") ))
+        (expr-stat (static-assign-expr (this-expr) "vy" (scope-ref-expr "vy") ))
+        (expr-stat (static-assign-expr (this-expr) "vz" (scope-ref-expr "vz") ))
+        (expr-stat (static-assign-expr (this-expr) "mass" (scope-ref-expr "mass") ))
+    ) ))))
+    (expr-stat (static-assign-expr (static-ref-expr (scope-ref-expr "Body") "prototype") "offsetMomentum" (func-literal (func-closure nil ["px" "py" "pz"]  #{} (block-stat 
+        (expr-stat (static-assign-expr (this-expr) "vx" (div-op-expr (neg-op-expr (scope-ref-expr "px")) (scope-ref-expr "SOLAR_MASS") ) ))
+        (expr-stat (static-assign-expr (this-expr) "vy" (div-op-expr (neg-op-expr (scope-ref-expr "py")) (scope-ref-expr "SOLAR_MASS") ) ))
+        (expr-stat (static-assign-expr (this-expr) "vz" (div-op-expr (neg-op-expr (scope-ref-expr "pz")) (scope-ref-expr "SOLAR_MASS") ) ))
+        (ret-stat  (this-expr))
+    ) )) ))
+    (expr-stat (scope-assign-expr "Jupiter" (func-literal (func-closure "Jupiter" []  #{} (expr-stat (ret-stat  (new-expr  (scope-ref-expr "Body") (num-literal 4.841431442464721) (neg-op-expr (num-literal 1.1603200440274284)) (mul-op-expr (neg-op-expr (num-literal 1.036220444711231)) (num-literal 0.1) ) (mul-op-expr (mul-op-expr (num-literal 1.660076642744037) (num-literal 1e-3) ) (scope-ref-expr "DAYS_PER_YEAR") ) (mul-op-expr (mul-op-expr (num-literal 7.6990111841974045) (num-literal 1e-3) ) (scope-ref-expr "DAYS_PER_YEAR") ) (mul-op-expr (mul-op-expr (neg-op-expr (num-literal 6.90460016972063)) (num-literal 1e-5) ) (scope-ref-expr "DAYS_PER_YEAR") ) (mul-op-expr (mul-op-expr (num-literal 9.547919384243267) (num-literal 1e-4) ) (scope-ref-expr "SOLAR_MASS") )))) ))))
+    (expr-stat (scope-assign-expr "Saturn" (func-literal (func-closure "Saturn" []  #{} (expr-stat (ret-stat  (new-expr  (scope-ref-expr "Body") (num-literal 8.34336671824458) (num-literal 4.124798564124305) (mul-op-expr (neg-op-expr (num-literal 4.035234171143213)) (num-literal 0.1) ) (mul-op-expr (mul-op-expr (neg-op-expr (num-literal 2.767425107268624)) (num-literal 1e-3) ) (scope-ref-expr "DAYS_PER_YEAR") ) (mul-op-expr (mul-op-expr (num-literal 4.998528012349173) (num-literal 1e-3) ) (scope-ref-expr "DAYS_PER_YEAR") ) (mul-op-expr (mul-op-expr (num-literal 2.3041729757376395) (num-literal 1e-5) ) (scope-ref-expr "DAYS_PER_YEAR") ) (mul-op-expr (mul-op-expr (num-literal 2.8588598066613082) (num-literal 1e-4) ) (scope-ref-expr "SOLAR_MASS") )))) ))))
+    (expr-stat (scope-assign-expr "Uranus" (func-literal (func-closure "Uranus" []  #{} (expr-stat (ret-stat  (new-expr  (scope-ref-expr "Body") (mul-op-expr (num-literal 1.2894369562139132) (num-literal 10) ) (mul-op-expr (neg-op-expr (num-literal 1.511115140169863)) (num-literal 10) ) (mul-op-expr (neg-op-expr (num-literal 2.2330757889265573)) (num-literal 0.1) ) (mul-op-expr (mul-op-expr (num-literal 2.964601375647616) (num-literal 1e-3) ) (scope-ref-expr "DAYS_PER_YEAR") ) (mul-op-expr (mul-op-expr (num-literal 2.3784717395948096) (num-literal 1e-3) ) (scope-ref-expr "DAYS_PER_YEAR") ) (mul-op-expr (mul-op-expr (neg-op-expr (num-literal 2.9658956854023755)) (num-literal 1e-5) ) (scope-ref-expr "DAYS_PER_YEAR") ) (mul-op-expr (mul-op-expr (num-literal 4.366244043351563) (num-literal 1e-5) ) (scope-ref-expr "SOLAR_MASS") )))) ))))
+    (expr-stat (scope-assign-expr "Neptune" (func-literal (func-closure "Neptune" []  #{} (expr-stat (ret-stat  (new-expr  (scope-ref-expr "Body") (mul-op-expr (num-literal 1.5379697114850917) (num-literal 10) ) (mul-op-expr (neg-op-expr (num-literal 2.5919314609987962)) (num-literal 10) ) (mul-op-expr (num-literal 1.7925877295037118) (num-literal 0.1) ) (mul-op-expr (mul-op-expr (num-literal 2.680677724903893) (num-literal 1e-3) ) (scope-ref-expr "DAYS_PER_YEAR") ) (mul-op-expr (mul-op-expr (num-literal 1.628241700382423) (num-literal 1e-3) ) (scope-ref-expr "DAYS_PER_YEAR") ) (mul-op-expr (mul-op-expr (neg-op-expr (num-literal 9.515922545197158)) (num-literal 1e-5) ) (scope-ref-expr "DAYS_PER_YEAR") ) (mul-op-expr (mul-op-expr (num-literal 5.151389020466114) (num-literal 1e-5) ) (scope-ref-expr "SOLAR_MASS") )))) ))))
+    (expr-stat (scope-assign-expr "Sun" (func-literal (func-closure "Sun" []  #{} (expr-stat (ret-stat  (new-expr  (scope-ref-expr "Body") (num-literal 0) (num-literal 0) (num-literal 0) (num-literal 0) (num-literal 0) (num-literal 0) (scope-ref-expr "SOLAR_MASS")))) ))))
+    (expr-stat (scope-assign-expr "NBodySystem" (func-literal (func-closure "NBodySystem" ["bodies"]  #{"px" "py" "pz" "size" "b" "m" "i"} (block-stat 
+        (expr-stat (static-assign-expr (this-expr) "bodies" (scope-ref-expr "bodies") ))
+        (expr-stat (scope-assign-expr "px" (num-literal 0)))
+        (expr-stat (scope-assign-expr "py" (num-literal 0)))
+        (expr-stat (scope-assign-expr "pz" (num-literal 0)))
+        (expr-stat (scope-assign-expr "size" (static-ref-expr (static-ref-expr (this-expr) "bodies") "length")))
+        (expr-stat (scope-assign-expr "i" (num-literal 0))) 
+ (while-stat (lt-op-expr (scope-ref-expr "i") (scope-ref-expr "size") )(block-stat 
+            (block-stat 
+                (expr-stat (scope-assign-expr "b" (dyn-ref-expr (static-ref-expr (this-expr) "bodies") (scope-ref-expr "i"))))
+                (expr-stat (scope-assign-expr "m" (static-ref-expr (scope-ref-expr "b") "mass")))
+                (expr-stat (scope-assign-expr "px" (add-op-expr (scope-ref-expr "px") (mul-op-expr (static-ref-expr (scope-ref-expr "b") "vx") (scope-ref-expr "m") ) ) ))
+                (expr-stat (scope-assign-expr "py" (add-op-expr (scope-ref-expr "py") (mul-op-expr (static-ref-expr (scope-ref-expr "b") "vy") (scope-ref-expr "m") ) ) ))
+                (expr-stat (scope-assign-expr "pz" (add-op-expr (scope-ref-expr "pz") (mul-op-expr (static-ref-expr (scope-ref-expr "b") "vz") (scope-ref-expr "m") ) ) ))
+            )
+            (expr-stat (scope-assign-expr "i" (add-op-expr (scope-ref-expr "i") (num-literal 1) ) ))
+        ))
+        (expr-stat (static-method-call-expr (dyn-ref-expr (static-ref-expr (this-expr) "bodies") (num-literal 0)) "offsetMomentum" (scope-ref-expr "px") (scope-ref-expr "py") (scope-ref-expr "pz")))
+    ) ))))
+    (expr-stat (static-assign-expr (static-ref-expr (scope-ref-expr "NBodySystem") "prototype") "advance" (func-literal (func-closure nil ["dt"]  #{"dx" "dy" "dz" "distance" "mag" "size" "bodyi" "bodyj" "j" "i" "body"} (block-stat 
+            
+        (expr-stat (scope-assign-expr "size" (static-ref-expr (static-ref-expr (this-expr) "bodies") "length")))
+        (expr-stat (scope-assign-expr "i" (num-literal 0))) 
+ (while-stat (lt-op-expr (scope-ref-expr "i") (scope-ref-expr "size") )(block-stat 
+            (block-stat 
+                (expr-stat (scope-assign-expr "bodyi" (dyn-ref-expr (static-ref-expr (this-expr) "bodies") (scope-ref-expr "i"))))
+                (expr-stat (scope-assign-expr "j" (add-op-expr (scope-ref-expr "i") (num-literal 1) ))) 
+ (while-stat (lt-op-expr (scope-ref-expr "j") (scope-ref-expr "size") )(block-stat 
+                    (block-stat 
+                        (expr-stat (scope-assign-expr "bodyj" (dyn-ref-expr (static-ref-expr (this-expr) "bodies") (scope-ref-expr "j"))))
+                        (expr-stat (scope-assign-expr "dx" (sub-op-expr (static-ref-expr (scope-ref-expr "bodyi") "x") (static-ref-expr (scope-ref-expr "bodyj") "x") ) ))
+                        (expr-stat (scope-assign-expr "dy" (sub-op-expr (static-ref-expr (scope-ref-expr "bodyi") "y") (static-ref-expr (scope-ref-expr "bodyj") "y") ) ))
+                        (expr-stat (scope-assign-expr "dz" (sub-op-expr (static-ref-expr (scope-ref-expr "bodyi") "z") (static-ref-expr (scope-ref-expr "bodyj") "z") ) ))
+                        (expr-stat (scope-assign-expr "distance" (static-method-call-expr (scope-ref-expr "Math") "sqrt" (add-op-expr (add-op-expr (mul-op-expr (scope-ref-expr "dx") (scope-ref-expr "dx") ) (mul-op-expr (scope-ref-expr "dy") (scope-ref-expr "dy") ) ) (mul-op-expr (scope-ref-expr "dz") (scope-ref-expr "dz") ) )) ))
+                        (expr-stat (scope-assign-expr "mag" (div-op-expr (scope-ref-expr "dt") (mul-op-expr (mul-op-expr (scope-ref-expr "distance") (scope-ref-expr "distance") ) (scope-ref-expr "distance") ) ) ))
+                        (expr-stat (static-assign-expr (scope-ref-expr "bodyi") "vx" (sub-op-expr (static-ref-expr (scope-ref-expr "bodyi") "vx") (mul-op-expr (mul-op-expr (scope-ref-expr "dx") (static-ref-expr (scope-ref-expr "bodyj") "mass") ) (scope-ref-expr "mag") ) ) ))
+                        (expr-stat (static-assign-expr (scope-ref-expr "bodyi") "vy" (sub-op-expr (static-ref-expr (scope-ref-expr "bodyi") "vy") (mul-op-expr (mul-op-expr (scope-ref-expr "dy") (static-ref-expr (scope-ref-expr "bodyj") "mass") ) (scope-ref-expr "mag") ) ) ))
+                        (expr-stat (static-assign-expr (scope-ref-expr "bodyi") "vz" (sub-op-expr (static-ref-expr (scope-ref-expr "bodyi") "vz") (mul-op-expr (mul-op-expr (scope-ref-expr "dz") (static-ref-expr (scope-ref-expr "bodyj") "mass") ) (scope-ref-expr "mag") ) ) ))
+                        (expr-stat (static-assign-expr (scope-ref-expr "bodyj") "vx" (add-op-expr (static-ref-expr (scope-ref-expr "bodyj") "vx") (mul-op-expr (mul-op-expr (scope-ref-expr "dx") (static-ref-expr (scope-ref-expr "bodyi") "mass") ) (scope-ref-expr "mag") ) ) ))
+                        (expr-stat (static-assign-expr (scope-ref-expr "bodyj") "vy" (add-op-expr (static-ref-expr (scope-ref-expr "bodyj") "vy") (mul-op-expr (mul-op-expr (scope-ref-expr "dy") (static-ref-expr (scope-ref-expr "bodyi") "mass") ) (scope-ref-expr "mag") ) ) ))
+                        (expr-stat (static-assign-expr (scope-ref-expr "bodyj") "vz" (add-op-expr (static-ref-expr (scope-ref-expr "bodyj") "vz") (mul-op-expr (mul-op-expr (scope-ref-expr "dz") (static-ref-expr (scope-ref-expr "bodyi") "mass") ) (scope-ref-expr "mag") ) ) ))
+                    )
+                    (expr-stat (scope-assign-expr "j" (add-op-expr (scope-ref-expr "j") (num-literal 1) ) ))
+                ))
+            )
+            (expr-stat (scope-assign-expr "i" (add-op-expr (scope-ref-expr "i") (num-literal 1) ) ))
+        ))
+        (expr-stat (scope-assign-expr "i" (num-literal 0))) 
+ (while-stat (lt-op-expr (scope-ref-expr "i") (scope-ref-expr "size") )(block-stat 
+            (block-stat 
+                (expr-stat (scope-assign-expr "body" (dyn-ref-expr (static-ref-expr (this-expr) "bodies") (scope-ref-expr "i"))))
+                (expr-stat (static-assign-expr (scope-ref-expr "body") "x" (add-op-expr (static-ref-expr (scope-ref-expr "body") "x") (mul-op-expr (scope-ref-expr "dt") (static-ref-expr (scope-ref-expr "body") "vx") ) ) ))
+                (expr-stat (static-assign-expr (scope-ref-expr "body") "y" (add-op-expr (static-ref-expr (scope-ref-expr "body") "y") (mul-op-expr (scope-ref-expr "dt") (static-ref-expr (scope-ref-expr "body") "vy") ) ) ))
+                (expr-stat (static-assign-expr (scope-ref-expr "body") "z" (add-op-expr (static-ref-expr (scope-ref-expr "body") "z") (mul-op-expr (scope-ref-expr "dt") (static-ref-expr (scope-ref-expr "body") "vz") ) ) ))
+            )
+            (expr-stat (scope-assign-expr "i" (add-op-expr (scope-ref-expr "i") (num-literal 1) ) ))
+        ))
+    ) )) ))
+    (expr-stat (static-assign-expr (static-ref-expr (scope-ref-expr "NBodySystem") "prototype") "energy" (func-literal (func-closure nil []  #{"dx" "dy" "dz" "distance" "e" "size" "bodyi" "bodyj" "j" "i"} (block-stat 
+           
+        (expr-stat (scope-assign-expr "e" (num-literal 0)))
+        (expr-stat (scope-assign-expr "size" (static-ref-expr (static-ref-expr (this-expr) "bodies") "length")))
+        (expr-stat (scope-assign-expr "i" (num-literal 0))) 
+ (while-stat (lt-op-expr (scope-ref-expr "i") (scope-ref-expr "size") )(block-stat 
+            (block-stat 
+                (expr-stat (scope-assign-expr "bodyi" (dyn-ref-expr (static-ref-expr (this-expr) "bodies") (scope-ref-expr "i"))))
+                (expr-stat (scope-assign-expr "e" (add-op-expr (scope-ref-expr "e") (mul-op-expr (mul-op-expr (num-literal 0.5) (static-ref-expr (scope-ref-expr "bodyi") "mass") ) (add-op-expr (add-op-expr (mul-op-expr (static-ref-expr (scope-ref-expr "bodyi") "vx") (static-ref-expr (scope-ref-expr "bodyi") "vx") ) (mul-op-expr (static-ref-expr (scope-ref-expr "bodyi") "vy") (static-ref-expr (scope-ref-expr "bodyi") "vy") ) ) (mul-op-expr (static-ref-expr (scope-ref-expr "bodyi") "vz") (static-ref-expr (scope-ref-expr "bodyi") "vz") ) ) ) ) ))
+                (expr-stat (scope-assign-expr "j" (add-op-expr (scope-ref-expr "i") (num-literal 1) ))) 
+ (while-stat (lt-op-expr (scope-ref-expr "j") (scope-ref-expr "size") )(block-stat 
+                    (block-stat 
+                        (expr-stat (scope-assign-expr "bodyj" (dyn-ref-expr (static-ref-expr (this-expr) "bodies") (scope-ref-expr "j"))))
+                        (expr-stat (scope-assign-expr "dx" (sub-op-expr (static-ref-expr (scope-ref-expr "bodyi") "x") (static-ref-expr (scope-ref-expr "bodyj") "x") ) ))
+                        (expr-stat (scope-assign-expr "dy" (sub-op-expr (static-ref-expr (scope-ref-expr "bodyi") "y") (static-ref-expr (scope-ref-expr "bodyj") "y") ) ))
+                        (expr-stat (scope-assign-expr "dz" (sub-op-expr (static-ref-expr (scope-ref-expr "bodyi") "z") (static-ref-expr (scope-ref-expr "bodyj") "z") ) ))
+                        (expr-stat (scope-assign-expr "distance" (static-method-call-expr (scope-ref-expr "Math") "sqrt" (add-op-expr (add-op-expr (mul-op-expr (scope-ref-expr "dx") (scope-ref-expr "dx") ) (mul-op-expr (scope-ref-expr "dy") (scope-ref-expr "dy") ) ) (mul-op-expr (scope-ref-expr "dz") (scope-ref-expr "dz") ) )) ))
+                        (expr-stat (scope-assign-expr "e" (sub-op-expr (scope-ref-expr "e") (div-op-expr (mul-op-expr (static-ref-expr (scope-ref-expr "bodyi") "mass") (static-ref-expr (scope-ref-expr "bodyj") "mass") ) (scope-ref-expr "distance") ) ) ))
+                    )
+                    (expr-stat (scope-assign-expr "j" (add-op-expr (scope-ref-expr "j") (num-literal 1) ) ))
+                ))
+            )
+            (expr-stat (scope-assign-expr "i" (add-op-expr (scope-ref-expr "i") (num-literal 1) ) ))
+        ))
+        (ret-stat  (scope-ref-expr "e"))
+    ) )) ))
+    (expr-stat (scope-assign-expr "n" (num-literal 5e7)))
+    (expr-stat (scope-assign-expr "bodies" (new-expr  (scope-ref-expr "NBodySystem") (call-expr (scope-ref-expr "Array") (call-expr (scope-ref-expr "Sun") ) (call-expr (scope-ref-expr "Jupiter") ) (call-expr (scope-ref-expr "Saturn") ) (call-expr (scope-ref-expr "Uranus") ) (call-expr (scope-ref-expr "Neptune") )))))
+    (expr-stat (call-expr (scope-ref-expr "print") (static-method-call-expr (scope-ref-expr "bodies") "energy" )))
+    (expr-stat (scope-assign-expr "i" (num-literal 0))) 
+ (while-stat (lt-op-expr (scope-ref-expr "i") (scope-ref-expr "n") )(block-stat 
+        (expr-stat (static-method-call-expr (scope-ref-expr "bodies") "advance" (num-literal 0.01)))
+        (expr-stat (scope-assign-expr "i" (add-op-expr (scope-ref-expr "i") (num-literal 1) ) ))
+    ))
+    (expr-stat (call-expr (scope-ref-expr "print") (static-method-call-expr (scope-ref-expr "bodies") "energy" )))
+) )
+)
+
 ;
 ; output
 ;
 
-(let [ast test-ast
+(let [ast josephus-ast
       profile (asm-analyze-ast ast nil (new-asm-profile))]
   ; closures
   (println "Closures...")

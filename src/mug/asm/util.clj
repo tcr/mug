@@ -18,3 +18,7 @@
 (def qn-classes-boolean "mug/JSBoolean")
 (def qn-classes-string "mug/JSString")
 (def qn-classes-number "mug/JSNumber")
+
+(def arg-limit 10)
+(def sig-instantiate (str "(" (apply str (repeat arg-limit "Lmug/JSPrimitive;")) ")Lmug/JSPrimitive;"))
+(def sig-invoke (str "(Lmug/compiled/JSObject;" (apply str (repeat arg-limit "Lmug/JSPrimitive;")) ")Lmug/JSPrimitive;"))
