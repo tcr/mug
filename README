@@ -1,0 +1,13 @@
+Mug: a JavaScript -> JVM compiler.
+==================================
+
+Next version:
+* Clean up Clojure, cleaner naming scheme
+* Normalize profiler hashing method
+* Convert AST profiler from JS to Clojure
+* Global object
+* Improve ECMAScript implementation
+
+Later:
+* Use ASM library+annotations to make Java<->JS interfacing easier
+* Implement variable/type analysis
