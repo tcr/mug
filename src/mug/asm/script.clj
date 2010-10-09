@@ -10,8 +10,8 @@
 
 (defn asm-compile-script-class [index]
   (let [cw (new ClassWriter ClassWriter/COMPUTE_MAXS)
-				qn (str "mug/compiled/JSClosure_" index)]
-		(.visit cw, Opcodes/V1_6, (+ Opcodes/ACC_SUPER Opcodes/ACC_PUBLIC), "mug/compiled/JSScript", nil, qn, nil)
+				qn (qn-js-closure index)]
+		(.visit cw, Opcodes/V1_6, (+ Opcodes/ACC_SUPER Opcodes/ACC_PUBLIC), qn-js-script, nil, qn, nil)
 		(doto (.visitMethod cw Opcodes/ACC_PUBLIC, "<init>", "()V", nil, nil)
       (.visitVarInsn Opcodes/ALOAD, 0)
       (.visitMethodInsn Opcodes/INVOKESPECIAL, qn, "<init>", "()V")

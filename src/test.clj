@@ -263,28 +263,28 @@
 ; output
 ;
 
-(let [ast josephus-ast
+(let [ast binary-ast
       profile (asm-analyze-ast ast nil (new-asm-profile))]
   ; closures
   (println "Closures...")
-	(doseq [[path bytes] (asm-compile-closure-classes profile)]
-		(write-file (str "out/" path) bytes))
+	(doseq [[qn bytes] (asm-compile-closure-classes profile)]
+		(write-file (str "out/" qn ".class") bytes))
 	
   ; constants
   (println "Constants...")
-	(write-file "out/JSConstants.class" (asm-compile-constants-class profile))
+	(write-file (str "out/" qn-js-constants ".class") (asm-compile-constants-class profile))
 	
   ; object shim
   (println "Objects...")
-	(write-file "out/JSObject.class" (asm-compile-object-class profile))
+	(write-file (str "out/" qn-js-object ".class") (asm-compile-object-class profile))
 	
   ; scopes
   (println "Scopes...")
-	(doseq [[path bytes] (asm-compile-scope-classes profile)]
-		(write-file (str "out/" path) bytes))
+	(doseq [[qn bytes] (asm-compile-scope-classes profile)]
+		(write-file (str "out/" qn ".class") bytes))
 	
   ; script entry point
   (println "Script...")
-	(write-file "out/JSScript.class" (asm-compile-script-class (index-of (profile :closures) ast)))
+	(write-file (str "out/" qn-js-script ".class") (asm-compile-script-class (index-of (profile :closures) ast)))
  
   (println "Done."))
