@@ -187,6 +187,16 @@
   (.visitInsn mw Opcodes/I2D)
   (.visitMethodInsn mw Opcodes/INVOKESPECIAL, qn-js-number, "<init>", (sig-call qn-double qn-void)))
 
+(defmethod compile-code :mug/eq-op-expr [node context ast mw]
+  (compile-code (node :left) context ast mw)
+  (compile-code (node :right) context ast mw)
+  (.visitMethodInsn mw Opcodes/INVOKESTATIC, qn-js-utils, "testEquality", (sig-call (sig-obj qn-js-primitive) (sig-obj qn-js-primitive) (sig-obj qn-js-boolean))))
+
+(defmethod compile-code :mug/neq-op-expr [node context ast mw]
+  (compile-code (node :left) context ast mw)
+  (compile-code (node :right) context ast mw)
+  (.visitMethodInsn mw Opcodes/INVOKESTATIC, qn-js-utils, "testInequality", (sig-call (sig-obj qn-js-primitive) (sig-obj qn-js-primitive) (sig-obj qn-js-boolean))))
+
 (defmethod compile-code :mug/eqs-op-expr [node context ast mw]
   (compile-code (node :left) context ast mw)
   (compile-code (node :right) context ast mw)

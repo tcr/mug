@@ -35,6 +35,7 @@
 (defast ::array-literal ::literal [exprs])
 (defast ::undef-literal ::literal [])
 (defast ::null-literal ::literal [])
+(defast ::boolean-literal ::literal [value])
 (defast ::func-literal ::literal [closure])
 
 ; operations
@@ -44,6 +45,7 @@
 (derive ::binary-op-expr ::op-expr)
 	(defn left-operand [n] (:left n))
 	(defn right-operand [n] (:right n))
+(defast ::num-op-expr ::unary-op-expr [expr])
 (defast ::neg-op-expr ::unary-op-expr [expr])
 (defast ::lt-op-expr ::binary-op-expr [left right])
 (defast ::lte-op-expr ::binary-op-expr [left right])

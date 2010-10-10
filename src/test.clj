@@ -1,7 +1,12 @@
 (ns test
-  (:use mug [mug.asm code contexts constants object scopes util ; profile script
-             ]
+  (:use mug mug.parse.parser [mug.asm code contexts constants object scopes util]
     clojure.java.io))
+
+;
+; parser
+;
+
+(import mug.parse.Parser)
 
 ;
 ; file i/o
@@ -189,8 +194,10 @@
 (doseq [f (.listFiles (new File "out/mug/compiled"))]
   (delete-file f true))
 
+(println (gen-ast))
+
 ; compile files
-(let [ast binary-ast]
+(let [ast (gen-ast)]
   ; script
   ;(println "Script...")
 	;(write-file (str "out/" qn-js-script ".class") (asm-compile-script-class ast))
