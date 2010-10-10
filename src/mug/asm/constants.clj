@@ -8,7 +8,7 @@
 ; constants
 ;
 
-(defn asm-compile-constants-fields [profile cw]
+(defn asm-compile-constants-fields [ast cw]
 	; undefined
 	(.visitEnd (.visitField cw, (+ Opcodes/ACC_PUBLIC Opcodes/ACC_STATIC), "UNDEFINED", (sig-obj qn-js-undefined), nil, nil))
 
@@ -17,14 +17,14 @@
 	(.visitEnd (.visitField cw, (+ Opcodes/ACC_PUBLIC Opcodes/ACC_STATIC), "FALSE", (sig-obj qn-js-boolean), nil, nil))
 
 	; strings
-	(doseq [v (vec (profile :strings))]
-			(.visitEnd (.visitField cw, (+ Opcodes/ACC_PUBLIC Opcodes/ACC_STATIC), (ident-str (index-of (profile :strings) v)), (sig-obj qn-js-string), nil, nil)))
+	(doseq [[i v] (index (ast :strings))]
+			(.visitEnd (.visitField cw, (+ Opcodes/ACC_PUBLIC Opcodes/ACC_STATIC), (ident-str i), (sig-obj qn-js-string), nil, nil)))
  
  	; numbers
-	(doseq [v (vec (profile :numbers))]
-			(.visitEnd (.visitField cw, (+ Opcodes/ACC_PUBLIC Opcodes/ACC_STATIC), (ident-num (index-of (profile :numbers) v)), (sig-obj qn-js-number), nil, nil))))
+	(doseq [[i v] (index (ast :numbers))]
+			(.visitEnd (.visitField cw, (+ Opcodes/ACC_PUBLIC Opcodes/ACC_STATIC), (ident-num i), (sig-obj qn-js-number), nil, nil))))
 
-(defn asm-compile-constants-clinit [profile cw]
+(defn asm-compile-constants-clinit [ast cw]
 	(let [mv (.visitMethod cw, Opcodes/ACC_STATIC, "<clinit>", (sig-call qn-void), nil, nil)]
 		(.visitCode mv)
 
@@ -50,32 +50,32 @@
 			(.visitFieldInsn Opcodes/PUTSTATIC, qn-js-constants, "FALSE", (sig-obj qn-js-boolean)))
 
 		; strings
-		(doseq [v (vec (profile :strings))]
+		(doseq [[i v] (index (ast :strings))]
 			(doto mv
 				(.visitTypeInsn Opcodes/NEW qn-js-string)
 				(.visitInsn Opcodes/DUP)
 				(.visitLdcInsn v)
 				(.visitMethodInsn Opcodes/INVOKESPECIAL, qn-js-string, "<init>", (sig-call (sig-obj qn-string) qn-void))
-				(.visitFieldInsn Opcodes/PUTSTATIC, qn-js-constants, (ident-str (index-of (profile :strings) v)), (sig-obj qn-js-string))))
+				(.visitFieldInsn Opcodes/PUTSTATIC, qn-js-constants, (ident-str i), (sig-obj qn-js-string))))
 
 		; numbers
-		(doseq [v (vec (profile :numbers))]
+		(doseq [[i v] (index (ast :numbers))]
 			(doto mv
 				(.visitTypeInsn Opcodes/NEW qn-js-number)
 				(.visitInsn Opcodes/DUP)
 				(.visitLdcInsn (new Double (double v)))
 				(.visitMethodInsn Opcodes/INVOKESPECIAL, qn-js-number, "<init>", (sig-call qn-double qn-void))
-				(.visitFieldInsn Opcodes/PUTSTATIC, qn-js-constants, (ident-num (index-of (profile :numbers) v)), (sig-obj qn-js-number))))
+				(.visitFieldInsn Opcodes/PUTSTATIC, qn-js-constants, (ident-num i), (sig-obj qn-js-number))))
 
 		(doto mv
 			(.visitInsn Opcodes/RETURN)
 			(.visitMaxs 4, 0)
 			(.visitEnd))))
 
-(defn asm-compile-constants-class [profile]
+(defn asm-compile-constants-class [ast]
 	(let [cw (new ClassWriter ClassWriter/COMPUTE_MAXS)]
 		(.visit cw, Opcodes/V1_6, (+ Opcodes/ACC_SUPER Opcodes/ACC_PUBLIC), qn-js-constants, nil, qn-object, nil)
-		(asm-compile-constants-fields profile cw)
-		(asm-compile-constants-clinit profile cw)
+		(asm-compile-constants-fields ast cw)
+		(asm-compile-constants-clinit ast cw)
 		(.visitEnd cw)
 		(.toByteArray cw)))

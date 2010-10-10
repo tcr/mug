@@ -158,7 +158,7 @@
 ; closure
 ;
 
-(defmethod asm-analyze-ast :mug/closure [node closure profile]
+(defmethod asm-analyze-ast :mug/scope [node scope profile]
 	(->> profile
     (asm-profile-assign :scopes node
       (if (nil? closure) [] (into ((profile :scopes) closure) [closure])) ,,,)

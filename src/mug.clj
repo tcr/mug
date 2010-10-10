@@ -6,14 +6,9 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-; util
-(defn escape-str [s]
-	(apply str (map (fn [c] (or (char-escape-string c) c)) s)))
-;(defn flatten [x]
-;	(filter (complement sequential?)
-;		(rest (tree-seq sequential? seq x))))
-(defn join [x y]
-	(apply str (interpose x y)))
+; nodes
+(defn js-ast [contexts structs accessors numbers strings]
+  {:contexts contexts :structs structs :accessors accessors :numbers numbers :strings strings})
 
 ; ast
 
@@ -27,10 +22,10 @@
 			(eval (list 'defn (symbol (name type)) types
 				(list 'apply 'struct (list 'cons ast-struct (vec symbols))))))))
 				
-; closures
-(derive ::closure ::ast-node)
-(defast ::func-closure ::closure [name args vars & stats])
-(defast ::global-closure ::closure [vars & stats])
+; contexts
+(derive ::context ::ast-node)
+(defast ::closure-context ::closure [parents name args vars & stats])
+(defast ::script-context ::closure [globals vars & stats])
 
 ; literals
 (derive ::literal ::expr)
@@ -60,10 +55,10 @@
 (defast ::div-op-expr ::binary-op-expr [left right])
 (defast ::mod-op-expr ::binary-op-expr [left right])
 (defast ::lsh-op-expr ::binary-op-expr [left right])
-(defast ::neq-op-expr ::binary-op-expr [left right])
 (defast ::eq-op-expr ::binary-op-expr [left right])
-(defast ::neqs-op-expr ::binary-op-expr [left right])
 (defast ::eqs-op-expr ::binary-op-expr [left right])
+(defast ::neq-op-expr ::binary-op-expr [left right])
+(defast ::neqs-op-expr ::binary-op-expr [left right])
 
 ; expressions
 (derive ::expr ::ast-node)
@@ -81,18 +76,22 @@
 (defast ::dyn-assign-expr ::expr [base index expr])
 (defast ::typeof-expr ::expr [ref])
 (defast ::if-expr ::expr [expr then-expr else-expr])
-(defast ::class-expr ::expr [name prototype constructor static])
-	(defn class-name [n] (:name n))
-	(defn class-static [n] (:static n))
-	(defn class-prototype [n] (:prototype n))
-(defast ::constructor ::ast-node [closure])
+(comment
+	(defast ::class-expr ::expr [name prototype constructor static])
+		(defn class-name [n] (:name n))
+		(defn class-static [n] (:static n))
+		(defn class-prototype [n] (:prototype n))
+  (defast ::constructor ::ast-node [closure])
+)
 
 ; statements
 (derive ::stat ::ast-node)
-(defast ::block-stat ::stat [& stats])
 (defast ::if-stat ::stat [expr then-stat else-stat])
 (defast ::class-stat ::stat [name prototype constructor static])
 (defast ::ret-stat ::stat [expr])
 (defast ::while-stat ::stat [expr stat])
-(defast ::for-in-stat ::stat [value from to by stat])
 (defast ::expr-stat ::stat [expr])
+(defast ::block-stat ::stat [& stats])
+(comment
+  (defast ::for-in-stat ::stat [value from to by stat])
+)

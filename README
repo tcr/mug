@@ -2,9 +2,7 @@ Mug: a JavaScript -> JVM compiler.
 ==================================
 
 Next version:
-* Normalize profiler hashing method
 * Convert AST profiler from JS to Clojure
-* Global object
 * Improve ECMAScript implementation
 
 Later:

@@ -8,7 +8,8 @@
 ; object
 ;
 
-(defn asm-compile-object-methods [name accessors cw]
+(defn asm-compile-object-methods [accessors cw]
+  ;[TODO] not filter out "prototype"
   (doseq [k (filter (fn [x] (not= x "prototype")) (vec accessors))]
 		(doto (.visitMethod cw, Opcodes/ACC_PUBLIC, (str "get_" k), "()Lmug/JSPrimitive;", nil, nil)
 			(.visitCode)
@@ -28,7 +29,7 @@
       (.visitMaxs 1, 1)
 			(.visitEnd))))
 
-(defn asm-compile-object-init [name cw]
+(defn asm-compile-object-init [cw]
 	(doto (.visitMethod cw, Opcodes/ACC_PUBLIC, "<init>", "()V", nil, nil)
 		(.visitCode)
 		(.visitVarInsn Opcodes/ALOAD, 0)
@@ -47,10 +48,10 @@
     (.visitMaxs 1, 1)
 		(.visitEnd)))
 
-(defn asm-compile-object-class [profile]
+(defn asm-compile-object-class [ast]
 		(let [cw (new ClassWriter ClassWriter/COMPUTE_MAXS)]
 			(.visit cw, Opcodes/V1_6, (+ Opcodes/ACC_SUPER Opcodes/ACC_PUBLIC), qn-js-object, nil, qn-js-objectbase, nil)
-			(asm-compile-object-methods qn-js-object (profile :accessors) cw)
-			(asm-compile-object-init qn-js-object cw)
+			(asm-compile-object-methods (ast :accessors) cw)
+			(asm-compile-object-init cw)
 			(.visitEnd cw)
 			(.toByteArray cw)))
