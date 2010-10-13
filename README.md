@@ -16,6 +16,13 @@ and mug-util.jar to run:
 Roadmap
 -------
 
+Short-term:
+1. make mug-js not interdependent with class files
+2. fix jar compilation setup
+3. make compiled classes' namespace choosable
+4. get compilation working fully from a clojure script, i.e. from a string, from a file, etc
+5. make it so you can compile and run a script entirely from clojure (interactive, test, etc)
+
 Soon:
 * Convert AST profiler from JS to Clojure
 * Improve ECMAScript implementation
