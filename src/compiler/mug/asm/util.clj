@@ -36,8 +36,8 @@
 (def qn-js-atoms (str pkg-mug "JSAtoms"))
 (def qn-js-constants (str pkg-compiled "JSConstants"))
 
-(def qn-js-compiled-object (str pkg-mug "JSCompiledObject"))
-(def qn-js-compiled-function (str pkg-mug "JSCompiledFunction"))
+;(def qn-js-compiled-object (str pkg-mug "JSCompiledObject"))
+;(def qn-js-compiled-function (str pkg-mug "JSCompiledFunction"))
 (def qn-js-globalscope (str pkg-mug "JSGlobalScope"))
 
 (def qn-js-script (str pkg-compiled "JSScript"))
@@ -64,7 +64,7 @@
 
 (def sig-execute (sig-call (sig-obj (qn-js-scope 0)) (sig-obj qn-js-primitive)))
 (def sig-instantiate (apply sig-call (conj (vec (repeat arg-limit (sig-obj qn-js-primitive))) (sig-obj qn-js-primitive))))
-(def sig-invoke (apply sig-call (conj (vec (conj (repeat arg-limit (sig-obj qn-js-primitive)) (sig-obj qn-js-compiled-object))) (sig-obj qn-js-primitive))))
+(def sig-invoke (apply sig-call (conj (vec (conj (repeat arg-limit (sig-obj qn-js-primitive)) (sig-obj qn-js-object))) (sig-obj qn-js-primitive))))
 
 (defmulti sig-context-init (fn [& args] (:type (first args))))
 (defmethod sig-context-init :mug.ast/script-context [context ast]

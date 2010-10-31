@@ -1,5 +1,5 @@
 (ns mug.compiler (:gen-class)
-  (:use mug.ast mug.parse.parser [mug.asm code contexts constants object scopes util]
+  (:use mug.ast mug.parse.parser [mug.asm code contexts constants scopes util]
     [clojure.contrib.io :only (delete-file-recursively)]))
 
 ;
@@ -22,6 +22,8 @@
 ;
 
 (defn compile-js [ast out-dir]
+  (println (str "AST: " ast))
+  
 	; clean output directory
 	(doseq [f (.listFiles (new File out-dir))]
     (delete-file-recursively f))
@@ -36,10 +38,10 @@
 	(write-file (str out-dir qn-js-constants ".class") (asm-compile-constants-class ast))
 	
   ; object shim
-  (println " Objects...")
+;  (println " Objects...")
 ;	(write-file (str out-dir qn-js-object ".class") (asm-compile-object-class ast))
-	(write-file (str out-dir pkg-compiled "JSCompiledObject.class")
-   (asm-compile-object-class ast))
+;	(write-file (str out-dir pkg-compiled "JSCompiledObject.class")
+;   (asm-compile-object-class ast))
 	
   ; scopes
   (println " Scopes...")

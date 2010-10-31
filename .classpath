@@ -2,7 +2,7 @@
 <classpath>
 	<classpathentry kind="src" path="res"/>
 	<classpathentry kind="src" path="src/compiler"/>
-	<classpathentry excluding="Container.java" kind="src" path="src/js"/>
+	<classpathentry kind="src" path="src/js"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
 	<classpathentry kind="lib" path="clojure.jar" sourcepath="clojure-src.jar"/>
 	<classpathentry kind="lib" path="clojure-contrib.jar" sourcepath="clojure-contrib-src.jar"/>

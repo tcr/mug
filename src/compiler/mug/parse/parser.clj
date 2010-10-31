@@ -26,7 +26,7 @@
   [])
 (defmethod walk-input :name [[_ name] walker]
   [])
-(defmethod walk-input :array [[_ elems] walker]
+(defmethod walk-input :array [[_ & elems] walker]
   (apply concat (map #(walker %1 walker) elems)))
 (defmethod walk-input :object [[_ properties] walker]
   (apply concat (map (fn [[k v]] (walker v walker)))))
@@ -46,7 +46,7 @@
 (defmethod walk-input :dot [[_ obj attr] walker]
   (walker obj walker))
 (defmethod walk-input :sub [[_ obj attr] walker]
-  (walker obj walker))
+  (concat (walker obj walker) (walker attr walker)))
 (defmethod walk-input :seq [[_ form1 result] walker]
   (concat (walker form1 walker) (walker result walker)))
 (defmethod walk-input :conditional [[_ test then else] walker]
@@ -221,7 +221,8 @@
     "this" (this-expr)
     "null" (null-literal)
     (scope-ref-expr value)))
-;(defmethod gen-ast-code :array [[_ elems]])
+(defmethod gen-ast-code :array [[_ & elems] input]
+  (array-literal (map #(gen-ast-code % input) elems)))
 ;(defmethod gen-ast-code :object [[_ properties]])
 ;(defmethod gen-ast-code :regexp [[_ expr flags]])
 
@@ -261,7 +262,8 @@
     :else (println (str "###ERROR: Unrecognized call format: " (first func)))))
 (defmethod gen-ast-code :dot [[_ obj attr] input]
   (static-ref-expr (gen-ast-code obj input) attr))
-;(defmethod gen-ast-code :sub [[_ obj attr]])
+(defmethod gen-ast-code :sub [[_ obj attr] input]
+  (dyn-ref-expr (gen-ast-code obj input) (gen-ast-code attr input)))
 ;(defmethod gen-ast-code :seq [[_ form1 result]])
 ;(defmethod gen-ast-code :conditional [[_ test then else]])
 (defmethod gen-ast-code :function [node input]

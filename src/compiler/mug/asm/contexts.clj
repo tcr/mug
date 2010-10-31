@@ -25,7 +25,7 @@
         qn (qn-js-context (context-index context ast))]
 		(.visitCode mw)
 		(.visitVarInsn mw Opcodes/ALOAD, 0)
-		(.visitMethodInsn mw Opcodes/INVOKESPECIAL, qn-js-compiled-function, "<init>", (sig-call qn-void))
+		(.visitMethodInsn mw Opcodes/INVOKESPECIAL, qn-js-function, "<init>", (sig-call qn-void))
  
     (doseq [parent (context :parents)]
       (.visitVarInsn mw Opcodes/ALOAD, 0)
@@ -139,7 +139,7 @@
 (defmethod compile-context-class :mug.ast/closure-context [context ast]
   (let [qn (qn-js-context (context-index context ast))
 				cw (new ClassWriter ClassWriter/COMPUTE_MAXS)]
-    (.visit cw, Opcodes/V1_6, (+ Opcodes/ACC_SUPER Opcodes/ACC_PUBLIC), qn, nil, qn-js-compiled-function, nil)
+    (.visit cw, Opcodes/V1_6, (+ Opcodes/ACC_SUPER Opcodes/ACC_PUBLIC), qn, nil, qn-js-function, nil)
 		(compile-context-init context ast cw)
 		(compile-context-method context ast cw)
     (compile-context-fields context ast cw)

@@ -32,6 +32,12 @@
 (defmethod compile-code :mug.ast/str-literal [node context ast mw]
 	(.visitFieldInsn mw Opcodes/GETSTATIC qn-js-constants (ident-str (index-of (ast :strings) (node :value))) (sig-obj qn-js-string)))
 
+(defmethod compile-code :mug.ast/array-literal [node context ast mw]
+  (compile-code
+    {:type :mug.ast/call-expr
+     :ref {:type :mug.ast/scope-ref-expr :value "Array"}
+     :args (node :exprs)} context ast mw))
+
 (defmethod compile-code :mug.ast/func-literal [node context ast mw]
   (let [qn (qn-js-context (node :closure))
         closure ((ast :contexts) (node :closure))]
@@ -53,35 +59,40 @@
 
 (defn asm-compile-closure-search-scopes [name parents context ast mw]
   (loop [parent (last parents) parents (butlast parents)]
-	  (if (nil? parents)
+	  (if (nil? parent)
 	    (if (contains? script-default-vars name)
 	      (do
 	        (println (str " . Found in global scope: " name))
-		      (.visitVarInsn mw Opcodes/ALOAD, 0)
-		      (.visitFieldInsn mw Opcodes/GETFIELD, (qn-js-context (index-of (ast :contexts) context)),
-		        (str "SCOPE_" 0), (sig-obj (qn-js-scope 0)))
+          (if (= (context-index context ast) 0) ; script-context scope inherits from globals
+            (.visitVarInsn mw Opcodes/ALOAD, 6)
+            (do
+		          (.visitVarInsn mw Opcodes/ALOAD, 0)
+		          (.visitFieldInsn mw Opcodes/GETFIELD, (qn-js-context (index-of (ast :contexts) context)),
+		            (str "SCOPE_" 0), (sig-obj (qn-js-scope 0)))))
 		      (.visitMethodInsn mw Opcodes/INVOKEVIRTUAL, qn-js-globalscope,
 	          (str "get_" name), (sig-call (sig-obj qn-js-primitive))))
 	      (println (str " . [ERROR] Not found: " name)))
-		    (if (contains? (context-scope-vars ((ast :contexts) parent)) name)
-		      (do
-		        (println (str " . Found in higher scope: " name))
-		        (.visitVarInsn mw Opcodes/ALOAD, 0)
-		        (.visitFieldInsn mw Opcodes/GETFIELD, (qn-js-context (index-of (ast :contexts) context)),
-		          (str "SCOPE_" parent), (sig-obj (qn-js-scope parent)))
-		        (.visitMethodInsn mw Opcodes/INVOKEVIRTUAL, (qn-js-scope parent),
-	            (str "get_" name), (sig-call (sig-obj qn-js-primitive))))
-	        (recur (last parents) (butlast parents))))))
+		  (if (contains? (context-scope-vars ((ast :contexts) parent)) name)
+		    (do
+		      (println (str " . Found in higher scope: " name))
+		      (.visitVarInsn mw Opcodes/ALOAD, 0)
+		      (.visitFieldInsn mw Opcodes/GETFIELD, (qn-js-context (index-of (ast :contexts) context)),
+		        (str "SCOPE_" parent), (sig-obj (qn-js-scope parent)))
+		      (.visitMethodInsn mw Opcodes/INVOKEVIRTUAL, (qn-js-scope parent),
+	          (str "get_" name), (sig-call (sig-obj qn-js-primitive))))
+	      (do
+          (println (str " . Not found in scope " (context-scope-vars ((ast :contexts) parent))))
+          (recur (last parents) (butlast parents)))))))
 
 (defmethod compile-code :mug.ast/scope-ref-expr [node context ast mw]
-  (println (context-scope-vars context))
+  (println (str "Seeking var \"" (node :value) "\" in current scope (" (context-scope-vars context) ")"))
   (if (contains? (context-scope-vars context) (node :value))
     ; in current scope?
     (do
       (.visitVarInsn mw Opcodes/ALOAD, 6)
       (.visitMethodInsn mw Opcodes/INVOKEVIRTUAL, (qn-js-scope (context-index context ast)), (str "get_" (node :value)), (sig-call (sig-obj qn-js-primitive))))
     ; we have to search parent scopes
-    (do (println (str "Looking for " (node :value) " in parent scopes."))
+    (do (println (str " . Now looking for " (node :value) " in parent scopes."))
       (asm-compile-closure-search-scopes (node :value) (context :parents) context ast mw))))
 ;    (if (not= (count (context :parents)) 0)
 ;      (asm-compile-closure-search-scopes (node :value) (context :parents) context ast mw)
@@ -96,23 +107,25 @@
 (defmethod compile-code :mug.ast/static-ref-expr [node context ast mw]
   (compile-code (node :base) context ast mw)
 	(doto mw
-    (.visitTypeInsn Opcodes/CHECKCAST, qn-js-compiled-object)
-		(.visitMethodInsn Opcodes/INVOKEVIRTUAL, qn-js-compiled-object, (str "get_" (node :value)), (sig-call (sig-obj qn-js-primitive)))))
+    (.visitTypeInsn Opcodes/CHECKCAST, qn-js-object)
+    (.visitLdcInsn (node :value))
+		(.visitMethodInsn Opcodes/INVOKEVIRTUAL, qn-js-object, "get", (sig-call (sig-obj qn-string) (sig-obj qn-js-primitive)))))
 
 (defmethod compile-code :mug.ast/dyn-ref-expr [node context ast mw]
   (compile-code (node :base) context ast mw)
-  (.visitTypeInsn mw, Opcodes/CHECKCAST, qn-js-compiled-object)
+  (.visitTypeInsn mw, Opcodes/CHECKCAST, qn-js-object)
   (compile-code (node :index) context ast mw)
   (.visitMethodInsn mw Opcodes/INVOKESTATIC, qn-js-utils, "asString", (sig-call (sig-obj qn-js-primitive) (sig-obj qn-string)))
-	(.visitMethodInsn mw Opcodes/INVOKEVIRTUAL, qn-js-compiled-object, "get", (sig-call (sig-obj qn-string) (sig-obj qn-js-primitive))))
+	(.visitMethodInsn mw Opcodes/INVOKEVIRTUAL, qn-js-object, "get", (sig-call (sig-obj qn-string) (sig-obj qn-js-primitive))))
 
 (defmethod compile-code :mug.ast/static-method-call-expr [node context ast mw]
   (compile-code (node :base) context ast mw)
 	(doto mw
-    (.visitTypeInsn Opcodes/CHECKCAST, qn-js-compiled-object)
+    (.visitTypeInsn Opcodes/CHECKCAST, qn-js-object)
     (.visitInsn Opcodes/DUP)
-		(.visitMethodInsn Opcodes/INVOKEVIRTUAL, qn-js-compiled-object, (str "get_" (node :value)), (sig-call (sig-obj qn-js-primitive)))
-	  (.visitTypeInsn Opcodes/CHECKCAST, qn-js-compiled-function)
+    (.visitLdcInsn (node :value))
+		(.visitMethodInsn Opcodes/INVOKEVIRTUAL, qn-js-object, "get", (sig-call (sig-obj qn-string) (sig-obj qn-js-primitive)))
+	  (.visitTypeInsn Opcodes/CHECKCAST, qn-js-function)
     (.visitInsn Opcodes/SWAP))
 	(doseq [arg (node :args)]
 		(compile-code arg context ast mw))
@@ -120,11 +133,11 @@
     (if (= _ (count (node :args)))
           (.visitInsn mw Opcodes/ACONST_NULL)
           (.visitInsn mw Opcodes/DUP)))
-	(.visitMethodInsn mw Opcodes/INVOKEVIRTUAL, qn-js-compiled-function, "invoke", sig-invoke))
+	(.visitMethodInsn mw Opcodes/INVOKEVIRTUAL, qn-js-function, "invoke", sig-invoke))
 
 (defmethod compile-code :mug.ast/call-expr [node context ast mw]
 	(compile-code (node :ref) context ast mw)
-	(.visitTypeInsn mw, Opcodes/CHECKCAST, qn-js-compiled-function)
+	(.visitTypeInsn mw, Opcodes/CHECKCAST, qn-js-function)
 	(.visitInsn mw Opcodes/ACONST_NULL)
 	(doseq [arg (node :args)]
 		(compile-code arg context ast mw))
@@ -132,7 +145,7 @@
     (if (= _ (count (node :args)))
           (.visitInsn mw Opcodes/ACONST_NULL)
           (.visitInsn mw Opcodes/DUP)))
-	(.visitMethodInsn mw Opcodes/INVOKEVIRTUAL, qn-js-compiled-function, "invoke", sig-invoke))
+	(.visitMethodInsn mw Opcodes/INVOKEVIRTUAL, qn-js-function, "invoke", sig-invoke))
 
 (defmethod compile-code :mug.ast/scope-assign-expr [node context ast mw]
 	(compile-code (node :expr) context ast mw)
@@ -145,20 +158,22 @@
 	(compile-code (node :expr) context ast mw)
   (.visitInsn mw Opcodes/DUP)
   (compile-code (node :base) context ast mw)
-  (.visitTypeInsn mw, Opcodes/CHECKCAST, qn-js-compiled-object)
+  (.visitTypeInsn mw, Opcodes/CHECKCAST, qn-js-object)
   (.visitInsn mw Opcodes/SWAP)
-	(.visitMethodInsn mw Opcodes/INVOKEVIRTUAL, qn-js-compiled-object, (str "set_" (node :value)), (sig-call (sig-obj qn-js-primitive) qn-void)))
+  (.visitLdcInsn mw (node :value))
+  (.visitInsn mw Opcodes/SWAP)
+	(.visitMethodInsn mw Opcodes/INVOKEVIRTUAL, qn-js-object, "set", (sig-call (sig-obj qn-string) (sig-obj qn-js-primitive) qn-void)))
 
 (defmethod compile-code :mug.ast/dyn-assign-expr [node context ast mw]
 	(compile-code (node :expr) context ast mw)
   (.visitInsn mw Opcodes/DUP)
   (compile-code (node :base) context ast mw)
-  (.visitTypeInsn mw, Opcodes/CHECKCAST, qn-js-compiled-object)
+  (.visitTypeInsn mw, Opcodes/CHECKCAST, qn-js-object)
   (.visitInsn mw Opcodes/SWAP)
   (compile-code (node :index) context ast mw)
   (.visitMethodInsn mw Opcodes/INVOKESTATIC, qn-js-utils, "asString", (sig-call (sig-obj qn-js-primitive) (sig-obj qn-string)))
   (.visitInsn mw Opcodes/SWAP)
-	(.visitMethodInsn mw Opcodes/INVOKEVIRTUAL, qn-js-compiled-object, "set", (sig-call (sig-obj qn-string) (sig-obj qn-js-primitive) qn-void)))
+	(.visitMethodInsn mw Opcodes/INVOKEVIRTUAL, qn-js-object, "set", (sig-call (sig-obj qn-string) (sig-obj qn-js-primitive) qn-void)))
 
 (defmethod compile-code :mug.ast/add-op-expr [node context ast mw]
   (compile-code (node :left) context ast mw)
@@ -301,12 +316,12 @@
 
 (defmethod compile-code :mug.ast/new-expr [node context ast mw]
   (compile-code (node :constructor) context ast mw)
-	(.visitTypeInsn mw, Opcodes/CHECKCAST, qn-js-compiled-function)
+	(.visitTypeInsn mw, Opcodes/CHECKCAST, qn-js-function)
 	(doseq [arg (node :args)]
 		(compile-code arg context ast mw))
 	(doseq [_ (range (count (node :args)) arg-limit)]
 		(.visitInsn mw Opcodes/ACONST_NULL))
-	(.visitMethodInsn mw Opcodes/INVOKEVIRTUAL, qn-js-compiled-function, "instantiate", sig-instantiate))
+	(.visitMethodInsn mw Opcodes/INVOKEVIRTUAL, qn-js-function, "instantiate", sig-instantiate))
 
 ;
 ; statements
@@ -405,11 +420,13 @@
 		(.visitMethodInsn mw Opcodes/INVOKEVIRTUAL, (qn-js-scope (context-index context ast)), (str "set_" (node :name)), (sig-call (sig-obj qn-js-primitive) qn-void))
 
     ; set prototype
-    (.visitMethodInsn mw Opcodes/INVOKEVIRTUAL, qn-js-compiled-object, "get_prototype", (sig-call (sig-obj qn-js-primitive)))
+    (.visitLdcInsn "prototype")
+    (.visitMethodInsn mw Opcodes/INVOKEVIRTUAL, qn-js-object, "get", (sig-call (sig-obj qn-string) (sig-obj qn-js-primitive)))
     (doseq [[k v] (node :prototype)]
       (.visitInsn mw Opcodes/DUP)
-      (.visitTypeInsn mw Opcodes/CHECKCAST, qn-js-compiled-object)
+      (.visitTypeInsn mw Opcodes/CHECKCAST, qn-js-object)
+      (.visitLdcInsn k)
       (compile-code v context ast mw)
-      (.visitMethodInsn mw Opcodes/INVOKEVIRTUAL, qn-js-compiled-object, (str "set_" k), (sig-call (sig-obj qn-js-primitive) qn-void)))
+      (.visitMethodInsn mw Opcodes/INVOKEVIRTUAL, qn-js-object, "set", (sig-call (sig-obj qn-string) (sig-obj qn-js-primitive) qn-void)))
     (.visitInsn mw Opcodes/POP))
 )

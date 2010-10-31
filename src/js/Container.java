@@ -1,4 +1,7 @@
-import mug.js.*;
+import mug.js.JSFunction;
+import mug.js.JSObject;
+import binarytrees.JSScript;
+import binarytrees.JSScriptScope;
 
 public class Container {
 
