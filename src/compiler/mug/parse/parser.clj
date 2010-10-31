@@ -121,6 +121,15 @@
   (concat [attr] (find-accessors obj find-accessors)))
 
 (defn find-vars-in-scope [context]
+  ; mock a toplevel context so we don't miss in-function definitions
+  (defmulti mock-toplevel first)
+  (defmethod mock-toplevel :toplevel [node] node)
+  ;NOTE: this sucks, also, doesn't include defun function names
+  (defmethod mock-toplevel :function [[_ name args & stat]]
+    (conj (apply list stat) :toplevel))
+  (defmethod mock-toplevel :defun [[_ name args & stat]]
+    (conj (apply list stat) :toplevel))
+  
   (defmulti vars-in-scope-walker (fn [node & args] (first node)) :default :no-match)
 	(defmethod vars-in-scope-walker :no-match [node & args]
 	  (walk-input node vars-in-scope-walker))
@@ -131,7 +140,7 @@
 	(defmethod vars-in-scope-walker :var [[_ bindings] walker]
 	  (vec (map (fn [[k v]] (name k)) bindings)))
  
-  (set (vars-in-scope-walker context vars-in-scope-walker)))
+  (set (vars-in-scope-walker (mock-toplevel context) vars-in-scope-walker)))
 
 (def *reserved-words* #{"typeof" "null" "this" "true" "false"})
 
@@ -334,7 +343,7 @@
 
 (defn gen-ast [input]
   (js-ast
-    (vec (map #(gen-ast-context %1 input) (find-contexts input)))
+    (vec (map #(do (println %1) (gen-ast-context %1 input)) (find-contexts input)))
     []
     (set (find-accessors input))
     (set (find-numbers input))

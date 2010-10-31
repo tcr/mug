@@ -45,7 +45,8 @@
 			(let [qn (qn-js-scope i)
             scope (context-scope-vars context)
             cw (new ClassWriter ClassWriter/COMPUTE_MAXS)]
-				(.visit cw, Opcodes/V1_6, (+ Opcodes/ACC_SUPER Opcodes/ACC_PUBLIC), qn, nil, qn-object, nil)
+				(.visit cw, Opcodes/V1_6, (+ Opcodes/ACC_SUPER Opcodes/ACC_PUBLIC), qn, nil,
+          (if (= i 0) qn-js-globalscope qn-object), nil)
 				(asm-compile-scope-fields qn scope cw)
 				(asm-compile-scope-methods qn scope cw)
 				(asm-compile-scope-init qn scope cw)

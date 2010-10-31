@@ -37,7 +37,9 @@
 	
   ; object shim
   (println " Objects...")
-	(write-file (str out-dir qn-js-object ".class") (asm-compile-object-class ast))
+;	(write-file (str out-dir qn-js-object ".class") (asm-compile-object-class ast))
+	(write-file (str out-dir pkg-compiled "JSCompiledObject.class")
+   (asm-compile-object-class ast))
 	
   ; scopes
   (println " Scopes...")

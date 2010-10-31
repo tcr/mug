@@ -27,6 +27,9 @@ public class Parser {
 				e.printStackTrace();
 				throw e;
 			}
+			
+			Thread.currentThread();
+			
 			return Context.toString(result);
 		} finally {
 		    Context.exit();

@@ -1,7 +1,5 @@
 package mug.js;
 
-import mug.js.compiled.JSConstants;
-
 public class JSUtils {
 	/*
 	 * conversions
@@ -54,37 +52,37 @@ public class JSUtils {
 	
 	static public JSBoolean testEquality(JSPrimitive a, JSPrimitive b) {
 		if (a == null && b == null)
-			return JSConstants.TRUE;
+			return JSAtoms.TRUE;
 		if (a instanceof JSNumber && b instanceof JSNumber)
-			return ((JSNumber) a).value == ((JSNumber) b).value ? JSConstants.TRUE : JSConstants.FALSE;
+			return ((JSNumber) a).value == ((JSNumber) b).value ? JSAtoms.TRUE : JSAtoms.FALSE;
 		//
-		return JSConstants.FALSE;
+		return JSAtoms.FALSE;
 	}
 	
 	static public JSBoolean testInequality(JSPrimitive a, JSPrimitive b) {
 		if (a == null && b == null)
-			return JSConstants.FALSE;
+			return JSAtoms.FALSE;
 		if (a instanceof JSNumber && b instanceof JSNumber)
-			return ((JSNumber) a).value == ((JSNumber) b).value ? JSConstants.FALSE : JSConstants.TRUE;
+			return ((JSNumber) a).value == ((JSNumber) b).value ? JSAtoms.FALSE : JSAtoms.TRUE;
 		//
-		return JSConstants.FALSE;
+		return JSAtoms.FALSE;
 	}
 	
 	static public JSBoolean testStrictEquality(JSPrimitive a, JSPrimitive b) {
 		if (a == null && b == null)
-			return JSConstants.TRUE;
+			return JSAtoms.TRUE;
 		if (a instanceof JSNumber && b instanceof JSNumber)
-			return ((JSNumber) a).value == ((JSNumber) b).value ? JSConstants.TRUE : JSConstants.FALSE;
+			return ((JSNumber) a).value == ((JSNumber) b).value ? JSAtoms.TRUE : JSAtoms.FALSE;
 		//
-		return JSConstants.FALSE;
+		return JSAtoms.FALSE;
 	}
 	
 	static public JSBoolean testStrictInequality(JSPrimitive a, JSPrimitive b) {
 		if (a == null && b == null)
-			return JSConstants.FALSE;
+			return JSAtoms.FALSE;
 		if (a instanceof JSNumber && b instanceof JSNumber)
-			return ((JSNumber) a).value == ((JSNumber) b).value ? JSConstants.FALSE : JSConstants.TRUE;
+			return ((JSNumber) a).value == ((JSNumber) b).value ? JSAtoms.FALSE : JSAtoms.TRUE;
 		//
-		return JSConstants.FALSE;
+		return JSAtoms.FALSE;
 	}
 }

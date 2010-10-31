@@ -1,16 +1,22 @@
 package mug.js;
 
-import mug.js.compiled.*;
 import java.util.HashMap;
 
 /**
- * 
+ * Object base (without accessors).
  */
 
-abstract public class JSObjectBase extends JSPrimitive {
-	protected JSObject __proto__;
+public class JSCompiledObject extends JSPrimitive implements JSObject {
+	public JSCompiledObject() {
+	}
+	
+	public JSCompiledObject(JSCompiledObject proto) {
+		__proto__ = proto;
+	}
+	
+	protected JSCompiledObject __proto__;
 
-	public JSObject getProto() {
+	public JSCompiledObject getProto() {
 		return __proto__;
 	}
 
@@ -28,6 +34,10 @@ abstract public class JSObjectBase extends JSPrimitive {
 			hash = new HashMap<String, JSPrimitive>();
 		hash.put(key, value);
 	}
+	
+	/*
+	 * .prototype property
+	 */
 
 	protected JSPrimitive _prototype;
 
@@ -38,7 +48,7 @@ abstract public class JSObjectBase extends JSPrimitive {
 			return null;
 		return __proto__.get_prototype();
 	}
-
+	
 	public void set_prototype(JSPrimitive v) {
 		_prototype = v;
 	}

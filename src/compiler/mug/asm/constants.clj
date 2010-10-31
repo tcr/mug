@@ -9,12 +9,14 @@
 ;
 
 (defn asm-compile-constants-fields [ast cw]
+(comment
 	; undefined
 	(.visitEnd (.visitField cw, (+ Opcodes/ACC_PUBLIC Opcodes/ACC_STATIC), "UNDEFINED", (sig-obj qn-js-undefined), nil, nil))
 
 	; booleans
 	(.visitEnd (.visitField cw, (+ Opcodes/ACC_PUBLIC Opcodes/ACC_STATIC), "TRUE", (sig-obj qn-js-boolean), nil, nil))
 	(.visitEnd (.visitField cw, (+ Opcodes/ACC_PUBLIC Opcodes/ACC_STATIC), "FALSE", (sig-obj qn-js-boolean), nil, nil))
+)
 
 	; strings
 	(doseq [[i v] (index (ast :strings))]
@@ -28,6 +30,7 @@
 	(let [mv (.visitMethod cw, Opcodes/ACC_STATIC, "<clinit>", (sig-call qn-void), nil, nil)]
 		(.visitCode mv)
 
+(comment
 		; undefined
 		(doto mv
 			(.visitTypeInsn Opcodes/NEW (sig-obj qn-js-undefined))
@@ -48,6 +51,7 @@
 			(.visitInsn Opcodes/ICONST_0)
 			(.visitMethodInsn Opcodes/INVOKESPECIAL, qn-js-boolean, "<init>", (sig-call qn-boolean qn-void))
 			(.visitFieldInsn Opcodes/PUTSTATIC, qn-js-constants, "FALSE", (sig-obj qn-js-boolean)))
+)
 
 		; strings
 		(doseq [[i v] (index (ast :strings))]
