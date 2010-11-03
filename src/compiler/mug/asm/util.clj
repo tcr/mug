@@ -54,23 +54,30 @@
 ;;;[TODO] these should be "sig-void", "sig-double", etc.
 (def qn-object "java/lang/Object")
 (def qn-string "java/lang/String")
-(def qn-void "V")
-(def qn-double "D")
-(def qn-integer "I")
-(def qn-boolean "Z")
+(def sig-void "V")
+(def sig-double "D")
+(def sig-integer "I")
+(def sig-boolean "Z")
 
 (defn sig-call [& args] (str "(" (apply str (butlast args)) ")" (or (last args) "V")))
 (defn sig-obj [x] (str "L" x ";"))
+(defn sig-array [x] (str "[" x))
 
 (def sig-execute (sig-call (sig-obj (qn-js-scope 0)) (sig-obj qn-js-primitive)))
-(def sig-instantiate (apply sig-call (conj (vec (repeat arg-limit (sig-obj qn-js-primitive))) (sig-obj qn-js-primitive))))
-(def sig-invoke (apply sig-call (conj (vec (conj (repeat arg-limit (sig-obj qn-js-primitive)) (sig-obj qn-js-object))) (sig-obj qn-js-primitive))))
+(def sig-instantiate (apply sig-call
+  (conj (conj (into [sig-integer]
+    (vec (repeat arg-limit (sig-obj qn-js-primitive))))
+    (sig-array (sig-obj qn-js-primitive))) (sig-obj qn-js-primitive))))
+(def sig-invoke (apply sig-call
+  (conj (conj (into [(sig-obj qn-js-object) sig-integer]
+    (vec (repeat arg-limit (sig-obj qn-js-primitive))))
+    (sig-array (sig-obj qn-js-primitive))) (sig-obj qn-js-primitive))))
 
 (defmulti sig-context-init (fn [& args] (:type (first args))))
 (defmethod sig-context-init :mug.ast/script-context [context ast]
-  (sig-call qn-void))
+  (sig-call sig-void))
 (defmethod sig-context-init :mug.ast/closure-context [context ast] 
-  (apply sig-call (conj (vec (map (fn [x] (sig-obj (qn-js-scope x))) (context :parents))) qn-void)))  
+  (apply sig-call (conj (vec (map (fn [x] (sig-obj (qn-js-scope x))) (context :parents))) sig-void)))  
 
 (defn ident-num [x] (str "NUM_" x))
 (defn ident-str [x] (str "STR_" x))

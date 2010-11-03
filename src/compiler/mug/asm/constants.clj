@@ -27,7 +27,7 @@
 			(.visitEnd (.visitField cw, (+ Opcodes/ACC_PUBLIC Opcodes/ACC_STATIC), (ident-num i), (sig-obj qn-js-number), nil, nil))))
 
 (defn asm-compile-constants-clinit [ast cw]
-	(let [mv (.visitMethod cw, Opcodes/ACC_STATIC, "<clinit>", (sig-call qn-void), nil, nil)]
+	(let [mv (.visitMethod cw, Opcodes/ACC_STATIC, "<clinit>", (sig-call sig-void), nil, nil)]
 		(.visitCode mv)
 
 (comment
@@ -35,7 +35,7 @@
 		(doto mv
 			(.visitTypeInsn Opcodes/NEW (sig-obj qn-js-undefined))
 			(.visitInsn Opcodes/DUP)
-			(.visitMethodInsn Opcodes/INVOKESPECIAL, (sig-obj qn-js-undefined), "<init>", (sig-call qn-void))
+			(.visitMethodInsn Opcodes/INVOKESPECIAL, (sig-obj qn-js-undefined), "<init>", (sig-call sig-void))
 			(.visitFieldInsn Opcodes/PUTSTATIC, qn-js-constants, "UNDEFINED", (sig-obj qn-js-undefined)))
 
 		; booleans
@@ -43,13 +43,13 @@
 			(.visitTypeInsn Opcodes/NEW qn-js-boolean)
 			(.visitInsn Opcodes/DUP)
 			(.visitInsn Opcodes/ICONST_1)
-			(.visitMethodInsn Opcodes/INVOKESPECIAL, qn-js-boolean, "<init>", (sig-call qn-boolean qn-void))
+			(.visitMethodInsn Opcodes/INVOKESPECIAL, qn-js-boolean, "<init>", (sig-call qn-boolean sig-void))
 			(.visitFieldInsn Opcodes/PUTSTATIC, qn-js-constants, "TRUE", (sig-obj qn-js-boolean)))
 		(doto mv
 			(.visitTypeInsn Opcodes/NEW qn-js-boolean)
 			(.visitInsn Opcodes/DUP)
 			(.visitInsn Opcodes/ICONST_0)
-			(.visitMethodInsn Opcodes/INVOKESPECIAL, qn-js-boolean, "<init>", (sig-call qn-boolean qn-void))
+			(.visitMethodInsn Opcodes/INVOKESPECIAL, qn-js-boolean, "<init>", (sig-call qn-boolean sig-void))
 			(.visitFieldInsn Opcodes/PUTSTATIC, qn-js-constants, "FALSE", (sig-obj qn-js-boolean)))
 )
 
@@ -59,7 +59,7 @@
 				(.visitTypeInsn Opcodes/NEW qn-js-string)
 				(.visitInsn Opcodes/DUP)
 				(.visitLdcInsn v)
-				(.visitMethodInsn Opcodes/INVOKESPECIAL, qn-js-string, "<init>", (sig-call (sig-obj qn-string) qn-void))
+				(.visitMethodInsn Opcodes/INVOKESPECIAL, qn-js-string, "<init>", (sig-call (sig-obj qn-string) sig-void))
 				(.visitFieldInsn Opcodes/PUTSTATIC, qn-js-constants, (ident-str i), (sig-obj qn-js-string))))
 
 		; numbers
@@ -68,7 +68,7 @@
 				(.visitTypeInsn Opcodes/NEW qn-js-number)
 				(.visitInsn Opcodes/DUP)
 				(.visitLdcInsn (new Double (double v)))
-				(.visitMethodInsn Opcodes/INVOKESPECIAL, qn-js-number, "<init>", (sig-call qn-double qn-void))
+				(.visitMethodInsn Opcodes/INVOKESPECIAL, qn-js-number, "<init>", (sig-call sig-double sig-void))
 				(.visitFieldInsn Opcodes/PUTSTATIC, qn-js-constants, (ident-num i), (sig-obj qn-js-number))))
 
 		(doto mv

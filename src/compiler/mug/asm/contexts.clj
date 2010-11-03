@@ -15,7 +15,7 @@
         mw (.visitMethod cw, Opcodes/ACC_PUBLIC, "<init>", sig, nil, nil)]
 		(.visitCode mw)
 		(.visitVarInsn mw Opcodes/ALOAD, 0)
-		(.visitMethodInsn mw Opcodes/INVOKESPECIAL, qn-object, "<init>", (sig-call qn-void))    
+		(.visitMethodInsn mw Opcodes/INVOKESPECIAL, qn-object, "<init>", (sig-call sig-void))    
 		(.visitInsn mw Opcodes/RETURN)
 		(.visitMaxs mw 1, 1)
 		(.visitEnd mw)))
@@ -25,7 +25,7 @@
         qn (qn-js-context (context-index context ast))]
 		(.visitCode mw)
 		(.visitVarInsn mw Opcodes/ALOAD, 0)
-		(.visitMethodInsn mw Opcodes/INVOKESPECIAL, qn-js-function, "<init>", (sig-call qn-void))
+		(.visitMethodInsn mw Opcodes/INVOKESPECIAL, qn-js-function, "<init>", (sig-call sig-void))
  
     (doseq [parent (context :parents)]
       (.visitVarInsn mw Opcodes/ALOAD, 0)
@@ -76,7 +76,7 @@
 		(doto mw
 			(.visitTypeInsn Opcodes/NEW, qn-scope)
 			(.visitInsn Opcodes/DUP)
-			(.visitMethodInsn Opcodes/INVOKESPECIAL, qn-scope, "<init>", (sig-call qn-void))
+			(.visitMethodInsn Opcodes/INVOKESPECIAL, qn-scope, "<init>", (sig-call sig-void))
 			(.visitVarInsn Opcodes/ASTORE, 6))
 		
 		; initialize arguments
@@ -84,13 +84,13 @@
 			(doto mw
 				(.visitVarInsn Opcodes/ALOAD, 6)
 				(.visitVarInsn Opcodes/ALOAD, (+ i 2))
-				(.visitMethodInsn Opcodes/INVOKEVIRTUAL, qn-scope, (str "set_" arg), (sig-call (sig-obj qn-js-primitive) qn-void))))
+				(.visitMethodInsn Opcodes/INVOKEVIRTUAL, qn-scope, (str "set_" arg), (sig-call (sig-obj qn-js-primitive) sig-void))))
     ; initialize self
     (when (not (nil? (context :name)))
       (doto mw
 				(.visitVarInsn Opcodes/ALOAD, 6)
 				(.visitVarInsn Opcodes/ALOAD, 0)
-				(.visitMethodInsn Opcodes/INVOKEVIRTUAL, qn-scope, (str "set_" (context :name)), (sig-call (sig-obj qn-js-primitive) qn-void))))
+				(.visitMethodInsn Opcodes/INVOKEVIRTUAL, qn-scope, (str "set_" (context :name)), (sig-call (sig-obj qn-js-primitive) sig-void))))
 		
 		; compile body
 		(doseq [stat (context :stats)]

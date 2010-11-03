@@ -2,6 +2,30 @@ package mug.js;
 
 public class JSUtils {
 	/*
+	 * API
+	 */
+	
+	static public JSPrimitive[] arguments(int argc, JSPrimitive l0, JSPrimitive l1, JSPrimitive l2, JSPrimitive l3, JSPrimitive l4, JSPrimitive l5, JSPrimitive l6, JSPrimitive l7, JSPrimitive[] rest) {
+		// return an array of arguments
+		JSPrimitive[] args = new JSPrimitive[argc];
+		// add arguments
+		switch (argc > 8 ? 8 : argc) {
+		case 8: args[7] = l7;
+		case 7: args[6] = l6;
+		case 6: args[5] = l5;
+		case 5: args[4] = l4;
+		case 4: args[3] = l3;
+		case 3: args[2] = l2;
+		case 2: args[1] = l1;
+		case 1: args[0] = l0;
+		}
+		if (rest != null)
+			for (int i = 0; i < rest.length; i++)
+				System.arraycopy(rest, 0, args, 8, rest.length);
+		return args;
+	}
+	
+	/*
 	 * conversions
 	 */
 

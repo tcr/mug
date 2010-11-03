@@ -30,14 +30,14 @@ public abstract class JSFunction extends JSObject {
 	 * callable
 	 */
 	
-	public JSPrimitive instantiate(JSPrimitive l0, JSPrimitive l1, JSPrimitive l2, JSPrimitive l3, JSPrimitive l4, JSPrimitive l5, JSPrimitive l6, JSPrimitive l7) throws Exception {
+	public JSPrimitive instantiate(int argc, JSPrimitive l0, JSPrimitive l1, JSPrimitive l2, JSPrimitive l3, JSPrimitive l4, JSPrimitive l5, JSPrimitive l6, JSPrimitive l7, JSPrimitive[] rest) throws Exception {
 		JSObject obj = new JSObject(actual_prototype);
 		JSPrimitive ret;
-		if ((ret = invoke(obj, l0, l1, l2, l3, l4, l5, l6, l7)) != null)
+		if ((ret = invoke(obj, argc, l0, l1, l2, l3, l4, l5, l6, l7, rest)) != null)
 			return ret;
 		return obj;
 	}
 
-	public abstract JSPrimitive invoke(JSObject ths, JSPrimitive l0, JSPrimitive l1, JSPrimitive l2, JSPrimitive l3, JSPrimitive l4, JSPrimitive l5, JSPrimitive l6, JSPrimitive l7)
+	public abstract JSPrimitive invoke(JSObject ths, int argc, JSPrimitive l0, JSPrimitive l1, JSPrimitive l2, JSPrimitive l3, JSPrimitive l4, JSPrimitive l5, JSPrimitive l6, JSPrimitive l7, JSPrimitive[] rest)
 			throws Exception;
 }

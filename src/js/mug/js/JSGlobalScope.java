@@ -16,7 +16,7 @@ public class JSGlobalScope {
 	
 	public static JSPrimitive _print = new JSFunction() {
 		@Override
-		public JSPrimitive invoke(JSObject ths, JSPrimitive l0, JSPrimitive l1, JSPrimitive l2, JSPrimitive l3, JSPrimitive l4, JSPrimitive l5, JSPrimitive l6, JSPrimitive l7)
+		public JSPrimitive invoke(JSObject ths, int argc, JSPrimitive l0, JSPrimitive l1, JSPrimitive l2, JSPrimitive l3, JSPrimitive l4, JSPrimitive l5, JSPrimitive l6, JSPrimitive l7, JSPrimitive[] rest)
 				throws Exception {
 			System.out.println(JSUtils.asString(l0) + " <" + l0 + ">");
 			return null;
@@ -33,7 +33,7 @@ public class JSGlobalScope {
 	public static JSPrimitive _Math = new JSObject() { {
 		set("sqrt", new JSFunction() {
 			@Override
-			public JSPrimitive invoke(JSObject ths, JSPrimitive l0, JSPrimitive l1, JSPrimitive l2, JSPrimitive l3, JSPrimitive l4, JSPrimitive l5, JSPrimitive l6, JSPrimitive l7)
+			public JSPrimitive invoke(JSObject ths, int argc, JSPrimitive l0, JSPrimitive l1, JSPrimitive l2, JSPrimitive l3, JSPrimitive l4, JSPrimitive l5, JSPrimitive l6, JSPrimitive l7, JSPrimitive[] rest)
 					throws Exception {
 				return new JSNumber(Math.sqrt(JSUtils.asNumber(l0)));
 			}
@@ -48,22 +48,25 @@ public class JSGlobalScope {
 	 */
 	
 	public static JSPrimitive _Array = new JSFunction() {
-		public JSPrimitive instantiate(JSPrimitive l0, JSPrimitive l1, JSPrimitive l2, JSPrimitive l3, JSPrimitive l4, JSPrimitive l5, JSPrimitive l6, JSPrimitive l7) throws Exception {
-			return invoke(null, l0, l1, l2, l3, l4, l5, l6, l7);
+		public JSPrimitive instantiate(int argc, JSPrimitive l0, JSPrimitive l1, JSPrimitive l2, JSPrimitive l3, JSPrimitive l4, JSPrimitive l5, JSPrimitive l6, JSPrimitive l7, JSPrimitive[] rest) throws Exception {
+			return invoke(null, argc, l0, l1, l2, l3, l4, l5, l6, l7, rest);
 		}
 		
 		@Override
-		public JSPrimitive invoke(JSObject ths, JSPrimitive l0, JSPrimitive l1, JSPrimitive l2, JSPrimitive l3, JSPrimitive l4, JSPrimitive l5, JSPrimitive l6, JSPrimitive l7)
+		public JSPrimitive invoke(JSObject ths, int argc, JSPrimitive l0, JSPrimitive l1, JSPrimitive l2, JSPrimitive l3, JSPrimitive l4, JSPrimitive l5, JSPrimitive l6, JSPrimitive l7, JSPrimitive[] rest)
 				throws Exception {
 			JSArray obj = new JSArray(actual_prototype);
-			if (l0 != null) obj.push(l0);
-			if (l1 != null) obj.set("1", l1);
-			if (l2 != null) obj.set("2", l2);
-			if (l3 != null) obj.set("3", l3);
-			if (l4 != null) obj.set("4", l4);
-			if (l5 != null) obj.set("5", l5);
-			if (l6 != null) obj.set("6", l6);
-			if (l7 != null) obj.set("7", l7);
+		
+			// single-argument constructor
+			if (argc == 0) {
+				obj.set("length", new JSNumber(argc));
+				return obj;
+			}
+			// literal declaration
+			JSPrimitive[] arguments = JSUtils.arguments(argc, l0, l1, l2, l3, l4, l5, l6, l7, rest);
+			for (int i = 0; i < arguments.length; i++)
+				obj.set(String.valueOf(i), arguments[i]);
+			
 			return obj;
 		}
 	};
@@ -77,7 +80,7 @@ public class JSGlobalScope {
 	
 	public static JSPrimitive _nanoTime = new JSFunction() {
 		@Override
-		public JSPrimitive invoke(JSObject ths, JSPrimitive l0, JSPrimitive l1, JSPrimitive l2, JSPrimitive l3, JSPrimitive l4, JSPrimitive l5, JSPrimitive l6, JSPrimitive l7)
+		public JSPrimitive invoke(JSObject ths, int argc, JSPrimitive l0, JSPrimitive l1, JSPrimitive l2, JSPrimitive l3, JSPrimitive l4, JSPrimitive l5, JSPrimitive l6, JSPrimitive l7, JSPrimitive[] rest)
 				throws Exception {
 			return new JSNumber(System.nanoTime());
 		}

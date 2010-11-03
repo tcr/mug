@@ -21,7 +21,7 @@
 			(.visitInsn Opcodes/ARETURN)
 			(.visitMaxs 1, 1)
 			(.visitEnd))
-		(doto (.visitMethod cw, Opcodes/ACC_PUBLIC, (str "set_" var), (sig-call (sig-obj qn-js-primitive) qn-void), nil, nil)
+		(doto (.visitMethod cw, Opcodes/ACC_PUBLIC, (str "set_" var), (sig-call (sig-obj qn-js-primitive) sig-void), nil, nil)
 			(.visitCode)
 			(.visitVarInsn Opcodes/ALOAD, 0)
 			(.visitVarInsn Opcodes/ALOAD, 1)
@@ -31,7 +31,7 @@
 			(.visitEnd))))
 
 (defn asm-compile-scope-init [qn scope cw]
-  (let [mw (.visitMethod cw, Opcodes/ACC_PUBLIC, "<init>", (sig-call qn-void), nil, nil)]
+  (let [mw (.visitMethod cw, Opcodes/ACC_PUBLIC, "<init>", (sig-call sig-void), nil, nil)]
   	(.visitCode mw)
   	(.visitVarInsn mw Opcodes/ALOAD, 0)
   	(.visitMethodInsn mw Opcodes/INVOKESPECIAL, qn-object, "<init>", "()V")  
