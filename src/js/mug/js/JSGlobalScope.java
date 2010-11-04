@@ -58,8 +58,8 @@ public class JSGlobalScope {
 			JSArray obj = new JSArray(actual_prototype);
 		
 			// single-argument constructor
-			if (argc == 0) {
-				obj.set("length", new JSNumber(argc));
+			if (argc == 1) {
+				obj.set("length", l0);
 				return obj;
 			}
 			// literal declaration

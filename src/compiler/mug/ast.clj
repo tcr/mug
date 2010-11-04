@@ -31,7 +31,7 @@
 (derive ::literal ::expr)
 (defast ::num-literal ::literal [value])
 (defast ::str-literal ::literal [value])
-(defast ::obj-literal ::literal [map])
+(defast ::obj-literal ::literal [props])
 (defast ::array-literal ::literal [exprs])
 (defast ::undef-literal ::literal [])
 (defast ::null-literal ::literal [])

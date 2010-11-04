@@ -50,7 +50,7 @@
 		; move global scope object to local #6
 		(doto mw
 			(.visitVarInsn Opcodes/ALOAD, 1)
-			(.visitVarInsn Opcodes/ASTORE, 6))
+			(.visitVarInsn Opcodes/ASTORE, (+ 1 3 arg-limit)))
   
     ;[TODO] THIS object
 	
@@ -77,18 +77,18 @@
 			(.visitTypeInsn Opcodes/NEW, qn-scope)
 			(.visitInsn Opcodes/DUP)
 			(.visitMethodInsn Opcodes/INVOKESPECIAL, qn-scope, "<init>", (sig-call sig-void))
-			(.visitVarInsn Opcodes/ASTORE, 6))
+			(.visitVarInsn Opcodes/ASTORE, (+ 1 3 arg-limit)))
 		
 		; initialize arguments
 		(doseq [[i arg] (index (context :args))]
 			(doto mw
-				(.visitVarInsn Opcodes/ALOAD, 6)
-				(.visitVarInsn Opcodes/ALOAD, (+ i 2))
+				(.visitVarInsn Opcodes/ALOAD, (+ 1 3 arg-limit))
+				(.visitVarInsn Opcodes/ALOAD, (+ i 3))
 				(.visitMethodInsn Opcodes/INVOKEVIRTUAL, qn-scope, (str "set_" arg), (sig-call (sig-obj qn-js-primitive) sig-void))))
     ; initialize self
     (when (not (nil? (context :name)))
       (doto mw
-				(.visitVarInsn Opcodes/ALOAD, 6)
+				(.visitVarInsn Opcodes/ALOAD, (+ 1 3 arg-limit))
 				(.visitVarInsn Opcodes/ALOAD, 0)
 				(.visitMethodInsn Opcodes/INVOKEVIRTUAL, qn-scope, (str "set_" (context :name)), (sig-call (sig-obj qn-js-primitive) sig-void))))
 		

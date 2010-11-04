@@ -12,29 +12,24 @@ Resulting class files are in the out/ directory. Include this
 and mug-util.jar to run:
 
     java -cp mug-js.jar;out mug.compiled.JSScript
-    
-Notes
------
-
-# Uses a custom classloader.
 
 Roadmap
 -------
 
 Short-term:
-1. make mug-js not interdependent with class files
+1. allow chooseable namespaces for compiled code
 2. fix jar compilation setup
-3. make compiled classes' namespace choosable
-4. get compilation working fully from a clojure script, i.e. from a string, from a file, etc
-5. make it so you can compile and run a script entirely from clojure (interactive, test, etc)
+3. allow code to import other modules
+4. get compilation working fully from java, i.e. from a string, from a file, etc
+5. make it possible to compile and run a script entirely programmatically (interactive, test, etc)
 
 Soon:
-* Convert AST profiler from JS to Clojure
-* Improve ECMAScript implementation
+* improve ECMAScript implementation
+* convert AST profiler from JS to Clojure
 
 Later:
-* Use ASM library+annotations for Java<->JS interfacing
-* Implement static variable/type analysis
+* use ASM library+annotations for Java<->JS interfacing
+* implement static type analysis
 
 License
 -------

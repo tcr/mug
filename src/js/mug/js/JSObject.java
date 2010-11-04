@@ -24,7 +24,7 @@ public class JSObject extends JSPrimitive {
 	 * hash
 	 */
 
-	HashMap<String, JSPrimitive> hash;
+	protected HashMap<String, JSPrimitive> hash;
 
 	public JSPrimitive get(String key) {
 		JSPrimitive ret = null;

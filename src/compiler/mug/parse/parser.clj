@@ -28,8 +28,8 @@
   [])
 (defmethod walk-input :array [[_ & elems] walker]
   (apply concat (map #(walker %1 walker) elems)))
-(defmethod walk-input :object [[_ properties] walker]
-  (apply concat (map (fn [[k v]] (walker v walker)))))
+(defmethod walk-input :object [[_ props] walker]
+  (apply concat (map (fn [[k v]] (walker v walker)) props)))
 (defmethod walk-input :regexp [[_ expr flags] walker]
   [])
 
@@ -223,7 +223,8 @@
     (scope-ref-expr value)))
 (defmethod gen-ast-code :array [[_ & elems] input]
   (array-literal (map #(gen-ast-code % input) elems)))
-;(defmethod gen-ast-code :object [[_ properties]])
+(defmethod gen-ast-code :object [[_ props] input]
+  (obj-literal (zipmap (keys props) (map #(gen-ast-code % input) (vals props)))))
 ;(defmethod gen-ast-code :regexp [[_ expr flags]])
 
 (defmethod gen-ast-code :assign [[_ op place val] input]

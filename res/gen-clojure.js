@@ -18,7 +18,7 @@ function gen_clojure(ast) {
 		"object": function(props) {
 			var out = ["{"];
 			props.map(function (p) {
-				out.push(":" + p[0]);
+				out.push("\"" + p[0] + "\"");
 				out.push(make(p[1]));
 			});
 			return out.concat(["}"]);

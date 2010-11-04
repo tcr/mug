@@ -43,6 +43,12 @@ public class JSUtils {
 			return ((JSNumber) a).value;
 		if (a instanceof JSBoolean)
 			return ((JSBoolean) a).value ? 1 : 0;
+		if (a instanceof JSString)
+			try {
+				return Double.parseDouble(((JSString) a).value);
+			} catch (Exception e) {
+				return Double.NaN;
+			}
 		// 
 		// 
 		return Double.NaN;

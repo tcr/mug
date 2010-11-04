@@ -25,8 +25,18 @@ public class JSArray extends JSObject {
 	}
 	
 	public void set(String key, JSPrimitive value) {
-		if (key == "length")
-			return; //[TODO] contract or expand array
+		if (key == "length") {
+			double dbl = JSUtils.asNumber(value);
+			int len = (int) dbl;
+			if (dbl == Double.NaN || len != dbl)
+				return;
+			// to contract, delete hash values
+			if (_length > len)
+				for (int i = len; i < _length; i++)
+					hash.remove(String.valueOf(i));
+			_length = len;
+			return;
+		}
 		super.set(key, value);
 		
 		// for setting higher indices, 

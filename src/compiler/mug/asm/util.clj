@@ -13,6 +13,7 @@
 ;
 
 (def arg-limit 8)
+(def script-default-vars #{"exports" "Math" "print" "Array" "nanoTime"})
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;
@@ -82,8 +83,6 @@
 (defn ident-num [x] (str "NUM_" x))
 (defn ident-str [x] (str "STR_" x))
 (defn ident-scope [x] (str "SCOPE_" x))
-
-(def script-default-vars #{"exports" "Math" "print" "Array" "nanoTime"})
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;
