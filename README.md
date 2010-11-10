@@ -27,7 +27,7 @@ Soon:
 * improve ECMAScript implementation
   * currently unsupported constructs: labels, regex literals, `with`, `try/catch/throw`, `break/continue`, `do`, `for`...`in`, `switch/case/default`, `typeof`
   * also broken: native prototypes
-* convert AST profiler from JS to Clojure ?
+* convert AST profiler from JS to Clojure, or at least self-host
 
 Later:
 
