@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<project default="package_all" name="Mug Jar">
+    <target name="mug_jar">
+        <jar destfile="lib/mug.jar">
+            <fileset dir="bin/" excludes="mug/js/*" />
+            <zipfileset excludes="META-INF/*.SF" src="clojure.jar"/>
+            <zipfileset excludes="META-INF/*.SF" src="clojure-contrib.jar"/>
+            <fileset dir="classes"/>
+            <zipfileset excludes="META-INF/*.SF" src="asm-3.3.jar"/>
+            <zipfileset excludes="META-INF/*.SF" src="rhino-js.jar"/>
+        </jar>
+    </target>
+	
+    <target name="mug_js_jar">
+        <jar destfile="lib/mug-js.jar">
+            <fileset dir="bin/" includes="mug/js/*"/>
+        </jar>
+    </target>
+
+    <target name="package_all" depends="mug_jar, mug_js_jar" />
+</project>

@@ -30,10 +30,10 @@
 	(.visitFieldInsn mw Opcodes/GETSTATIC, qn-js-atoms, (if (node :value) "TRUE" "FALSE"), (sig-obj qn-js-boolean)))
 
 (defmethod compile-code :mug.ast/num-literal [node context ast mw]
-	(.visitFieldInsn mw Opcodes/GETSTATIC, qn-js-constants (ident-num (index-of (ast :numbers) (node :value))) (sig-obj qn-js-number)))
+	(.visitFieldInsn mw Opcodes/GETSTATIC, (qn-js-constants) (ident-num (index-of (ast :numbers) (node :value))) (sig-obj qn-js-number)))
 
 (defmethod compile-code :mug.ast/str-literal [node context ast mw]
-	(.visitFieldInsn mw Opcodes/GETSTATIC qn-js-constants (ident-str (index-of (ast :strings) (node :value))) (sig-obj qn-js-string)))
+	(.visitFieldInsn mw Opcodes/GETSTATIC (qn-js-constants) (ident-str (index-of (ast :strings) (node :value))) (sig-obj qn-js-string)))
 
 (defmethod compile-code :mug.ast/array-literal [node context ast mw]
   (compile-code
@@ -199,6 +199,12 @@
   (.visitMethodInsn mw Opcodes/INVOKESTATIC, qn-js-utils, "asString", (sig-call (sig-obj qn-js-primitive) (sig-obj qn-string)))
   (.visitInsn mw Opcodes/SWAP)
 	(.visitMethodInsn mw Opcodes/INVOKEVIRTUAL, qn-js-object, "set", (sig-call (sig-obj qn-string) (sig-obj qn-js-primitive) sig-void)))
+
+;(defmethod compile-code :mug.ast/post-inc-op-expr [node context ast mw]
+;  (compile-code (node :left) context ast mw)
+;  (.visitInsn mw Opcodes/DUP)
+;  (compile-code (node :right) context ast mw)
+;  (.visitMethodInsn mw Opcodes/INVOKESTATIC, qn-js-utils, "add", (sig-call (sig-obj qn-js-primitive) (sig-obj qn-js-primitive) (sig-obj qn-js-primitive))))
 
 (defmethod compile-code :mug.ast/add-op-expr [node context ast mw]
   (compile-code (node :left) context ast mw)

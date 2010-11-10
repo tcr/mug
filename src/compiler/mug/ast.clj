@@ -45,6 +45,8 @@
 (derive ::binary-op-expr ::op-expr)
 	(defn left-operand [n] (:left n))
 	(defn right-operand [n] (:right n))
+(defast ::post-inc-op-expr ::unary-op-expr [expr])
+(defast ::pre-inc-op-expr ::unary-op-expr [expr])
 (defast ::num-op-expr ::unary-op-expr [expr])
 (defast ::neg-op-expr ::unary-op-expr [expr])
 (defast ::lt-op-expr ::binary-op-expr [left right])

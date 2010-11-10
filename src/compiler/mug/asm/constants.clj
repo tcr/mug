@@ -36,7 +36,7 @@
 			(.visitTypeInsn Opcodes/NEW (sig-obj qn-js-undefined))
 			(.visitInsn Opcodes/DUP)
 			(.visitMethodInsn Opcodes/INVOKESPECIAL, (sig-obj qn-js-undefined), "<init>", (sig-call sig-void))
-			(.visitFieldInsn Opcodes/PUTSTATIC, qn-js-constants, "UNDEFINED", (sig-obj qn-js-undefined)))
+			(.visitFieldInsn Opcodes/PUTSTATIC, (qn-js-constants), "UNDEFINED", (sig-obj qn-js-undefined)))
 
 		; booleans
 		(doto mv
@@ -44,13 +44,13 @@
 			(.visitInsn Opcodes/DUP)
 			(.visitInsn Opcodes/ICONST_1)
 			(.visitMethodInsn Opcodes/INVOKESPECIAL, qn-js-boolean, "<init>", (sig-call qn-boolean sig-void))
-			(.visitFieldInsn Opcodes/PUTSTATIC, qn-js-constants, "TRUE", (sig-obj qn-js-boolean)))
+			(.visitFieldInsn Opcodes/PUTSTATIC, (qn-js-constants), "TRUE", (sig-obj qn-js-boolean)))
 		(doto mv
 			(.visitTypeInsn Opcodes/NEW qn-js-boolean)
 			(.visitInsn Opcodes/DUP)
 			(.visitInsn Opcodes/ICONST_0)
 			(.visitMethodInsn Opcodes/INVOKESPECIAL, qn-js-boolean, "<init>", (sig-call qn-boolean sig-void))
-			(.visitFieldInsn Opcodes/PUTSTATIC, qn-js-constants, "FALSE", (sig-obj qn-js-boolean)))
+			(.visitFieldInsn Opcodes/PUTSTATIC, (qn-js-constants), "FALSE", (sig-obj qn-js-boolean)))
 )
 
 		; strings
@@ -60,7 +60,7 @@
 				(.visitInsn Opcodes/DUP)
 				(.visitLdcInsn v)
 				(.visitMethodInsn Opcodes/INVOKESPECIAL, qn-js-string, "<init>", (sig-call (sig-obj qn-string) sig-void))
-				(.visitFieldInsn Opcodes/PUTSTATIC, qn-js-constants, (ident-str i), (sig-obj qn-js-string))))
+				(.visitFieldInsn Opcodes/PUTSTATIC, (qn-js-constants), (ident-str i), (sig-obj qn-js-string))))
 
 		; numbers
 		(doseq [[i v] (index (ast :numbers))]
@@ -69,7 +69,7 @@
 				(.visitInsn Opcodes/DUP)
 				(.visitLdcInsn (new Double (double v)))
 				(.visitMethodInsn Opcodes/INVOKESPECIAL, qn-js-number, "<init>", (sig-call sig-double sig-void))
-				(.visitFieldInsn Opcodes/PUTSTATIC, qn-js-constants, (ident-num i), (sig-obj qn-js-number))))
+				(.visitFieldInsn Opcodes/PUTSTATIC, (qn-js-constants), (ident-num i), (sig-obj qn-js-number))))
 
 		(doto mv
 			(.visitInsn Opcodes/RETURN)
@@ -78,7 +78,7 @@
 
 (defn asm-compile-constants-class [ast]
 	(let [cw (new ClassWriter ClassWriter/COMPUTE_MAXS)]
-		(.visit cw, Opcodes/V1_6, (+ Opcodes/ACC_SUPER Opcodes/ACC_PUBLIC), qn-js-constants, nil, qn-object, nil)
+		(.visit cw, Opcodes/V1_6, (+ Opcodes/ACC_SUPER Opcodes/ACC_PUBLIC), (qn-js-constants), nil, qn-object, nil)
 		(asm-compile-constants-fields ast cw)
 		(asm-compile-constants-clinit ast cw)
 		(.visitEnd cw)

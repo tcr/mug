@@ -84,7 +84,7 @@ function gen_clojure(ast) {
 			var out = ["{"];
 			defs.map(function (p) {
 				out.push(":" + p[0]);
-				out.push(make(p[1]));
+				out.push(p[1] ? make(p[1]) : "nil");
 			});
 			return out.concat(["}"]);
 		},

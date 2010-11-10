@@ -21,8 +21,11 @@
 ; compiler
 ;
 
-(defn compile-js [ast out-dir]
+(defn compile-js [ast qn out-dir]
   (println (str "AST: " ast))
+  
+  ; update atom
+  (swap! pkg-compiled #(identity %2) (str qn "/"))
   
 	; clean output directory
 	(doseq [f (.listFiles (new File out-dir))]
@@ -35,7 +38,7 @@
 	
   ; constants
   (println " Constants...")
-	(write-file (str out-dir qn-js-constants ".class") (asm-compile-constants-class ast))
+	(write-file (str out-dir (qn-js-constants) ".class") (asm-compile-constants-class ast))
 	
   ; object shim
 ;  (println " Objects...")
@@ -56,16 +59,17 @@
 ;
 
 (defn -main [& args]
-  (doseq [path args]
-    (let [file (new File path)]
-      ; check file exists
-	    (when (not (.exists file))
-	      (throw (new Exception (str "File not found \"" path "\"."))))
-      (println (str "Compiling \"" path "\""))
-     
-      ; parse
-      (let [ast (gen-ast (parse-js (slurp path)))
-            cwd (.getParent file)]
-        
-        ; compile
-        (compile-js ast (str cwd "/out/"))))))
+  (let [qn (first args)]
+	  (doseq [path (next args)]
+	    (let [file (new File path)]
+	      ; check file exists
+		    (when (not (.exists file))
+		      (throw (new Exception (str "File not found \"" path "\"."))))
+	      (println (str "Compiling \"" path "\""))
+	     
+	      ; parse
+	      (let [ast (gen-ast (parse-js (slurp path)))
+	            cwd (.getParent file)]
+	        
+	        ; compile
+	        (compile-js ast qn (str cwd "/out/")))))))

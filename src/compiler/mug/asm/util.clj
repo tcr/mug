@@ -22,7 +22,7 @@
 
 ; packages
 (def pkg-mug "mug/js/")
-(def pkg-compiled "binarytrees/")
+(def pkg-compiled (atom "script/")) ; is atom
 
 ; types
 (def qn-js-undefined (str pkg-mug "JSUndefined"))
@@ -35,22 +35,22 @@
 (def qn-js-object (str pkg-mug "JSObject"))
 
 (def qn-js-atoms (str pkg-mug "JSAtoms"))
-(def qn-js-constants (str pkg-compiled "JSConstants"))
+(defn qn-js-constants [] (str @pkg-compiled "JSConstants"))
 
 ;(def qn-js-compiled-object (str pkg-mug "JSCompiledObject"))
 ;(def qn-js-compiled-function (str pkg-mug "JSCompiledFunction"))
 (def qn-js-globalscope (str pkg-mug "JSGlobalScope"))
 
-(def qn-js-script (str pkg-compiled "JSScript"))
-(def qn-js-scriptscope (str pkg-compiled "JSScriptScope"))
+(defn qn-js-script [] (str @pkg-compiled "JSScript"))
+(defn qn-js-scriptscope [] (str @pkg-compiled "JSScriptScope"))
 (defn qn-js-context [x] 
   (if (= x 0)
-    qn-js-script
-    (str pkg-compiled "JSContext$" x)))
+    (qn-js-script)
+    (str @pkg-compiled "JSContext$" x)))
 (defn qn-js-scope [x]
   (if (= x 0)
-    qn-js-scriptscope
-    (str pkg-compiled "JSScope$" x)))
+    (qn-js-scriptscope)
+    (str @pkg-compiled "JSScope$" x)))
 
 ;;;[TODO] these should be "sig-void", "sig-double", etc.
 (def qn-object "java/lang/Object")
@@ -64,7 +64,7 @@
 (defn sig-obj [x] (str "L" x ";"))
 (defn sig-array [x] (str "[" x))
 
-(def sig-execute (sig-call (sig-obj (qn-js-scope 0)) (sig-obj qn-js-primitive)))
+(defn sig-execute [] (sig-call (sig-obj (qn-js-scope 0)) (sig-obj qn-js-primitive)))
 (def sig-instantiate (apply sig-call
   (conj (conj (into [sig-integer]
     (vec (repeat arg-limit (sig-obj qn-js-primitive))))

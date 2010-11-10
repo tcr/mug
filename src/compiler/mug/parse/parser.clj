@@ -250,10 +250,16 @@
 	  "<<" lsh-op-expr} op) (gen-ast-code lhs input) (gen-ast-code rhs input)))
 (defmethod gen-ast-code :unary-postfix [[_ op place] input]
   (case op
-    "++" (gen-ast-code (list :assign "+" place (list :num 1)) input)
+    "++" (gen-ast-code (list :binary "-" (list :assign "+" place (list :num 1)) (list :num 1)) input)
+    "--" (gen-ast-code (list :binary "+" (list :assign "-" place (list :num 1)) (list :num 1)) input)
     :else (println (str "###ERROR: Bad unary postfix: " op))))
 (defmethod gen-ast-code :unary-prefix [[_ op place] input]
-  (({"+" num-op-expr "-" neg-op-expr} op) (gen-ast-code place input)))
+  (case op
+    "+" (num-op-expr (gen-ast-code place input))
+    "-" (neg-op-expr (gen-ast-code place input))
+    "++" (gen-ast-code (list :assign "+" place (list :num 1)) input)
+    "--" (gen-ast-code (list :assign "-" place (list :num 1)) input)
+    :else (println (str "###ERROR: Bad unary prefix: " op))))
 (defmethod gen-ast-code :call [[_ func args] input]
   (case (first func)
     :name (apply call-expr (into [(gen-ast-code func input)] (map #(gen-ast-code %1 input) args)))
@@ -302,7 +308,8 @@
 
 ;(defmethod gen-ast-code :break [[_ label] input] )
 ;(defmethod gen-ast-code :continue [[_ label] input] )
-;(defmethod gen-ast-code :while [[_ cond body] input])
+(defmethod gen-ast-code :while [[_ cond body] input]
+  (while-stat (gen-ast-code cond input) (gen-ast-code body input)))
 ;(defmethod gen-ast-code :do [[_ cond body] input] )
 (defmethod gen-ast-code :for [[_ init cond step body] input]
   (apply block-stat

@@ -44,7 +44,7 @@
 (defmulti compile-context-method (fn [& args] (:type (first args))))
 
 (defmethod compile-context-method :mug.ast/script-context [context ast cw]
-	(let [mw (.visitMethod cw, Opcodes/ACC_PUBLIC, "execute", sig-execute, nil, (into-array ["java/lang/Exception"]))]
+	(let [mw (.visitMethod cw, Opcodes/ACC_PUBLIC, "execute", (sig-execute), nil, (into-array ["java/lang/Exception"]))]
 		(.visitCode mw)
 		
 		; move global scope object to local #6
@@ -133,6 +133,23 @@
 		(compile-context-init context ast cw)
 		(compile-context-method context ast cw)
     (compile-context-fields context ast cw)
+    
+    ; main
+    (let [mw (.visitMethod cw (+ Opcodes/ACC_PUBLIC Opcodes/ACC_STATIC), "main", "([Ljava/lang/String;)V", nil, (into-array ["java/lang/Exception"]))]
+      (doto mw
+        (.visitCode)
+        (.visitTypeInsn Opcodes/NEW, (qn-js-script))
+        (.visitInsn Opcodes/DUP)
+        (.visitMethodInsn Opcodes/INVOKESPECIAL, (qn-js-script), "<init>", "()V")
+        (.visitTypeInsn Opcodes/NEW, (qn-js-scriptscope))
+        (.visitInsn Opcodes/DUP)
+        (.visitMethodInsn Opcodes/INVOKESPECIAL, (qn-js-scriptscope), "<init>", "()V")
+        (.visitMethodInsn Opcodes/INVOKEVIRTUAL, (qn-js-script), "execute", (sig-call (sig-obj (qn-js-scriptscope)) (sig-obj qn-js-primitive)))
+        (.visitInsn Opcodes/POP)
+        (.visitInsn Opcodes/RETURN)
+        (.visitMaxs 1, 1)
+        (.visitEnd)))
+    
 		(.visitEnd cw)
   	[qn (.toByteArray cw)]))
 
