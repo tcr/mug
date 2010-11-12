@@ -1,6 +1,23 @@
 package mug.js;
 
+import mug.Modules;
+
 public class JSGlobalScope {
+	/*
+	 * require
+	 */
+	
+	public static JSPrimitive _require = new JSFunction() {
+		@Override
+		public JSPrimitive invoke(JSObject ths, int argc, JSPrimitive l0, JSPrimitive l1, JSPrimitive l2, JSPrimitive l3, JSPrimitive l4, JSPrimitive l5, JSPrimitive l6, JSPrimitive l7, JSPrimitive[] rest)
+				throws Exception {
+			return Modules.getModule(JSUtils.asString(l0)).load();
+		}
+	};
+	
+	public JSPrimitive get_require() { return _require; }
+	public void set_require(JSPrimitive value) { _require = value; }
+	
 	/*
 	 * exports
 	 */

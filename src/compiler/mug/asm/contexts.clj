@@ -15,7 +15,7 @@
         mw (.visitMethod cw, Opcodes/ACC_PUBLIC, "<init>", sig, nil, nil)]
 		(.visitCode mw)
 		(.visitVarInsn mw Opcodes/ALOAD, 0)
-		(.visitMethodInsn mw Opcodes/INVOKESPECIAL, qn-object, "<init>", (sig-call sig-void))    
+		(.visitMethodInsn mw Opcodes/INVOKESPECIAL, qn-js-module, "<init>", (sig-call sig-void))    
 		(.visitInsn mw Opcodes/RETURN)
 		(.visitMaxs mw 1, 1)
 		(.visitEnd mw)))
@@ -44,13 +44,21 @@
 (defmulti compile-context-method (fn [& args] (:type (first args))))
 
 (defmethod compile-context-method :mug.ast/script-context [context ast cw]
-	(let [mw (.visitMethod cw, Opcodes/ACC_PUBLIC, "execute", (sig-execute), nil, (into-array ["java/lang/Exception"]))]
+	(let [mw (.visitMethod cw, Opcodes/ACC_PUBLIC, "load", (sig-load), nil, (into-array ["java/lang/Exception"]))]
 		(.visitCode mw)
 		
-		; move global scope object to local #6
-		(doto mw
-			(.visitVarInsn Opcodes/ALOAD, 1)
-			(.visitVarInsn Opcodes/ASTORE, (+ 1 3 arg-limit)))
+		; scope
+    (doto mw
+      ; create scope and store in register
+      (.visitTypeInsn Opcodes/NEW, (qn-js-scriptscope))
+      (.visitInsn Opcodes/DUP)
+      (.visitInsn Opcodes/DUP)
+      (.visitMethodInsn Opcodes/INVOKESPECIAL, (qn-js-scriptscope), "<init>", "()V")
+			(.visitVarInsn Opcodes/ASTORE, (+ 1 3 arg-limit))
+      ; "exports" object
+      (.visitMethodInsn Opcodes/INVOKEVIRTUAL, (qn-js-scriptscope), "get_exports", (sig-call (sig-obj qn-js-primitive)))
+      (.visitTypeInsn Opcodes/CHECKCAST, qn-js-object)
+      (.visitVarInsn Opcodes/ASTORE, (+ 2 3 arg-limit)))
   
     ;[TODO] THIS object
 	
@@ -58,10 +66,11 @@
 		(doseq [stat (context :stats)]
 			(compile-code stat context ast mw))
 		
-  	; catch-all return
+  	; return "exports" object
 		(doto mw
-			(.visitInsn Opcodes/ACONST_NULL)
+			(.visitVarInsn Opcodes/ALOAD, (+ 2 3 arg-limit))
 			(.visitInsn Opcodes/ARETURN))
+  
 		; finish closure
 		(.visitMaxs mw 0, 0)
 		(.visitEnd mw)))
@@ -129,7 +138,7 @@
 (defmethod compile-context-class :mug.ast/script-context [context ast]
   (let [qn (qn-js-context (context-index context ast))
 				cw (new ClassWriter ClassWriter/COMPUTE_MAXS)]
-    (.visit cw, Opcodes/V1_6, (+ Opcodes/ACC_SUPER Opcodes/ACC_PUBLIC), qn, nil, qn-object, nil)
+    (.visit cw, Opcodes/V1_6, (+ Opcodes/ACC_SUPER Opcodes/ACC_PUBLIC), qn, nil, qn-js-module, nil)
 		(compile-context-init context ast cw)
 		(compile-context-method context ast cw)
     (compile-context-fields context ast cw)
@@ -141,10 +150,11 @@
         (.visitTypeInsn Opcodes/NEW, (qn-js-script))
         (.visitInsn Opcodes/DUP)
         (.visitMethodInsn Opcodes/INVOKESPECIAL, (qn-js-script), "<init>", "()V")
-        (.visitTypeInsn Opcodes/NEW, (qn-js-scriptscope))
-        (.visitInsn Opcodes/DUP)
-        (.visitMethodInsn Opcodes/INVOKESPECIAL, (qn-js-scriptscope), "<init>", "()V")
-        (.visitMethodInsn Opcodes/INVOKEVIRTUAL, (qn-js-script), "execute", (sig-call (sig-obj (qn-js-scriptscope)) (sig-obj qn-js-primitive)))
+;        (.visitTypeInsn Opcodes/NEW, (qn-js-scriptscope))
+;        (.visitInsn Opcodes/DUP)
+;        (.visitMethodInsn Opcodes/INVOKESPECIAL, (qn-js-scriptscope), "<init>", "()V")
+;        (.visitMethodInsn Opcodes/INVOKEVIRTUAL, (qn-js-script), "execute", (sig-call (sig-obj (qn-js-scriptscope)) (sig-obj qn-js-primitive)))
+        (.visitMethodInsn Opcodes/INVOKEVIRTUAL, (qn-js-script), "load", (sig-call (sig-obj qn-js-object)))
         (.visitInsn Opcodes/POP)
         (.visitInsn Opcodes/RETURN)
         (.visitMaxs 1, 1)

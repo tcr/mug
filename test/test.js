@@ -1,5 +1,3 @@
-var a = 0;
-while (a++ < 10) {
-print(a);
-print("AND");
-}
+var io = require("io");
+
+io.log("Called IO module. She didn't call back. :(");

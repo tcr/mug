@@ -1,5 +1,7 @@
 (ns mug.asm.util
-  (:use clojure.contrib.str-utils [clojure.set :only (difference)]))
+  (:use
+    clojure.contrib.str-utils
+    [clojure.set :only (difference)]))
 		
 (defn index [coll]
 	(map vector (iterate inc 0) coll))
@@ -13,7 +15,7 @@
 ;
 
 (def arg-limit 8)
-(def script-default-vars #{"exports" "Math" "print" "Array" "nanoTime"})
+(def script-default-vars #{"exports" "require" "Math" "print" "Array" "nanoTime"})
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;
@@ -22,7 +24,7 @@
 
 ; packages
 (def pkg-mug "mug/js/")
-(def pkg-compiled (atom "script/")) ; is atom
+(def pkg-compiled (atom "mug/modules/script$")) ; atom
 
 ; types
 (def qn-js-undefined (str pkg-mug "JSUndefined"))
@@ -33,6 +35,7 @@
 (def qn-js-utils (str pkg-mug "JSUtils"))
 (def qn-js-function (str pkg-mug "JSFunction"))
 (def qn-js-object (str pkg-mug "JSObject"))
+(def qn-js-module (str pkg-mug "JSModule"))
 
 (def qn-js-atoms (str pkg-mug "JSAtoms"))
 (defn qn-js-constants [] (str @pkg-compiled "JSConstants"))
@@ -41,7 +44,7 @@
 ;(def qn-js-compiled-function (str pkg-mug "JSCompiledFunction"))
 (def qn-js-globalscope (str pkg-mug "JSGlobalScope"))
 
-(defn qn-js-script [] (str @pkg-compiled "JSScript"))
+(defn qn-js-script [] (chop @pkg-compiled))
 (defn qn-js-scriptscope [] (str @pkg-compiled "JSScriptScope"))
 (defn qn-js-context [x] 
   (if (= x 0)
@@ -64,7 +67,8 @@
 (defn sig-obj [x] (str "L" x ";"))
 (defn sig-array [x] (str "[" x))
 
-(defn sig-execute [] (sig-call (sig-obj (qn-js-scope 0)) (sig-obj qn-js-primitive)))
+;(defn sig-execute [] (sig-call (sig-obj (qn-js-scope 0)) (sig-obj qn-js-primitive))) deprecated
+(defn sig-load [] (sig-call (sig-obj qn-js-object)))
 (def sig-instantiate (apply sig-call
   (conj (conj (into [sig-integer]
     (vec (repeat arg-limit (sig-obj qn-js-primitive))))
