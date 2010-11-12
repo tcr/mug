@@ -2,7 +2,7 @@ package mug.js;
 
 import java.util.HashMap;
 
-public abstract class JSFunction extends JSObject {
+public abstract class JSFunction extends JSObject {	
 	public JSFunction() {
 		set("prototype", new JSObject());
 	}
