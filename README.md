@@ -1,5 +1,5 @@
-c[_] Mug: a JavaScript compiler for the JVM.
-============================================
+c[_] JavaScript compiler for the JVM
+====================================
 
 Mug statically compiles JavaScript into Java .class files.
 It's currently in version crazy-alpha.
@@ -9,7 +9,7 @@ Compiling with mug.jar in your classpath:
 	java -cp mug.jar mug.Compiler input input.js [namespace2 file2 namespace3 file3...]
 	
 Resulting class files are in the newly created out/ directory.
-Include this and mug-js.jar to run:
+Include this and mug-js.jar to run your module:
 
     java -cp mug-js.jar:out mug.modules.input
 
