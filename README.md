@@ -26,9 +26,8 @@ Roadmap
 Short-term:
 
 * improve ECMAScript implementation
-  * currently unsupported constructs: labels, regex literals, `with`, `try/catch/throw`, `break/continue`, `do`, `for`...`in`, `switch/case/default`, `typeof`
-  * native object prototypes
-  * autoboxing primitives
+  * currently unsupported constructs: labels, `with`, `try/catch/throw`, `break/continue`, `do`, `for`...`in`, `switch/case/default`, `typeof`
+  * much of the standard library
   * more complete operator support
 * make compilation programmatic (string, file, stream, etc.)
 * make compilation/test cycle programmatic

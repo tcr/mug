@@ -4,32 +4,6 @@ import mug.Modules;
 
 public class JSTopLevel {
 	/*
-	 * scope accessors
-	 */
-	
-	public JSPrimitive get_require() { return requireFunction; }
-	
-	public JSPrimitive get_exports() { return exportsObject; }
-	
-	public JSPrimitive get_print() { return printFunction; }
-	
-	public JSPrimitive get_Math() { return mathObject; }
-
-	public JSPrimitive get_Array() { return arrayConstructor; }
-	
-	/*
-	 * prototype accessors
-	 */
-	
-	public JSObject getArrayPrototype() {
-		return arrayPrototype;
-	}
-	
-	public JSObject getStringPrototype() {
-		return stringPrototype;
-	}
-	
-	/*
 	 * objects/constructors
 	 */	
 	
@@ -63,10 +37,6 @@ public class JSTopLevel {
 	} };
 	
 	final JSFunction arrayConstructor = new JSFunction() {
-		{
-			actual_prototype = getArrayPrototype();
-		}
-		
 		public JSPrimitive instantiate(int argc, JSPrimitive l0, JSPrimitive l1, JSPrimitive l2, JSPrimitive l3, JSPrimitive l4, JSPrimitive l5, JSPrimitive l6, JSPrimitive l7, JSPrimitive[] rest) throws Exception {
 			return invoke(null, argc, l0, l1, l2, l3, l4, l5, l6, l7, rest);
 		}
@@ -74,7 +44,7 @@ public class JSTopLevel {
 		@Override
 		public JSPrimitive invoke(JSObject ths, int argc, JSPrimitive l0, JSPrimitive l1, JSPrimitive l2, JSPrimitive l3, JSPrimitive l4, JSPrimitive l5, JSPrimitive l6, JSPrimitive l7, JSPrimitive[] rest)
 				throws Exception {
-			JSArray obj = new JSArray(actual_prototype);
+			JSArray obj = new JSArray(arrayPrototype);
 		
 			// single-argument constructor
 			if (argc == 1) {
@@ -93,18 +63,6 @@ public class JSTopLevel {
 	/*
 	 * prototypes
 	 */
-	
-	final JSObject stringPrototype = new JSObject() { {
-		set("charAt", new JSFunction () {
-			@Override
-			public JSPrimitive invoke(JSObject ths, int argc, JSPrimitive index,
-					JSPrimitive l1, JSPrimitive l2, JSPrimitive l3,
-					JSPrimitive l4, JSPrimitive l5, JSPrimitive l6,
-					JSPrimitive l7, JSPrimitive[] rest) throws Exception {
-				return new JSString(String.valueOf(JSUtils.asString(ths.valueOf()).charAt((int) JSUtils.asNumber(index))));
-			}
-		});
-	} };
 	
 	final JSObject arrayPrototype = new JSObject() { {
 		set("concat", new JSFunction() {
@@ -160,4 +118,66 @@ public class JSTopLevel {
 			}
 		});
 	} };
+	
+	final JSObject stringPrototype = new JSObject() { {
+		set("charAt", new JSFunction () {
+			@Override
+			public JSPrimitive invoke(JSObject ths, int argc, JSPrimitive index,
+					JSPrimitive l1, JSPrimitive l2, JSPrimitive l3,
+					JSPrimitive l4, JSPrimitive l5, JSPrimitive l6,
+					JSPrimitive l7, JSPrimitive[] rest) throws Exception {
+				return new JSString(String.valueOf(JSUtils.asString(ths.getPrimitiveValue()).charAt((int) JSUtils.asNumber(index))));
+			}
+		});
+	} };
+	
+	final JSObject numberPrototype = new JSObject() { {
+	} };
+	
+	final JSObject booleanPrototype = new JSObject() { {
+	} };
+	
+	/*
+	 * prototype accessors
+	 */
+	
+	public JSObject getArrayPrototype() {
+		return arrayPrototype;
+	}
+	
+	public JSObject getStringPrototype() {
+		return stringPrototype;
+	}
+	
+	public JSObject getNumberPrototype() {
+		return numberPrototype;
+	}
+	
+	public JSObject getBooleanPrototype() {
+		return booleanPrototype;
+	}
+	
+	/*
+	 * scope accessors
+	 */
+	
+	JSPrimitive _require = requireFunction;
+	public JSPrimitive get_require() { return _require; }
+	public void set_require(JSPrimitive value) { _require = value; }
+	
+	JSPrimitive _exports = exportsObject;
+	public JSPrimitive get_exports() { return _exports; }
+	public void set_exports(JSPrimitive value) { _exports = value; }
+	
+	JSPrimitive _print = printFunction;
+	public JSPrimitive get_print() { return _print; }
+	public void set_print(JSPrimitive value) { _print = value; }
+	
+	JSPrimitive _Math = mathObject;
+	public JSPrimitive get_Math() { return _Math; }
+	public void set_Math(JSPrimitive value) { _Math = value; }
+
+	JSPrimitive _Array = arrayConstructor;
+	public JSPrimitive get_Array() { return _Array; }
+	public void set_Array(JSPrimitive value) { _Array = value; }
 }

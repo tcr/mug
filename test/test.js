@@ -6,6 +6,9 @@ io.log("Called IO module. She didn't call back. :(");
 print(fs.read("test.js"));
 */
 
+var f = [5];
+print(f.length);
+
 var a = [5, 6, 7];
 print(a.push(8));
 print(a[3]);
@@ -18,4 +21,4 @@ print(a.length);
 var c = /a/;
 print(c.test("bcda"));
 print(c.test("bcd"));
-print("asfdsaasdf".substr);
+print("asfdsaasdf".charAt(1));

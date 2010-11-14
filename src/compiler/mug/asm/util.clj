@@ -27,7 +27,7 @@
 (def pkg-compiled (atom "mug/modules/script$")) ; atom
 
 ; types
-(def qn-js-undefined (str pkg-mug "JSUndefined"))
+(def qn-js-null (str pkg-mug "JSNull"))
 (def qn-js-boolean (str pkg-mug "JSBoolean"))
 (def qn-js-string (str pkg-mug "JSString"))
 (def qn-js-number (str pkg-mug "JSNumber"))
@@ -41,9 +41,7 @@
 (def qn-js-atoms (str pkg-mug "JSAtoms"))
 (defn qn-js-constants [] (str @pkg-compiled "JSConstants"))
 
-;(def qn-js-compiled-object (str pkg-mug "JSCompiledObject"))
-;(def qn-js-compiled-function (str pkg-mug "JSCompiledFunction"))
-(def qn-js-globalscope (str pkg-mug "JSGlobalScope"))
+(def qn-js-toplevel (str pkg-mug "JSTopLevel"))
 
 (defn qn-js-script [] (chop @pkg-compiled))
 (defn qn-js-scriptscope [] (str @pkg-compiled "JSScriptScope"))

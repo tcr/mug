@@ -6,4 +6,10 @@ public class JSNumber extends JSPrimitive {
 	public JSNumber(double value) {
 		this.value = value;
 	}
+	
+	public JSObject toObject(JSTopLevel top) {
+		JSObject obj = new JSObject(top.getNumberPrototype());
+		obj.setPrimitiveValue(this);
+		return obj;
+	}
 }

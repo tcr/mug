@@ -9,15 +9,6 @@
 ;
 
 (defn asm-compile-constants-fields [ast cw]
-(comment
-	; undefined
-	(.visitEnd (.visitField cw, (+ Opcodes/ACC_PUBLIC Opcodes/ACC_STATIC), "UNDEFINED", (sig-obj qn-js-undefined), nil, nil))
-
-	; booleans
-	(.visitEnd (.visitField cw, (+ Opcodes/ACC_PUBLIC Opcodes/ACC_STATIC), "TRUE", (sig-obj qn-js-boolean), nil, nil))
-	(.visitEnd (.visitField cw, (+ Opcodes/ACC_PUBLIC Opcodes/ACC_STATIC), "FALSE", (sig-obj qn-js-boolean), nil, nil))
-)
-
 	; strings
 	(doseq [[i v] (index (ast :strings))]
 			(.visitEnd (.visitField cw, (+ Opcodes/ACC_PUBLIC Opcodes/ACC_STATIC), (ident-str i), (sig-obj qn-js-string), nil, nil)))
@@ -33,29 +24,6 @@
 (defn asm-compile-constants-clinit [ast cw]
 	(let [mv (.visitMethod cw, Opcodes/ACC_STATIC, "<clinit>", (sig-call sig-void), nil, nil)]
 		(.visitCode mv)
-
-(comment
-		; undefined
-		(doto mv
-			(.visitTypeInsn Opcodes/NEW (sig-obj qn-js-undefined))
-			(.visitInsn Opcodes/DUP)
-			(.visitMethodInsn Opcodes/INVOKESPECIAL, (sig-obj qn-js-undefined), "<init>", (sig-call sig-void))
-			(.visitFieldInsn Opcodes/PUTSTATIC, (qn-js-constants), "UNDEFINED", (sig-obj qn-js-undefined)))
-
-		; booleans
-		(doto mv
-			(.visitTypeInsn Opcodes/NEW qn-js-boolean)
-			(.visitInsn Opcodes/DUP)
-			(.visitInsn Opcodes/ICONST_1)
-			(.visitMethodInsn Opcodes/INVOKESPECIAL, qn-js-boolean, "<init>", (sig-call qn-boolean sig-void))
-			(.visitFieldInsn Opcodes/PUTSTATIC, (qn-js-constants), "TRUE", (sig-obj qn-js-boolean)))
-		(doto mv
-			(.visitTypeInsn Opcodes/NEW qn-js-boolean)
-			(.visitInsn Opcodes/DUP)
-			(.visitInsn Opcodes/ICONST_0)
-			(.visitMethodInsn Opcodes/INVOKESPECIAL, qn-js-boolean, "<init>", (sig-call qn-boolean sig-void))
-			(.visitFieldInsn Opcodes/PUTSTATIC, (qn-js-constants), "FALSE", (sig-obj qn-js-boolean)))
-)
 
 		; strings
 		(doseq [[i v] (index (ast :strings))]

@@ -30,11 +30,11 @@
 			(.visitMaxs 2, 2)
 			(.visitEnd))))
 
-(defn asm-compile-scope-init [qn scope cw]
+(defn asm-compile-scope-init [qn super scope cw]
   (let [mw (.visitMethod cw, Opcodes/ACC_PUBLIC, "<init>", (sig-call sig-void), nil, nil)]
   	(.visitCode mw)
   	(.visitVarInsn mw Opcodes/ALOAD, 0)
-  	(.visitMethodInsn mw Opcodes/INVOKESPECIAL, qn-object, "<init>", "()V")  
+  	(.visitMethodInsn mw Opcodes/INVOKESPECIAL, super, "<init>", "()V")  
   	(.visitInsn mw Opcodes/RETURN)
   	(.visitMaxs mw 1, 1)
   	(.visitEnd mw)))
@@ -44,12 +44,13 @@
 		(map-indexed (fn [i context]
 			(let [qn (qn-js-scope i)
             scope (context-scope-vars context)
-            cw (new ClassWriter ClassWriter/COMPUTE_MAXS)]
+            cw (new ClassWriter ClassWriter/COMPUTE_MAXS)
+            super (if (= i 0) qn-js-toplevel qn-object)]
 				(.visit cw, Opcodes/V1_6, (+ Opcodes/ACC_SUPER Opcodes/ACC_PUBLIC), qn, nil,
-          (if (= i 0) qn-js-globalscope qn-object), nil)
+          super, nil)
 				(asm-compile-scope-fields qn scope cw)
 				(asm-compile-scope-methods qn scope cw)
-				(asm-compile-scope-init qn scope cw)
+				(asm-compile-scope-init qn super scope cw)
 				(.visitEnd cw)
 				[qn (.toByteArray cw)]))
 		(ast :contexts))))

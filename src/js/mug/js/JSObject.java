@@ -24,13 +24,17 @@ public class JSObject extends JSPrimitive {
 	 * methods
 	 */
 	
-	public JSObject toObject() {
+	public JSObject toObject(JSTopLevel top) {
 		return this;
 	}
 	
-	JSPrimitive value;
+	JSPrimitive value = null;
 	
-	public JSPrimitive valueOf() {
+	public void setPrimitiveValue(JSPrimitive value) {
+		this.value = value;
+	}
+	
+	public JSPrimitive getPrimitiveValue() {
 		return value;
 	}
 	

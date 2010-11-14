@@ -6,4 +6,10 @@ public class JSBoolean extends JSPrimitive {
 	public JSBoolean(boolean value) {
 		this.value = value;
 	}
+	
+	public JSObject toObject(JSTopLevel top) {
+		JSObject obj = new JSObject(top.getBooleanPrototype());
+		obj.setPrimitiveValue(this);
+		return obj;
+	}
 }
