@@ -147,19 +147,4 @@ public class JSGlobalScope {
 	
 	public JSPrimitive get_Array() { return _Array; }
 	public void set_Array(JSPrimitive value) { _Array = value; }
-	
-	/*
-	 * nanoTime
-	 */
-	
-	public static JSPrimitive _nanoTime = new JSFunction() {
-		@Override
-		public JSPrimitive invoke(JSObject ths, int argc, JSPrimitive l0, JSPrimitive l1, JSPrimitive l2, JSPrimitive l3, JSPrimitive l4, JSPrimitive l5, JSPrimitive l6, JSPrimitive l7, JSPrimitive[] rest)
-				throws Exception {
-			return new JSNumber(System.nanoTime());
-		}
-	};
-	
-	public JSPrimitive get_nanoTime() { return _nanoTime; }
-	public void set_nanoTime(JSPrimitive value) { _nanoTime = value; }
 }

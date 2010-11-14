@@ -114,6 +114,12 @@
 (defmethod find-numbers :unary-prefix [[_ op place] walker]
   [1])
 
+(defmulti find-regexes (fn [node & args] (first node)) :default :no-match)
+(defmethod find-regexes :no-match [node & args]
+  (walk-input node find-regexes))
+(defmethod find-regexes :regexp [[_ expr flags] walker]
+  [[expr flags]])
+
 (defmulti find-accessors (fn [node & args] (first node)) :default :no-match)
 (defmethod find-accessors :no-match [node & args]
   (walk-input node find-accessors))
@@ -225,7 +231,8 @@
   (array-literal (map #(gen-ast-code % input) elems)))
 (defmethod gen-ast-code :object [[_ props] input]
   (obj-literal (zipmap (keys props) (map #(gen-ast-code % input) (vals props)))))
-;(defmethod gen-ast-code :regexp [[_ expr flags]])
+(defmethod gen-ast-code :regexp [[_ expr flags] input]
+  (regex-literal expr flags))
 
 (defmethod gen-ast-code :assign [[_ op place val] input]
   (let [val (if (not= op true) (list :binary op place val) val)]
@@ -357,4 +364,5 @@
     []
     (set (find-accessors input))
     (set (find-numbers input))
-    (set (find-strings input))))
+    (set (find-strings input))
+    (set (find-regexes input))))

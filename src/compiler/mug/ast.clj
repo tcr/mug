@@ -7,8 +7,8 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 ; nodes
-(defn js-ast [contexts structs accessors numbers strings]
-  {:contexts contexts :structs structs :accessors accessors :numbers numbers :strings strings})
+(defn js-ast [contexts structs accessors numbers strings regexes]
+  {:contexts contexts :structs structs :accessors accessors :numbers numbers :strings strings :regexes regexes})
 
 ; ast
 
@@ -37,6 +37,7 @@
 (defast ::null-literal ::literal [])
 (defast ::boolean-literal ::literal [value])
 (defast ::func-literal ::literal [closure])
+(defast ::regex-literal ::literal [expr flags])
 
 ; operations
 (derive ::op-expr ::expr)

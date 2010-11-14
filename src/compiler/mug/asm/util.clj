@@ -15,7 +15,7 @@
 ;
 
 (def arg-limit 8)
-(def script-default-vars #{"exports" "require" "Math" "print" "Array" "nanoTime"})
+(def script-default-vars #{"exports" "require" "print" "Math" "Array"})
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;
@@ -35,6 +35,7 @@
 (def qn-js-utils (str pkg-mug "JSUtils"))
 (def qn-js-function (str pkg-mug "JSFunction"))
 (def qn-js-object (str pkg-mug "JSObject"))
+(def qn-js-regex (str pkg-mug "JSRegExp"))
 (def qn-js-module (str pkg-mug "JSModule"))
 
 (def qn-js-atoms (str pkg-mug "JSAtoms"))
@@ -86,6 +87,7 @@
 
 (defn ident-num [x] (str "NUM_" x))
 (defn ident-str [x] (str "STR_" x))
+(defn ident-regex [x] (str "REGEX_" x))
 (defn ident-scope [x] (str "SCOPE_" x))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

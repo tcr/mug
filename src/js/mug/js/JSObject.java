@@ -21,6 +21,20 @@ public class JSObject extends JSPrimitive {
 	}
 	
 	/*
+	 * methods
+	 */
+	
+	public JSObject toObject() {
+		return this;
+	}
+	
+	JSPrimitive value;
+	
+	public JSPrimitive valueOf() {
+		return value;
+	}
+	
+	/*
 	 * hash
 	 */
 

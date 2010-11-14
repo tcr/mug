@@ -35,6 +35,9 @@
 (defmethod compile-code :mug.ast/str-literal [node context ast mw]
 	(.visitFieldInsn mw Opcodes/GETSTATIC (qn-js-constants) (ident-str (index-of (ast :strings) (node :value))) (sig-obj qn-js-string)))
 
+(defmethod compile-code :mug.ast/regex-literal [node context ast mw]
+	(.visitFieldInsn mw Opcodes/GETSTATIC (qn-js-constants) (ident-regex (index-of (ast :regexes) [(node :expr) (node :flags)])) (sig-obj qn-js-object)))
+
 (defmethod compile-code :mug.ast/array-literal [node context ast mw]
   (compile-code
     {:type :mug.ast/call-expr
@@ -111,13 +114,15 @@
 (defmethod compile-code :mug.ast/static-ref-expr [node context ast mw]
   (compile-code (node :base) context ast mw)
 	(doto mw
-    (.visitTypeInsn Opcodes/CHECKCAST, qn-js-object)
+;    (.visitTypeInsn Opcodes/CHECKCAST, qn-js-object)
+    (.visitMethodInsn Opcodes/INVOKEVIRTUAL, qn-js-primitive, "toObject", (sig-call (sig-obj qn-js-object)))
     (.visitLdcInsn (node :value))
 		(.visitMethodInsn Opcodes/INVOKEVIRTUAL, qn-js-object, "get", (sig-call (sig-obj qn-string) (sig-obj qn-js-primitive)))))
 
 (defmethod compile-code :mug.ast/dyn-ref-expr [node context ast mw]
   (compile-code (node :base) context ast mw)
-  (.visitTypeInsn mw, Opcodes/CHECKCAST, qn-js-object)
+;  (.visitTypeInsn mw, Opcodes/CHECKCAST, qn-js-object)
+  (.visitMethodInsn mw Opcodes/INVOKEVIRTUAL, qn-js-primitive, "toObject", (sig-call (sig-obj qn-js-object)))
   (compile-code (node :index) context ast mw)
   (.visitMethodInsn mw Opcodes/INVOKESTATIC, qn-js-utils, "asString", (sig-call (sig-obj qn-js-primitive) (sig-obj qn-string)))
 	(.visitMethodInsn mw Opcodes/INVOKEVIRTUAL, qn-js-object, "get", (sig-call (sig-obj qn-string) (sig-obj qn-js-primitive))))
@@ -149,7 +154,7 @@
   (compile-code (node :base) context ast mw)
   ; get argument and method
 	(doto mw
-    (.visitTypeInsn Opcodes/CHECKCAST, qn-js-object)
+    (.visitMethodInsn Opcodes/INVOKEVIRTUAL, qn-js-primitive, "toObject", (sig-call (sig-obj qn-js-object)))
     (.visitInsn Opcodes/DUP)
     (.visitLdcInsn (node :value))
 		(.visitMethodInsn Opcodes/INVOKEVIRTUAL, qn-js-object, "get", (sig-call (sig-obj qn-string) (sig-obj qn-js-primitive)))
@@ -183,22 +188,24 @@
 	(compile-code (node :expr) context ast mw)
   (.visitInsn mw Opcodes/DUP)
   (compile-code (node :base) context ast mw)
-  (.visitTypeInsn mw, Opcodes/CHECKCAST, qn-js-object)
+;  (.visitTypeInsn mw, Opcodes/CHECKCAST, qn-js-object)
+  (.visitMethodInsn mw Opcodes/INVOKEVIRTUAL, qn-js-primitive, "toObject", (sig-call (sig-obj qn-js-object)))
   (.visitInsn mw Opcodes/SWAP)
   (.visitLdcInsn mw (node :value))
   (.visitInsn mw Opcodes/SWAP)
-	(.visitMethodInsn mw Opcodes/INVOKEVIRTUAL, qn-js-object, "set", (sig-call (sig-obj qn-string) (sig-obj qn-js-primitive) sig-void)))
+	(.visitMethodInsn mw Opcodes/INVOKEVIRTUAL, qn-js-primitive, "set", (sig-call (sig-obj qn-string) (sig-obj qn-js-primitive) sig-void)))
 
 (defmethod compile-code :mug.ast/dyn-assign-expr [node context ast mw]
 	(compile-code (node :expr) context ast mw)
   (.visitInsn mw Opcodes/DUP)
   (compile-code (node :base) context ast mw)
-  (.visitTypeInsn mw, Opcodes/CHECKCAST, qn-js-object)
+;  (.visitTypeInsn mw, Opcodes/CHECKCAST, qn-js-object)
+  (.visitMethodInsn mw Opcodes/INVOKEVIRTUAL, qn-js-primitive, "toObject", (sig-call (sig-obj qn-js-object)))
   (.visitInsn mw Opcodes/SWAP)
   (compile-code (node :index) context ast mw)
   (.visitMethodInsn mw Opcodes/INVOKESTATIC, qn-js-utils, "asString", (sig-call (sig-obj qn-js-primitive) (sig-obj qn-string)))
   (.visitInsn mw Opcodes/SWAP)
-	(.visitMethodInsn mw Opcodes/INVOKEVIRTUAL, qn-js-object, "set", (sig-call (sig-obj qn-string) (sig-obj qn-js-primitive) sig-void)))
+	(.visitMethodInsn mw Opcodes/INVOKEVIRTUAL, qn-js-primitive, "set", (sig-call (sig-obj qn-string) (sig-obj qn-js-primitive) sig-void)))
 
 ;(defmethod compile-code :mug.ast/post-inc-op-expr [node context ast mw]
 ;  (compile-code (node :left) context ast mw)
@@ -218,7 +225,6 @@
   (.visitMethodInsn mw Opcodes/INVOKESTATIC, qn-js-utils, "asNumber", (sig-call (sig-obj qn-js-primitive) sig-double))
   (compile-code (node :right) context ast mw)
   (.visitMethodInsn mw Opcodes/INVOKESTATIC, qn-js-utils, "asNumber", (sig-call (sig-obj qn-js-primitive) sig-double))
-  (.visitInsn mw Opcodes/DSUB)
   (.visitMethodInsn mw Opcodes/INVOKESPECIAL, qn-js-number, "<init>", (sig-call sig-double sig-void)))
 
 (defmethod compile-code :mug.ast/div-op-expr [node context ast mw]

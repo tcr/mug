@@ -24,7 +24,11 @@
  
  	; numbers
 	(doseq [[i v] (index (ast :numbers))]
-			(.visitEnd (.visitField cw, (+ Opcodes/ACC_PUBLIC Opcodes/ACC_STATIC), (ident-num i), (sig-obj qn-js-number), nil, nil))))
+			(.visitEnd (.visitField cw, (+ Opcodes/ACC_PUBLIC Opcodes/ACC_STATIC), (ident-num i), (sig-obj qn-js-number), nil, nil)))
+
+ 	; regexes
+	(doseq [[i [expr flags]] (index (ast :regexes))]
+			(.visitEnd (.visitField cw, (+ Opcodes/ACC_PUBLIC Opcodes/ACC_STATIC), (ident-regex i), (sig-obj qn-js-object), nil, nil))))
 
 (defn asm-compile-constants-clinit [ast cw]
 	(let [mv (.visitMethod cw, Opcodes/ACC_STATIC, "<clinit>", (sig-call sig-void), nil, nil)]
@@ -70,6 +74,16 @@
 				(.visitLdcInsn (new Double (double v)))
 				(.visitMethodInsn Opcodes/INVOKESPECIAL, qn-js-number, "<init>", (sig-call sig-double sig-void))
 				(.visitFieldInsn Opcodes/PUTSTATIC, (qn-js-constants), (ident-num i), (sig-obj qn-js-number))))
+  
+    ; regex
+		(doseq [[i [expr flags]] (index (ast :regexes))]
+			(doto mv
+				(.visitTypeInsn Opcodes/NEW qn-js-regex)
+				(.visitInsn Opcodes/DUP)
+				(.visitLdcInsn expr)
+        (.visitLdcInsn flags)
+				(.visitMethodInsn Opcodes/INVOKESPECIAL, qn-js-regex, "<init>", (sig-call (sig-obj qn-string) (sig-obj qn-string) sig-void))
+				(.visitFieldInsn Opcodes/PUTSTATIC, (qn-js-constants), (ident-regex i), (sig-obj qn-js-object))))
 
 		(doto mv
 			(.visitInsn Opcodes/RETURN)

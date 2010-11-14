@@ -14,3 +14,8 @@ var b = [9, 10];
 print(a.concat(b).length);
 print(a.pop());
 print(a.length);
+
+var c = /a/;
+print(c.test("bcda"));
+print(c.test("bcd"));
+print("asfdsaasdf".substr);
