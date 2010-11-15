@@ -14,6 +14,22 @@ public class JSArray extends JSObject {
 		_length++;
 	}
 	
+	public JSPrimitive pop() {
+		JSPrimitive value = super.get(String.valueOf(_length));
+		super.set(String.valueOf(_length), null);
+		_length--;
+		return value;
+	}
+	
+	public int getLength() {
+		return _length;
+	}
+	
+	public void append(JSPrimitive[] arr) {
+		for (JSPrimitive value : arr)
+			push(value);
+	}
+	
 	/*
 	 * length property
 	 */

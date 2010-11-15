@@ -208,7 +208,7 @@
 
 (defmulti gen-ast-code (fn [node & args] (first node)) :default :no-match)
 (defmethod gen-ast-code :no-match [node & args]
-  (println (str "No AST generator found for type " (first node))))
+  (println (str "###Error: No AST generator found for type " (first node))))
 
 (defmethod gen-ast-code :atom [[_ value] input]
   (case value
@@ -266,6 +266,7 @@
     "-" (neg-op-expr (gen-ast-code place input))
     "++" (gen-ast-code (list :assign "+" place (list :num 1)) input)
     "--" (gen-ast-code (list :assign "-" place (list :num 1)) input)
+    "typeof" (typeof-expr (gen-ast-code place input))
     :else (println (str "###ERROR: Bad unary prefix: " op))))
 (defmethod gen-ast-code :call [[_ func args] input]
   (case (first func)
@@ -279,7 +280,10 @@
 (defmethod gen-ast-code :sub [[_ obj attr] input]
   (dyn-ref-expr (gen-ast-code obj input) (gen-ast-code attr input)))
 ;(defmethod gen-ast-code :seq [[_ form1 result]])
-;(defmethod gen-ast-code :conditional [[_ test then else]])
+(defmethod gen-ast-code :conditional [[_ test then else] input]
+  (if-expr (gen-ast-code test input)
+    (gen-ast-code then input)
+    (gen-ast-code else input)))
 (defmethod gen-ast-code :function [node input]
   (func-literal (find-context-index node input)))
 (defmethod gen-ast-code :new [[_ func args] input]

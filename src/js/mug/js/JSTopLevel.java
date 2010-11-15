@@ -67,38 +67,28 @@ public class JSTopLevel {
 	final JSObject arrayPrototype = new JSObject() { {
 		set("concat", new JSFunction() {
 			@Override
-			public JSPrimitive invoke(JSObject ths, int argc,
-					JSPrimitive l0, JSPrimitive l1, JSPrimitive l2,
-					JSPrimitive l3, JSPrimitive l4, JSPrimitive l5,
-					JSPrimitive l6, JSPrimitive l7, JSPrimitive[] rest)
-					throws Exception {
+			public JSPrimitive invoke(JSObject ths, int argc, JSPrimitive l0, JSPrimitive l1, JSPrimitive l2, JSPrimitive l3, JSPrimitive l4, JSPrimitive l5, JSPrimitive l6, JSPrimitive l7, JSPrimitive[] rest) throws Exception
+			{
 				// concatenate arrays to new array
-				JSObject out = (JSObject) arrayConstructor.instantiate(0, null, null, null, null, null, null, null, null, null);
+				JSArray out = new JSArray(arrayPrototype);
 				JSPrimitive[] arguments = JSUtils.arguments(argc, l0, l1, l2, l3, l4, l5, l6, l7, rest);
-				int k = append(out, 0, ths);
-				for (int i = 0; i < arguments.length; i++) {
-					if (!(arguments[i] instanceof JSObject))
+				for (int j = 0, max = (int) JSUtils.asNumber(ths.get("length")); j < max; j++)
+					out.push(ths.get(String.valueOf(j)));
+				for (JSPrimitive arg : arguments) {
+					if (!(arg instanceof JSObject))
 						continue;
-					k = append(out, k, (JSObject) arguments[i]);
+					JSObject arr = (JSObject) arg;
+					for (int j = 0, max = (int) JSUtils.asNumber(arr.get("length")); j < max; j++)
+						out.push(arr.get(String.valueOf(j)));
 				}
 				return out;
-			}
-			
-			int append(JSObject to, int len, JSObject from) {
-				for (int j = 0; j < JSUtils.asNumber(from.get("length")); j++) {
-					to.set(String.valueOf(len++), from.get(String.valueOf(j)));
-				}
-				return len;
 			}
 		});
 		
 		set("push", new JSFunction() {
 			@Override
-			public JSPrimitive invoke(JSObject ths, int argc,
-					JSPrimitive l0, JSPrimitive l1, JSPrimitive l2,
-					JSPrimitive l3, JSPrimitive l4, JSPrimitive l5,
-					JSPrimitive l6, JSPrimitive l7, JSPrimitive[] rest)
-					throws Exception {
+			public JSPrimitive invoke(JSObject ths, int argc, JSPrimitive l0, JSPrimitive l1, JSPrimitive l2, JSPrimitive l3, JSPrimitive l4, JSPrimitive l5, JSPrimitive l6, JSPrimitive l7, JSPrimitive[] rest) throws Exception
+			{
 				ths.set(String.valueOf((int) ((JSNumber) ths.get("length")).value), l0);
 				return ths.get("length");
 			}
@@ -106,15 +96,41 @@ public class JSTopLevel {
 		
 		set("pop", new JSFunction() {
 			@Override
-			public JSPrimitive invoke(JSObject ths, int argc,
-					JSPrimitive l0, JSPrimitive l1, JSPrimitive l2,
-					JSPrimitive l3, JSPrimitive l4, JSPrimitive l5,
-					JSPrimitive l6, JSPrimitive l7, JSPrimitive[] rest)
-					throws Exception {
+			public JSPrimitive invoke(JSObject ths, int argc, JSPrimitive l0, JSPrimitive l1, JSPrimitive l2, JSPrimitive l3, JSPrimitive l4, JSPrimitive l5, JSPrimitive l6, JSPrimitive l7, JSPrimitive[] rest) throws Exception
+			{
 				int len = (int) ((JSNumber) ths.get("length")).value;
 				JSPrimitive out = ths.get(String.valueOf(len-1));
 				ths.set("length", new JSNumber(len-1));
 				return out;
+			}
+		});
+		
+		set("map", new JSFunction() {
+			@Override
+			public JSPrimitive invoke(JSObject ths, int argc, JSPrimitive l0, JSPrimitive l1, JSPrimitive l2, JSPrimitive l3, JSPrimitive l4, JSPrimitive l5, JSPrimitive l6, JSPrimitive l7, JSPrimitive[] rest) throws Exception
+			{
+				JSObject func = (JSObject) l0;
+				JSArray out = new JSArray(arrayPrototype);
+				int len = (int) JSUtils.asNumber(ths.get("length"));
+				for (int i = 0; i < len; i++)
+					out.push(func.invoke(ths, 2, ths.get(String.valueOf(i)), new JSNumber(i), null, null, null, null, null, null, null));
+				return out;
+			}
+		});
+		
+		set("join", new JSFunction() {
+			@Override
+			public JSPrimitive invoke(JSObject ths, int argc, JSPrimitive l0, JSPrimitive l1, JSPrimitive l2, JSPrimitive l3, JSPrimitive l4, JSPrimitive l5, JSPrimitive l6, JSPrimitive l7, JSPrimitive[] rest) throws Exception
+			{
+				StringBuffer sb = new StringBuffer();
+				String delim = (l0 == null || l0 == JSAtoms.NULL) ? "" : JSUtils.asString(l0); 
+				int len = (int) JSUtils.asNumber(ths.get("length"));
+				for (int i = 0; i < len; i++) {
+					if (i > 0)
+						sb.append(delim);
+					sb.append(JSUtils.asString(ths.get(String.valueOf(i))));
+				}
+				return new JSString(sb.toString());
 			}
 		});
 	} };
@@ -122,11 +138,19 @@ public class JSTopLevel {
 	final JSObject stringPrototype = new JSObject() { {
 		set("charAt", new JSFunction () {
 			@Override
-			public JSPrimitive invoke(JSObject ths, int argc, JSPrimitive index,
-					JSPrimitive l1, JSPrimitive l2, JSPrimitive l3,
-					JSPrimitive l4, JSPrimitive l5, JSPrimitive l6,
-					JSPrimitive l7, JSPrimitive[] rest) throws Exception {
+			public JSPrimitive invoke(JSObject ths, int argc, JSPrimitive index, JSPrimitive l1, JSPrimitive l2, JSPrimitive l3, JSPrimitive l4, JSPrimitive l5, JSPrimitive l6, JSPrimitive l7, JSPrimitive[] rest) throws Exception
+			{
 				return new JSString(String.valueOf(JSUtils.asString(ths.getPrimitiveValue()).charAt((int) JSUtils.asNumber(index))));
+			}
+		});
+		
+		set("substr", new JSFunction () {
+			@Override
+			public JSPrimitive invoke(JSObject ths, int argc, JSPrimitive l0, JSPrimitive l1, JSPrimitive l2, JSPrimitive l3, JSPrimitive l4, JSPrimitive l5, JSPrimitive l6, JSPrimitive l7, JSPrimitive[] rest) throws Exception
+			{
+				int start = (int) JSUtils.asNumber(l0), end = (int) JSUtils.asNumber(l1);
+				String value = JSUtils.asString(ths.getPrimitiveValue());
+				return new JSString(value.substring(start, end+start));
 			}
 		});
 	} };

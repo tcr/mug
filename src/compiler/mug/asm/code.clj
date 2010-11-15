@@ -357,9 +357,24 @@
   (.visitMethodInsn mw Opcodes/INVOKESTATIC, qn-js-utils, "asNumber", (sig-call (sig-obj qn-js-primitive) sig-double))
   (.visitInsn mw Opcodes/DNEG)
   (.visitMethodInsn mw Opcodes/INVOKESPECIAL, qn-js-number, "<init>", (sig-call sig-double sig-void)))
+
+(defmethod compile-code :mug.ast/typeof-expr [node context ast mw]
+  (compile-code (node :expr) context ast mw)
+  (.visitMethodInsn mw Opcodes/INVOKESTATIC, qn-js-utils, "typeof", (sig-call (sig-obj qn-js-primitive) (sig-obj qn-js-string))))
     
 (defmethod compile-code :mug.ast/this-expr [node context ast mw]
   (.visitVarInsn mw Opcodes/ALOAD, 1))
+
+(defmethod compile-code :mug.ast/if-expr [node context ast mw]
+  (compile-code (node :expr) context ast mw)
+  (.visitMethodInsn mw Opcodes/INVOKESTATIC, qn-js-utils, "asBoolean", (sig-call (sig-obj qn-js-primitive) sig-boolean))
+  (let [false-case (new Label) true-case (new Label)]
+    (.visitJumpInsn mw, Opcodes/IFEQ, false-case)
+    (compile-code (node :then-expr) context ast mw)
+    (.visitJumpInsn mw, Opcodes/GOTO, true-case)
+    (.visitLabel mw false-case)
+    (compile-code (node :else-expr) context ast mw)
+    (.visitLabel mw true-case)))
 
 ;
 ; statements

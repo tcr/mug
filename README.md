@@ -26,7 +26,7 @@ Roadmap
 Short-term:
 
 * improve ECMAScript implementation
-  * currently unsupported constructs: labels, `with`, `try/catch/throw`, `break/continue`, `do`, `for`...`in`, `switch/case/default`, `typeof`
+  * currently unsupported constructs: labels, `with`, `try/catch/throw`, `break/continue`, `do`...`while`, `for`...`in`, `switch/case/default`
   * much of the standard library
   * more complete operator support
 * make compilation programmatic (string, file, stream, etc.)

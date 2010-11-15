@@ -34,11 +34,14 @@ public class JSUtils {
 			return ((JSBoolean) a).value;
 		// 
 		// 
-		// 
+		if (a instanceof JSObject)
+			return true;
 		return false;
 	}
 
 	static public double asNumber(JSPrimitive a) {
+//		if (a instanceof JSObject)
+//			a = ((JSObject) a).getPrimitiveValue();
 		if (a instanceof JSNumber)
 			return ((JSNumber) a).value;
 		if (a instanceof JSBoolean)
@@ -63,7 +66,10 @@ public class JSUtils {
 		}
 		if (a instanceof JSBoolean)
 			return Boolean.toString(((JSBoolean) a).value);
-		// 
+		if (a instanceof JSNull)
+			return "null";
+		if (a == null)
+			return "undefined";
 		return null;
 	}
 	
@@ -114,5 +120,27 @@ public class JSUtils {
 			return ((JSNumber) a).value == ((JSNumber) b).value ? JSAtoms.FALSE : JSAtoms.TRUE;
 		//
 		return JSAtoms.FALSE;
+	}
+	
+	/*
+	 * utilities
+	 */
+	
+	static public JSString typeof(JSPrimitive a) {
+		if (a instanceof JSString)
+			return new JSString("string");
+		if (a instanceof JSNumber)
+			return new JSString("number");
+		if (a instanceof JSBoolean)
+			return new JSString("boolean");
+		if (a instanceof JSNull)
+			return new JSString("null");
+		if (a == null)
+			return new JSString("undefined");
+		if (a instanceof JSFunction)
+			return new JSString("function");
+		if (a instanceof JSObject)
+			return new JSString("object");
+		return null;
 	}
 }

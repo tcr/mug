@@ -22,6 +22,8 @@ public class Parser {
 			
 			Object result = null;
 			try {
+				Object res = cx.evaluateString(scope, "parse(inputSource).toSource()", "<parse-script>", 1, null);
+				System.out.println(res);
 				result = cx.evaluateString(scope, "gen_clojure(parse(inputSource))", "<parse-script>", 1, null);
 			} catch (Exception e) {
 				e.printStackTrace();
