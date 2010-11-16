@@ -11,7 +11,12 @@ public class JSTopLevel {
 	 * prototypes
 	 */
 	
-	final JSObject functionPrototype = new JSObject() { {
+	final JSObject objectPrototype = JSObject.createObjectPrototype();
+	
+	final JSObject functionPrototype = new JSObject(objectPrototype) { {
+		// needed to reference self
+		JSObject functionPrototype = this;
+		
 		set("apply", new JSFunction (functionPrototype) {
 			@Override
 			public JSPrimitive invoke(JSPrimitive ths, int argc, JSPrimitive l0, JSPrimitive l1, JSPrimitive l2, JSPrimitive l3, JSPrimitive l4, JSPrimitive l5, JSPrimitive l6, JSPrimitive l7, JSPrimitive[] rest) throws Exception
@@ -39,7 +44,7 @@ public class JSTopLevel {
 		});
 	} };
 	
-	final JSObject arrayPrototype = new JSObject() { {
+	final JSObject arrayPrototype = new JSObject(objectPrototype) { {
 		set("concat", new JSFunction(functionPrototype) {
 			@Override
 			public JSPrimitive invoke(JSPrimitive ths, int argc, JSPrimitive l0, JSPrimitive l1, JSPrimitive l2, JSPrimitive l3, JSPrimitive l4, JSPrimitive l5, JSPrimitive l6, JSPrimitive l7, JSPrimitive[] rest) throws Exception
@@ -132,7 +137,7 @@ public class JSTopLevel {
 		});
 	} };
 	
-	final JSObject stringPrototype = new JSObject() { {
+	final JSObject stringPrototype = new JSObject(objectPrototype) { {
 		set("charAt", new JSFunction (functionPrototype) {
 			@Override
 			public JSPrimitive invoke(JSPrimitive ths, int argc, JSPrimitive l0, JSPrimitive l1, JSPrimitive l2, JSPrimitive l3, JSPrimitive l4, JSPrimitive l5, JSPrimitive l6, JSPrimitive l7, JSPrimitive[] rest) throws Exception
@@ -195,7 +200,7 @@ public class JSTopLevel {
 		});
 	} };
 	
-	final JSObject numberPrototype = new JSObject() { {
+	final JSObject numberPrototype = new JSObject(objectPrototype) { {
 		set("toString", new JSFunction(functionPrototype) {
 			@Override
 			public JSPrimitive invoke(JSPrimitive ths, int argc, JSPrimitive l0, JSPrimitive l1, JSPrimitive l2, JSPrimitive l3, JSPrimitive l4, JSPrimitive l5, JSPrimitive l6, JSPrimitive l7, JSPrimitive[] rest) throws Exception
@@ -212,10 +217,10 @@ public class JSTopLevel {
 		});
 	} };
 	
-	final JSObject booleanPrototype = new JSObject() { {
+	final JSObject booleanPrototype = new JSObject(objectPrototype) { {
 	} };
 	
-	final JSObject regexpPrototype = new JSObject() { {
+	final JSObject regexpPrototype = new JSObject(objectPrototype) { {
 		set("test", new JSFunction (functionPrototype) {
 			@Override
 			public JSPrimitive invoke(JSPrimitive ths, int argc, JSPrimitive l0, JSPrimitive l1, JSPrimitive l2, JSPrimitive l3, JSPrimitive l4, JSPrimitive l5, JSPrimitive l6, JSPrimitive l7, JSPrimitive[] rest) throws Exception
@@ -252,7 +257,7 @@ public class JSTopLevel {
 		}
 	};
 	
-	final JSObject exportsObject = new JSObject() { };
+	final JSObject exportsObject = new JSObject(objectPrototype) { };
 	
 	final JSFunction printFunction = new JSFunction(functionPrototype) {
 		@Override
@@ -264,7 +269,7 @@ public class JSTopLevel {
 		}
 	};
 	
-	final JSObject mathObject = new JSObject() { {
+	final JSObject mathObject = new JSObject(objectPrototype) { {
 		set("sqrt", new JSFunction(functionPrototype) {
 			@Override
 			public JSPrimitive invoke(JSPrimitive ths, int argc, JSPrimitive l0, JSPrimitive l1, JSPrimitive l2, JSPrimitive l3, JSPrimitive l4, JSPrimitive l5, JSPrimitive l6, JSPrimitive l7, JSPrimitive[] rest) throws Exception
@@ -309,6 +314,10 @@ public class JSTopLevel {
 	/*
 	 * prototype accessors
 	 */
+	
+	public JSObject getObjectPrototype() {
+		return objectPrototype;
+	}
 	
 	public JSObject getArrayPrototype() {
 		return arrayPrototype;

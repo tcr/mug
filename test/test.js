@@ -9,7 +9,7 @@ print(fs.read("test.js"));
 print.apply(null, ["apples"]);
 
 print(5 > 6 ? "5 is greater than 6" : "6 is greater than 5. duh.");
-print("Should be '6-7': " + [5,6,7,8,9].slice(1,2).join('-'))
+print("Should be '6-7': " + [5,6,7,8,9].slice(1,3).join('-'))
 print("Should be '6-7-8': " + [5,6,7,8,9].slice(1,-2).join('-'))
 
 print((63).toString(2));

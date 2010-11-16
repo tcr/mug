@@ -12,35 +12,32 @@ import mug.js.JSModule;
 import mug.js.JSObject;
 import mug.js.JSPrimitive;
 import mug.js.JSString;
+import mug.js.JSTopLevel;
 import mug.js.JSUtils;
 
 public class fs extends JSModule {
 	@Override
 	public JSObject load() throws Exception {
-		return new JSObject() { {
-			set("open", new JSFunction () {
+		final JSTopLevel top = new JSTopLevel();
+		
+		return new JSObject(top.getObjectPrototype()) { {
+			set("open", new JSFunction (top.getFunctionPrototype()) {
 				@Override
-				public JSPrimitive invoke(JSPrimitive ths, int argc,
-						JSPrimitive l0, JSPrimitive l1, JSPrimitive l2,
-						JSPrimitive l3, JSPrimitive l4, JSPrimitive l5,
-						JSPrimitive l6, JSPrimitive l7, JSPrimitive[] rest)
-						throws Exception {
+				public JSPrimitive invoke(JSPrimitive ths, int argc, JSPrimitive l0, JSPrimitive l1, JSPrimitive l2, JSPrimitive l3, JSPrimitive l4, JSPrimitive l5, JSPrimitive l6, JSPrimitive l7, JSPrimitive[] rest) throws Exception
+				{
 					// coerce path
 					String path = JSUtils.asString(l0);
 					// coerce options
 					//[TODO] later
 					
-					return new JSFile(new File(path));
+					return new JSFile(top.getObjectPrototype(), new File(path));
 				}
 			});
 			
-			set("read", new JSFunction () {
+			set("read", new JSFunction (top.getFunctionPrototype()) {
 				@Override
-				public JSPrimitive invoke(JSPrimitive ths, int argc,
-						JSPrimitive l0, JSPrimitive l1, JSPrimitive l2,
-						JSPrimitive l3, JSPrimitive l4, JSPrimitive l5,
-						JSPrimitive l6, JSPrimitive l7, JSPrimitive[] rest)
-						throws Exception {
+				public JSPrimitive invoke(JSPrimitive ths, int argc, JSPrimitive l0, JSPrimitive l1, JSPrimitive l2, JSPrimitive l3, JSPrimitive l4, JSPrimitive l5, JSPrimitive l6, JSPrimitive l7, JSPrimitive[] rest) throws Exception
+				{
 					// coerce path
 					String path = JSUtils.asString(l0);
 					// coerce options
@@ -75,7 +72,8 @@ public class fs extends JSModule {
 			return file;
 		}
 		
-		public JSFile(File file) {
+		public JSFile(JSObject proto, File file) {
+			super(proto);
 			this.file = file;
 		}
 	}

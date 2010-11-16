@@ -82,7 +82,10 @@
 (defmethod compile-code :mug.ast/obj-literal [node context ast mw]
 	(.visitTypeInsn mw Opcodes/NEW qn-js-object)
 	(.visitInsn mw Opcodes/DUP)
-	(.visitMethodInsn mw Opcodes/INVOKESPECIAL, qn-js-object, "<init>", (sig-call sig-void))
+  ; object prototype
+  (asm-toplevel context ast mw)
+  (.visitMethodInsn mw Opcodes/INVOKEVIRTUAL, qn-js-toplevel, "getObjectPrototype", (sig-call (sig-obj qn-js-object)))
+	(.visitMethodInsn mw Opcodes/INVOKESPECIAL, qn-js-object, "<init>", (sig-call (sig-obj qn-js-object) sig-void))
 	(doseq [[k v] (node :props)]
     (.visitInsn mw Opcodes/DUP)
     (.visitLdcInsn mw k)

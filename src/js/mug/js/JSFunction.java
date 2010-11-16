@@ -3,13 +3,9 @@ package mug.js;
 import java.util.HashMap;
 
 public abstract class JSFunction extends JSObject {	
-	public JSFunction() {
-		set("prototype", new JSObject());
-	}
-	
 	public JSFunction(JSObject proto) {
 		super(proto);
-		set("prototype", new JSObject());
+		set("prototype", new JSObject(proto.getProto())); // Function.prototype.__proto__ == Object.prototype
 	}
 	
 	/*
@@ -26,7 +22,8 @@ public abstract class JSFunction extends JSObject {
 	public void set(String key, JSPrimitive value) {
 		if (key.equals("prototype")) {
 			_prototype = value;
-			actual_prototype = value instanceof JSObject ? (JSObject) value : new JSObject();
+			if (value instanceof JSObject)
+				actual_prototype = (JSObject) value;
 		} else
 			super.set(key, value);
 	}

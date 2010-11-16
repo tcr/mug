@@ -30,7 +30,7 @@ function gen_clojure(ast) {
 			return out.concat(["}"]);
 		},
 		"regexp": function(rx, mods) {
-			return [make_string(rx.replace(/\\/g, "\\\\")), make_string(mods)];
+			return [make_string(rx), make_string(mods)];
 		},
 		"assign": function(op, lvalue, rvalue) {
 			return [typeof op == "string" ? make_string(op) : op ? "true" : "false", make(lvalue), make(rvalue)];
