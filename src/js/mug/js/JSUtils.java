@@ -1,9 +1,23 @@
 package mug.js;
 
+import java.util.regex.Pattern;
+
 public class JSUtils {
 	/*
-	 * API
+	 * utilities
 	 */
+	
+	static public boolean isNull(JSPrimitive value) {
+		return value == null || value == JSAtoms.NULL;
+	}
+	
+	static public JSPrimitive[] toJavaArray(JSObject arr) {
+		int len = (int) JSUtils.asNumber(arr.get("length"));
+		JSPrimitive[] out = new JSPrimitive[len];
+		for (int j = 0; j < len; j++)
+			out[j] = arr.get(String.valueOf(j));
+		return out;
+	}
 	
 	static public JSPrimitive[] arguments(int argc, JSPrimitive l0, JSPrimitive l1, JSPrimitive l2, JSPrimitive l3, JSPrimitive l4, JSPrimitive l5, JSPrimitive l6, JSPrimitive l7, JSPrimitive[] rest) {
 		// return an array of arguments
@@ -30,6 +44,9 @@ public class JSUtils {
 	 */
 
 	static public boolean asBoolean(JSPrimitive a) {
+		if (a instanceof JSObject && ((JSObject) a).getPrimitiveValue() != null) 
+			a = ((JSObject) a).getPrimitiveValue();
+		
 		if (a instanceof JSBoolean)
 			return ((JSBoolean) a).value;
 		// 
@@ -40,8 +57,9 @@ public class JSUtils {
 	}
 
 	static public double asNumber(JSPrimitive a) {
-//		if (a instanceof JSObject)
-//			a = ((JSObject) a).getPrimitiveValue();
+		if (a instanceof JSObject && ((JSObject) a).getPrimitiveValue() != null)
+			a = ((JSObject) a).getPrimitiveValue();
+		
 		if (a instanceof JSNumber)
 			return ((JSNumber) a).value;
 		if (a instanceof JSBoolean)
@@ -58,6 +76,9 @@ public class JSUtils {
 	}
 
 	static public String asString(JSPrimitive a) {
+		if (a instanceof JSObject && ((JSObject) a).getPrimitiveValue() != null)
+			a = ((JSObject) a).getPrimitiveValue();
+		
 		if (a instanceof JSString)
 			return ((JSString) a).value;
 		if (a instanceof JSNumber) {
@@ -66,6 +87,10 @@ public class JSUtils {
 		}
 		if (a instanceof JSBoolean)
 			return Boolean.toString(((JSBoolean) a).value);
+		if (a instanceof JSFunction)
+			return "function () { }";
+		if (a instanceof JSObject)
+			return "[object Object]";
 		if (a instanceof JSNull)
 			return "null";
 		if (a == null)
@@ -74,7 +99,7 @@ public class JSUtils {
 	}
 	
 	/*
-	 * arithmetic
+	 * operators
 	 */
 	
 	static public JSPrimitive add(JSPrimitive a, JSPrimitive b) {
@@ -121,11 +146,7 @@ public class JSUtils {
 		//
 		return JSAtoms.FALSE;
 	}
-	
-	/*
-	 * utilities
-	 */
-	
+
 	static public JSString typeof(JSPrimitive a) {
 		if (a instanceof JSString)
 			return new JSString("string");
@@ -142,5 +163,15 @@ public class JSUtils {
 		if (a instanceof JSObject)
 			return new JSString("object");
 		return null;
+	}
+	
+	static public Pattern compilePattern(String expr, String flags) {
+		return Pattern.compile(expr,
+		    (flags.indexOf('i') != -1 ? Pattern.CASE_INSENSITIVE : 0) +
+		    (flags.indexOf('m') != -1 ? Pattern.MULTILINE : 0));
+	}
+	
+	static public boolean isPatternGlobal(String flags) {
+		return flags.indexOf('g') != -1;
 	}
 }

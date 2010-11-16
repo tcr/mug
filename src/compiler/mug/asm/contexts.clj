@@ -25,11 +25,12 @@
         qn (qn-js-context (context-index context ast))]
 		(.visitCode mw)
 		(.visitVarInsn mw Opcodes/ALOAD, 0)
-		(.visitMethodInsn mw Opcodes/INVOKESPECIAL, qn-js-function, "<init>", (sig-call sig-void))
+    (.visitVarInsn mw Opcodes/ALOAD, 1)
+		(.visitMethodInsn mw Opcodes/INVOKESPECIAL, qn-js-function, "<init>", (sig-call (sig-obj qn-js-object) sig-void))
  
-    (doseq [parent (context :parents)]
+    (doseq [[i parent] (index (context :parents))]
       (.visitVarInsn mw Opcodes/ALOAD, 0)
-      (.visitVarInsn mw Opcodes/ALOAD, (+ parent 1))
+      (.visitVarInsn mw Opcodes/ALOAD, (+ i 2))
       (.visitFieldInsn mw Opcodes/PUTFIELD, qn, (ident-scope parent), (sig-obj (qn-js-scope parent))))
     
 		(.visitInsn mw Opcodes/RETURN)

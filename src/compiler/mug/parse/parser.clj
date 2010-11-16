@@ -29,6 +29,7 @@
 (defmethod walk-input :array [[_ & elems] walker]
   (apply concat (map #(walker %1 walker) elems)))
 (defmethod walk-input :object [[_ props] walker]
+  
   (apply concat (map (fn [[k v]] (walker v walker)) props)))
 (defmethod walk-input :regexp [[_ expr flags] walker]
   [])
@@ -65,7 +66,7 @@
 (defmethod walk-input :label [[_ name form] walker]
   (walker form walker))
 (defmethod walk-input :if [[_ test then else] walker]
-  (concat (walker test walker) (walker then walker) (walker else walker)))
+  (concat (walker test walker) (walker then walker) (if else (walker else walker) [])))
 (defmethod walk-input :with [[_ obj body] walker]
   (apply concat (conj (map #(walker %1 walker) body) (walker obj walker))))
 (defmethod walk-input :var [[_ bindings] walker]
@@ -165,27 +166,31 @@
 
   (set (globals-walker context globals-walker)))
 
+; find context parents
+
 (defn find-context-info [toplevel & [parents]]
 	(defmulti contexts-walker (fn [node & args] (first node)) :default :no-match)
-	(defmethod contexts-walker :no-match [node & args]
-	  (walk-input node contexts-walker))
-	(defmethod contexts-walker :toplevel [node walker]
-    (let [[_ & stats] node]
+	(defmethod contexts-walker :no-match [node parents walker]
+	  (walk-input node walker))
+	(defmethod contexts-walker :toplevel [node parents walker]
+	  (let [[_ & stats] node]
 	    (concat
 	      [[node parents]]
-        (apply concat (map #(find-context-info %1 (conj (or parents []) node)) stats)))))
-	(defmethod contexts-walker :function [node walker]
-    (let [[_ name args & stats] node]
+	      (apply concat (map #(find-context-info %1 (conj (or parents []) node)) stats)))))
+	(defmethod contexts-walker :function [node parents walker]
+	  (let [[_ name args & stats] node]
 	    (concat
 	      [[node parents]]
-        (apply concat (map #(find-context-info %1 (conj (or parents []) node)) stats)))))
-	(defmethod contexts-walker :defun [node walker]
-    (let [[_ name args & stats] node]
+	      (apply concat (map #(find-context-info %1 (conj (or parents []) node)) stats)))))
+	(defmethod contexts-walker :defun [node parents walker]
+	  (let [[_ name args & stats] node]
 	    (concat
 	      [[node parents]]
-        (apply concat (map #(find-context-info %1 (conj (or parents []) node)) stats)))))
+	    (apply concat (map #(find-context-info %1 (conj (or parents []) node)) stats)))))
+ 
+  (contexts-walker toplevel parents #(contexts-walker %1 parents %2)))
 
-  (contexts-walker toplevel contexts-walker))
+; contexts
 
 (defn find-contexts [toplevel]
   (let [info (find-context-info toplevel)]
@@ -364,7 +369,7 @@
 
 (defn gen-ast [input]
   (js-ast
-    (vec (map #(do (println %1) (gen-ast-context %1 input)) (find-contexts input)))
+    (vec (map #(do (println %1) (println (gen-ast-context %1 input)) (gen-ast-context %1 input)) (find-contexts input)))
     []
     (set (find-accessors input))
     (set (find-numbers input))

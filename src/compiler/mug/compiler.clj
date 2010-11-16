@@ -31,7 +31,8 @@
   (println (str "AST: " ast))
   
   ; update atom
-  (swap! pkg-compiled #(identity %2) (str "mug/modules/" (replace-str "." "/" qn) "$"))
+  (swap! pkg-compiled #(identity %2)
+    (str "mug/modules/" (replace-str "." "/" (replace-str "-" "_" qn)) "$"))
 
   ; closures
   (println " Closures...")

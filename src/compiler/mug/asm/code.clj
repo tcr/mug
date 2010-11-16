@@ -8,9 +8,23 @@
 ;
 ; local variable mapping:
 ;   0    this object
-;   1    JS this object at a given time (function object, global object)
-;   2-9  arguments
-;   10    current scope object
+;   1    JS "this" object at a given time (function object, global object)
+;   2-x  arguments
+;   x+1    current scope object
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;
+; utilities
+;
+
+(defn asm-toplevel [context ast mw]
+  (if (= (context-index context ast) 0)
+    (.visitVarInsn mw Opcodes/ALOAD, (+ 1 3 arg-limit))
+    (do
+      (.visitVarInsn mw Opcodes/ALOAD, 0)
+      (.visitFieldInsn mw Opcodes/GETFIELD, (qn-js-context (index-of (ast :contexts) context)),
+	      (str "SCOPE_" 0), (sig-obj (qn-js-scope 0)))
+      (.visitTypeInsn mw Opcodes/CHECKCAST, qn-js-toplevel))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;
@@ -36,18 +50,39 @@
 	(.visitFieldInsn mw Opcodes/GETSTATIC (qn-js-constants) (ident-str (index-of (ast :strings) (node :value))) (sig-obj qn-js-string)))
 
 (defmethod compile-code :mug.ast/regex-literal [node context ast mw]
-	(.visitFieldInsn mw Opcodes/GETSTATIC (qn-js-constants) (ident-regex (index-of (ast :regexes) [(node :expr) (node :flags)])) (sig-obj qn-js-object)))
+	(.visitTypeInsn mw Opcodes/NEW qn-js-regexp)
+	(.visitInsn mw Opcodes/DUP)
+  (asm-toplevel context ast mw)
+  (.visitMethodInsn mw Opcodes/INVOKEVIRTUAL, qn-js-toplevel, "getRegExpPrototype", (sig-call (sig-obj qn-js-object)))
+	(.visitFieldInsn mw Opcodes/GETSTATIC (qn-js-constants) (ident-regex (index-of (ast :regexes) [(node :expr) (node :flags)])) (sig-obj qn-pattern))
+  (.visitLdcInsn mw (node :flags))
+	(.visitMethodInsn mw Opcodes/INVOKESTATIC, qn-js-utils, "isPatternGlobal", (sig-call (sig-obj qn-string) sig-boolean))
+	(.visitMethodInsn mw Opcodes/INVOKESPECIAL, qn-js-regexp, "<init>", (sig-call (sig-obj qn-js-object) (sig-obj qn-pattern) sig-boolean sig-void)))
 
 (defmethod compile-code :mug.ast/array-literal [node context ast mw]
-  (compile-code
-    {:type :mug.ast/call-expr
-     :ref {:type :mug.ast/scope-ref-expr :value "Array"}
-     :args (node :exprs)} context ast mw))
+	(.visitTypeInsn mw Opcodes/NEW qn-js-array)
+	(.visitInsn mw Opcodes/DUP)
+  (asm-toplevel context ast mw)
+  (.visitMethodInsn mw Opcodes/INVOKEVIRTUAL, qn-js-toplevel, "getArrayPrototype", (sig-call (sig-obj qn-js-object)))
+	(.visitMethodInsn mw Opcodes/INVOKESPECIAL, qn-js-array, "<init>", (sig-call (sig-obj qn-js-object) sig-void))
+	(.visitInsn mw Opcodes/DUP)
+  (.visitIntInsn mw Opcodes/BIPUSH, (count (node :exprs)))
+  (.visitTypeInsn mw Opcodes/ANEWARRAY, qn-js-primitive)
+  (doseq [[i expr] (index (node :exprs))]
+    (.visitInsn mw Opcodes/DUP)
+    (.visitIntInsn mw Opcodes/BIPUSH, i)
+    (compile-code expr context ast mw)
+    (.visitInsn mw Opcodes/AASTORE))
+  (.visitMethodInsn mw Opcodes/INVOKEVIRTUAL, qn-js-array, "append", (sig-call (sig-array (sig-obj qn-js-primitive)) sig-void)))
+;  (compile-code
+;    {:type :mug.ast/call-expr
+;     :ref {:type :mug.ast/scope-ref-expr :value "Array"}
+;     :args (node :exprs)} context ast mw))
 
 (defmethod compile-code :mug.ast/obj-literal [node context ast mw]
-	(.visitTypeInsn mw Opcodes/NEW (sig-obj qn-js-object))
+	(.visitTypeInsn mw Opcodes/NEW qn-js-object)
 	(.visitInsn mw Opcodes/DUP)
-	(.visitMethodInsn mw Opcodes/INVOKESPECIAL, (sig-obj qn-js-object), "<init>", (sig-call sig-void))
+	(.visitMethodInsn mw Opcodes/INVOKESPECIAL, qn-js-object, "<init>", (sig-call sig-void))
 	(doseq [[k v] (node :props)]
     (.visitInsn mw Opcodes/DUP)
     (.visitLdcInsn mw k)
@@ -60,6 +95,9 @@
     ; create context instance
     (.visitTypeInsn mw Opcodes/NEW, qn)
 		(.visitInsn mw Opcodes/DUP)
+    ; function prototype
+    (asm-toplevel context ast mw)
+    (.visitMethodInsn mw Opcodes/INVOKEVIRTUAL, qn-js-toplevel, "getFunctionPrototype", (sig-call (sig-obj qn-js-object)))
     ; load scopes
     (doseq [parent (closure :parents)]
       (if (= ((ast :contexts) parent) context)
@@ -74,13 +112,7 @@
 ;
 
 (defn asm-to-object [context ast mw]
-  (if (= (context-index context ast) 0)
-    (.visitVarInsn mw Opcodes/ALOAD, (+ 1 3 arg-limit))
-    (do
-      (.visitVarInsn mw Opcodes/ALOAD, 0)
-	    (.visitFieldInsn mw Opcodes/GETFIELD, (qn-js-context (index-of (ast :contexts) context)),
-		    (str "SCOPE_" 0), (sig-obj (qn-js-scope 0)))
-      (.visitTypeInsn Opcodes/CHECKCAST, qn-js-toplevel)))
+  (asm-toplevel context ast mw)
   (.visitMethodInsn mw Opcodes/INVOKEVIRTUAL, qn-js-primitive, "toObject", (sig-call (sig-obj qn-js-toplevel) (sig-obj qn-js-object))))
 
 (defn asm-compile-closure-search-scopes [name parents context ast mw]
@@ -97,7 +129,7 @@
 		            (str "SCOPE_" 0), (sig-obj (qn-js-scope 0)))))
 		      (.visitMethodInsn mw Opcodes/INVOKEVIRTUAL, qn-js-toplevel,
 	          (str "get_" name), (sig-call (sig-obj qn-js-primitive))))
-	      (println (str " . [ERROR] Not found: " name)))
+	      (throw (new Exception (str "Identifier not defined in any scope: " name))))
 		  (if (contains? (context-scope-vars ((ast :contexts) parent)) name)
 		    (do
 		      (println (str " . Found in higher scope: " name))
@@ -107,7 +139,7 @@
 		      (.visitMethodInsn mw Opcodes/INVOKEVIRTUAL, (qn-js-scope parent),
 	          (str "get_" name), (sig-call (sig-obj qn-js-primitive))))
 	      (do
-          (println (str " . Not found in scope " (context-scope-vars ((ast :contexts) parent))))
+          (println (str " . Not found in parent scope " (context-scope-vars ((ast :contexts) parent))))
           (recur (last parents) (butlast parents)))))))
 
 (defmethod compile-code :mug.ast/scope-ref-expr [node context ast mw]
@@ -118,7 +150,7 @@
       (.visitVarInsn mw Opcodes/ALOAD, (+ 1 3 arg-limit))
       (.visitMethodInsn mw Opcodes/INVOKEVIRTUAL, (qn-js-scope (context-index context ast)), (str "get_" (node :value)), (sig-call (sig-obj qn-js-primitive))))
     ; we have to search parent scopes
-    (do (println (str " . Now looking for " (node :value) " in parent scopes."))
+    (do
       (asm-compile-closure-search-scopes (node :value) (context :parents) context ast mw))))
 
 (defmethod compile-code :mug.ast/static-ref-expr [node context ast mw]
@@ -203,7 +235,7 @@
   (.visitInsn mw Opcodes/SWAP)
   (.visitLdcInsn mw (node :value))
   (.visitInsn mw Opcodes/SWAP)
-	(.visitMethodInsn mw Opcodes/INVOKEVIRTUAL, qn-js-primitive, "set", (sig-call (sig-obj qn-string) (sig-obj qn-js-primitive) sig-void)))
+	(.visitMethodInsn mw Opcodes/INVOKEVIRTUAL, qn-js-object, "set", (sig-call (sig-obj qn-string) (sig-obj qn-js-primitive) sig-void)))
 
 (defmethod compile-code :mug.ast/dyn-assign-expr [node context ast mw]
 	(compile-code (node :expr) context ast mw)

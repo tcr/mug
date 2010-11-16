@@ -35,28 +35,30 @@
 (def qn-js-utils (str pkg-mug "JSUtils"))
 (def qn-js-function (str pkg-mug "JSFunction"))
 (def qn-js-object (str pkg-mug "JSObject"))
-(def qn-js-regex (str pkg-mug "JSRegExp"))
+(def qn-js-array (str pkg-mug "JSArray"))
+(def qn-js-regexp (str pkg-mug "JSRegExp"))
 (def qn-js-module (str pkg-mug "JSModule"))
 
 (def qn-js-atoms (str pkg-mug "JSAtoms"))
-(defn qn-js-constants [] (str @pkg-compiled "JSConstants"))
+(defn qn-js-constants [] (str @pkg-compiled "constants"))
 
 (def qn-js-toplevel (str pkg-mug "JSTopLevel"))
 
 (defn qn-js-script [] (chop @pkg-compiled))
-(defn qn-js-scriptscope [] (str @pkg-compiled "JSScriptScope"))
+(defn qn-js-scriptscope [] (str @pkg-compiled "scope$script"))
 (defn qn-js-context [x] 
   (if (= x 0)
     (qn-js-script)
-    (str @pkg-compiled "JSContext$" x)))
+    (str @pkg-compiled "context$" x)))
 (defn qn-js-scope [x]
   (if (= x 0)
     (qn-js-scriptscope)
-    (str @pkg-compiled "JSScope$" x)))
+    (str @pkg-compiled "scope$" x)))
 
 ;;;[TODO] these should be "sig-void", "sig-double", etc.
 (def qn-object "java/lang/Object")
 (def qn-string "java/lang/String")
+(def qn-pattern "java/util/regex/Pattern")
 (def sig-void "V")
 (def sig-double "D")
 (def sig-integer "I")
@@ -66,14 +68,13 @@
 (defn sig-obj [x] (str "L" x ";"))
 (defn sig-array [x] (str "[" x))
 
-;(defn sig-execute [] (sig-call (sig-obj (qn-js-scope 0)) (sig-obj qn-js-primitive))) deprecated
 (defn sig-load [] (sig-call (sig-obj qn-js-object)))
 (def sig-instantiate (apply sig-call
   (conj (conj (into [sig-integer]
     (vec (repeat arg-limit (sig-obj qn-js-primitive))))
     (sig-array (sig-obj qn-js-primitive))) (sig-obj qn-js-primitive))))
 (def sig-invoke (apply sig-call
-  (conj (conj (into [(sig-obj qn-js-object) sig-integer]
+  (conj (conj (into [(sig-obj qn-js-primitive) sig-integer]
     (vec (repeat arg-limit (sig-obj qn-js-primitive))))
     (sig-array (sig-obj qn-js-primitive))) (sig-obj qn-js-primitive))))
 
@@ -81,7 +82,7 @@
 (defmethod sig-context-init :mug.ast/script-context [context ast]
   (sig-call sig-void))
 (defmethod sig-context-init :mug.ast/closure-context [context ast] 
-  (apply sig-call (conj (vec (map (fn [x] (sig-obj (qn-js-scope x))) (context :parents))) sig-void)))  
+  (apply sig-call (conj (into [(sig-obj qn-js-object)] (vec (map (fn [x] (sig-obj (qn-js-scope x))) (context :parents)))) sig-void)))  
 
 (defn ident-num [x] (str "NUM_" x))
 (defn ident-str [x] (str "STR_" x))

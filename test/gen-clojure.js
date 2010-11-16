@@ -1,3 +1,9 @@
+//=========================================================
+// generate clojure ast
+//=========================================================
+
+var gen_clojure = null;
+
 function gen_clojure(ast) {
 	var generators = {
 		"atom": function(name) {
@@ -147,8 +153,8 @@ function gen_clojure(ast) {
 	function make(node) {
 		var type = node[0];
 		var gen = generators[type];
-		if (!gen)
-			throw new Error("Can't find generator for \"" + type + "\"");
+//		if (!gen)
+//			throw new Error("Can't find generator for \"" + type + "\"");
 		return add_spaces(["(:" + type].concat(gen.apply(type, node.slice(1))).concat([")"]));
 	};
 
@@ -157,6 +163,7 @@ function gen_clojure(ast) {
 
 ////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////
+
 
 function best_of(a) {
 	if (a.length == 1) {
@@ -208,3 +215,17 @@ function make_string(str) {
 function add_spaces(a) {
 	return a.join(" ");
 };
+
+//=========================================================
+// exports
+//=========================================================
+
+exports.gen_clojure = gen_clojure;
+
+//=========================================================
+// test
+//=========================================================
+
+print("START.");
+var test = ["toplevel", [["defun", "log", ["a"], [["stat", ["call", ["name", "print"], [["name", "a"]]]]]]]];
+print(gen_clojure(test));
