@@ -1,18 +1,10 @@
-var fs = require("fs");
-
 /*
 var io = require("io");
+var fs = require("fs");
 
 io.log("Called IO module. She didn't call back. :(");
 print(fs.read("test.js"));
 */
-
-print("FS TESTBENCH:\n");
-
-print("Test.js filesize: " + fs.open("test.js").read().length);
-
-print("\n");
-print("TESTBENCH:\n");
 
 print.apply(null, ["apples"]);
 

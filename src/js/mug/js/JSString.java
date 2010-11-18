@@ -13,8 +13,19 @@ public class JSString extends JSPrimitive {
 	}
 	
 	public JSObject toObject(JSTopLevel top) {
-		JSObject obj = new JSObject(top.getStringPrototype());
-		obj.setPrimitiveValue(this);
-		return obj;
+		return new JSStringObject(top.getStringPrototype(), this);
+	}
+	
+	public static class JSStringObject extends JSObject {
+		public JSStringObject(JSObject proto, JSString value) {
+			super(proto);
+			setPrimitiveValue(value);
+		}
+		
+		public JSPrimitive get(String key) {
+			if (key.equals("length"))
+				return new JSNumber(((JSString) this.getPrimitiveValue()).value.length());
+			return super.get(key);
+		}
 	}
 }
