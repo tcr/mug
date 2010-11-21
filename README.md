@@ -23,8 +23,8 @@ the "exports" object:
 Why?
 ----
 
-* Faster than Rhino, sacrificing ECMAScript conformity/Java interoperability.
-* Compiled JavaScript has little overhead as possible compared to a full engine to support eval() constructs). Preferrable for embedded devices.
+* Faster than Rhino, sacrificing ECMAScript conformity for speed.
+* Compiled JavaScript has as little overhead as possible compared to a full interpreter. Preferrable for embedded devices.
 * It's a neat party trick.
 
 Roadmap
@@ -34,7 +34,7 @@ To-dos, in some particular order.
 
 *ECMAScript Implementation*
 
-* Currently unsupported constructs: labels, `with`, `void`, `try/catch/throw`, `break/continue`, `switch/case/default`
+* Currently unsupported constructs: `try/catch/throw`, `switch/case/default`, labels, `with`, `void`
 * Incomplete standard library
 * Incomplete operator cases for some combinations of types
 * Replace regexp implementation (java.util.regex) 
@@ -53,6 +53,10 @@ To-dos, in some particular order.
 *Debug/Logging*
 
 * Compile line numbers/filenames into bytecode for debugging
+
+*ASM*
+
+* More functional ASM building (constructing bytecode AST, then compiling)
 
 *Optimizations*
 

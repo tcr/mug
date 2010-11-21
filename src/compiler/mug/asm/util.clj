@@ -102,3 +102,16 @@
 
 (defn context-index [context ast]
   (index-of (ast :contexts) context))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;
+; mutable compiler state
+;
+
+(def state (atom {}))
+
+(defn get-state [key]
+  (@state key))
+
+(defn update-state [key val]
+  (swap! state assoc key val))

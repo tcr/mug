@@ -346,22 +346,20 @@
 ;(defmethod gen-ast-code :try [[_ body catch finally] input] )
 ;(defmethod gen-ast-code :throw [[_ expr] input] )
 
-;(defmethod gen-ast-code :break [[_ label] input] )
-;(defmethod gen-ast-code :continue [[_ label] input] )
+(defmethod gen-ast-code :break [[_ label] input]
+  (break-stat label))
+(defmethod gen-ast-code :continue [[_ label] input]
+  (continue-stat label))
 (defmethod gen-ast-code :while [[_ cond body] input]
   (while-stat (gen-ast-code cond input) (gen-ast-code body input)))
 (defmethod gen-ast-code :do [[_ cond body] input]
   (do-while-stat (gen-ast-code cond input) (gen-ast-code body input)))
 (defmethod gen-ast-code :for [[_ init cond step body] input]
-  (apply block-stat
-    (into (if init
-        (if (= (first init) :var)
-          [(gen-ast-code init input)]
-          [(expr-stat (gen-ast-code init input))])
-        [])
-      [(while-stat (if cond (gen-ast-code cond input) (boolean-literal true))
-         (apply block-stat (into [(gen-ast-code body input)]
-           (if step [(expr-stat (gen-ast-code step input))] []))))])))
+  (for-stat
+    (gen-ast-code init input)
+    (gen-ast-code cond input)
+    (gen-ast-code step input)
+    (gen-ast-code body input)))
 (defmethod gen-ast-code :for-in [[_ var name obj body] input]
   (for-in-stat name (gen-ast-code obj input) (gen-ast-code body input)))
 ;(defmethod gen-ast-code :switch [[_ val body] input] )

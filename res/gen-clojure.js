@@ -109,10 +109,10 @@ function gen_clojure(ast) {
 
 
 		"break": function(label) {
-			return [make_string(name)];
+			return [label ? make_string(label) : "nil"];
 		},
 		"continue": function(label) {
-			return [make_string(name)];
+			return [label ? make_string(label) : "nil"];
 		},
 		"while": function(condition, block) {
 			return [make(condition), make(block)];

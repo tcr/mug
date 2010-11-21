@@ -17,6 +17,8 @@
 ; utilities
 ;
 
+; top-level asm
+
 (defn asm-toplevel [context ast mw]
   (if (= (context-index context ast) 0)
     (.visitVarInsn mw Opcodes/ALOAD, (+ 1 3 arg-limit))
@@ -25,6 +27,60 @@
       (.visitFieldInsn mw Opcodes/GETFIELD, (qn-js-context (index-of (ast :contexts) context)),
 	      (str "SCOPE_" 0), (sig-obj (qn-js-scope 0)))
       (.visitTypeInsn mw Opcodes/CHECKCAST, qn-js-toplevel))))
+
+; to-object asm 
+
+(defn asm-to-object [context ast mw]
+  (asm-toplevel context ast mw)
+  (.visitMethodInsn mw Opcodes/INVOKEVIRTUAL, qn-js-primitive, "toObject", (sig-call (sig-obj qn-js-toplevel) (sig-obj qn-js-object))))
+
+; search scopes
+; asm loads scope object, fn returns qn of scope object
+
+(defn asm-compile-closure-search-scopes [name parents context ast mw]
+  (if (contains? (context-scope-vars context) name)
+    ; variable found in current scope
+    (do
+      (.visitVarInsn mw Opcodes/ALOAD, (+ 1 3 arg-limit))
+      (qn-js-scope (context-index context ast)))
+  (loop [parent (last parents) parents (butlast parents)]
+	  (if (nil? parent)
+	    (if (contains? script-default-vars name)
+        ; found variable in global scope
+	      (do
+	        (println (str " . Found in global scope: " name))
+          (if (= (context-index context ast) 0) ; script-context scope inherits from globals
+            (.visitVarInsn mw Opcodes/ALOAD, (+ 1 3 arg-limit))
+            (do
+		          (.visitVarInsn mw Opcodes/ALOAD, 0)
+		          (.visitFieldInsn mw Opcodes/GETFIELD, (qn-js-context (index-of (ast :contexts) context)),
+		            (str "SCOPE_" 0), (sig-obj (qn-js-scope 0)))))
+          qn-js-toplevel)
+        ; identifier not found at all
+	      (throw (new Exception (str "Identifier not defined in any scope: " name))))
+		  (if (contains? (context-scope-vars ((ast :contexts) parent)) name)
+        ; found variable in ancestor scope
+		    (do
+		      (println (str " . Found in higher scope: " name))
+		      (.visitVarInsn mw Opcodes/ALOAD, 0)
+		      (.visitFieldInsn mw Opcodes/GETFIELD, (qn-js-context (index-of (ast :contexts) context)),
+		        (str "SCOPE_" parent), (sig-obj (qn-js-scope parent)))
+          (qn-js-scope parent))
+        ; must recur to parent scope
+	      (do
+          (println (str " . Not found in parent scope " (context-scope-vars ((ast :contexts) parent))))
+          (recur (last parents) (butlast parents))))))))
+
+; label state
+
+(defn push-label [label continue break]
+  (update-state (list :label label)
+    (conj (or (get-state (list :label label)) []) {:break break :continue continue})))
+(defn pop-label [label]
+  (update-state (list :label label)
+    (pop (get-state (list :label label)))))
+(defn get-label [label]
+  (last (or (get-state (list :label label)) [])))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;
@@ -74,10 +130,6 @@
     (compile-code expr context ast mw)
     (.visitInsn mw Opcodes/AASTORE))
   (.visitMethodInsn mw Opcodes/INVOKEVIRTUAL, qn-js-array, "append", (sig-call (sig-array (sig-obj qn-js-primitive)) sig-void)))
-;  (compile-code
-;    {:type :mug.ast/call-expr
-;     :ref {:type :mug.ast/scope-ref-expr :value "Array"}
-;     :args (node :exprs)} context ast mw))
 
 (defmethod compile-code :mug.ast/obj-literal [node context ast mw]
 	(.visitTypeInsn mw Opcodes/NEW qn-js-object)
@@ -95,7 +147,7 @@
 (defmethod compile-code :mug.ast/func-literal [node context ast mw]
   (let [qn (qn-js-context (node :closure))
         closure ((ast :contexts) (node :closure))]
-    ; create context instance
+    ; create context instance``
     (.visitTypeInsn mw Opcodes/NEW, qn)
 		(.visitInsn mw Opcodes/DUP)
     ; function prototype
@@ -113,51 +165,6 @@
 ;
 ; expressions
 ;
-
-(defn asm-to-object [context ast mw]
-  (asm-toplevel context ast mw)
-  (.visitMethodInsn mw Opcodes/INVOKEVIRTUAL, qn-js-primitive, "toObject", (sig-call (sig-obj qn-js-toplevel) (sig-obj qn-js-object))))
-
-; SEARCH SCOPES
-; loads scope object, then return the qn of the scope
-; in which it is located
-(defn asm-compile-closure-search-scopes [name parents context ast mw]
-  (if (contains? (context-scope-vars context) name)
-    ; variable found in current scope
-    (do
-      (.visitVarInsn mw Opcodes/ALOAD, (+ 1 3 arg-limit))
-      (qn-js-scope (context-index context ast)))
-  (loop [parent (last parents) parents (butlast parents)]
-	  (if (nil? parent)
-	    (if (contains? script-default-vars name)
-        ; found variable in global scope
-	      (do
-	        (println (str " . Found in global scope: " name))
-          (if (= (context-index context ast) 0) ; script-context scope inherits from globals
-            (.visitVarInsn mw Opcodes/ALOAD, (+ 1 3 arg-limit))
-            (do
-		          (.visitVarInsn mw Opcodes/ALOAD, 0)
-		          (.visitFieldInsn mw Opcodes/GETFIELD, (qn-js-context (index-of (ast :contexts) context)),
-		            (str "SCOPE_" 0), (sig-obj (qn-js-scope 0)))))
-          qn-js-toplevel)
-;		      (.visitMethodInsn mw Opcodes/INVOKEVIRTUAL, qn-js-toplevel,
-;	          (str "get_" name), (sig-call (sig-obj qn-js-primitive))))
-        ; identifier not found at all
-	      (throw (new Exception (str "Identifier not defined in any scope: " name))))
-		  (if (contains? (context-scope-vars ((ast :contexts) parent)) name)
-        ; found variable in ancestor scope
-		    (do
-		      (println (str " . Found in higher scope: " name))
-		      (.visitVarInsn mw Opcodes/ALOAD, 0)
-		      (.visitFieldInsn mw Opcodes/GETFIELD, (qn-js-context (index-of (ast :contexts) context)),
-		        (str "SCOPE_" parent), (sig-obj (qn-js-scope parent)))
-          (qn-js-scope parent))
-;		      (.visitMethodInsn mw Opcodes/INVOKEVIRTUAL, (qn-js-scope parent),
-;	          (str "get_" name), (sig-call (sig-obj qn-js-primitive))))
-        ; must recur to parent scope
-	      (do
-          (println (str " . Not found in parent scope " (context-scope-vars ((ast :contexts) parent))))
-          (recur (last parents) (butlast parents))))))))
 
 (defmethod compile-code :mug.ast/scope-ref-expr [node context ast mw]
   (println (str "Seeking var \"" (node :value) "\" in current scope (" (context-scope-vars context) ")"))
@@ -443,6 +450,8 @@
 
 (defmethod compile-code :mug.ast/while-stat [node context ast mw]
   (let [true-case (new Label) false-case (new Label)]
+    (push-label nil true-case false-case)
+    
     (.visitLabel mw true-case)
     (compile-code (node :expr) context ast mw)
     (.visitMethodInsn mw Opcodes/INVOKESTATIC, qn-js-utils, "asBoolean", (sig-call (sig-obj qn-js-primitive) sig-boolean))
@@ -450,16 +459,49 @@
     (when (node :stat)
       (compile-code (node :stat) context ast mw))
     (.visitJumpInsn mw, Opcodes/GOTO, true-case)
-    (.visitLabel mw false-case)))
+    (.visitLabel mw false-case)
+    
+    (pop-label nil)))
 
 (defmethod compile-code :mug.ast/do-while-stat [node context ast mw]
-  (let [true-case (new Label)]
+  (let [true-case (new Label) false-case (new Label)]
+    (push-label nil true-case false-case)
+    
     (.visitLabel mw true-case)
     (compile-code (node :stat) context ast mw)
     (compile-code (node :expr) context ast mw)
     (.visitMethodInsn mw Opcodes/INVOKESTATIC, qn-js-utils, "asBoolean", (sig-call (sig-obj qn-js-primitive) sig-boolean))
     (.visitJumpInsn mw, Opcodes/IFNE, true-case)
-    ))
+    (.visitLabel mw false-case)
+    
+    (pop-label nil)))
+
+(defmethod compile-code :mug.ast/for-stat [node context ast mw]
+  (when (node :init)
+    (compile-code (node :init) context ast mw)
+    (when (isa? (first (node :init)) :mug.ast/expr)
+      (.visitInsn mw Opcodes/POP)))
+  (let [start-label (new Label) continue-label (new Label) break-label (new Label)]
+    (push-label nil continue-label break-label)
+    
+    (.visitLabel mw start-label)
+    (when (node :expr)
+      (println (node :expr))
+      (compile-code (node :expr) context ast mw)
+      (.visitMethodInsn mw Opcodes/INVOKESTATIC, qn-js-utils, "asBoolean", (sig-call (sig-obj qn-js-primitive) sig-boolean))
+      (.visitJumpInsn mw, Opcodes/IFEQ, break-label))
+    (when (node :stat)
+      (println (node :stat))
+      (compile-code (node :stat) context ast mw))
+    (.visitLabel mw continue-label)
+    (when (node :step)
+      (println (node :step))
+      (compile-code (node :step) context ast mw)
+      (.visitInsn mw Opcodes/POP))
+    (.visitJumpInsn mw, Opcodes/GOTO, start-label)
+    (.visitLabel mw break-label)
+    
+    (pop-label nil)))
 
 (defmethod compile-code :mug.ast/if-stat [node context ast mw]
   (compile-code (node :expr) context ast mw)
@@ -473,8 +515,20 @@
       (compile-code (node :else-stat) context ast mw))
     (.visitLabel mw true-case)))
 
+(defmethod compile-code :mug.ast/break-stat [node context ast mw]
+  (if (> (count (get-label nil)) 0)
+    (.visitJumpInsn mw, Opcodes/GOTO, ((get-label nil) :break))
+    (throw (new Exception "Cannot break outside of loop"))))
+
+(defmethod compile-code :mug.ast/continue-stat [node context ast mw]
+  (if (> (count (get-label nil)) 0)
+    (.visitJumpInsn mw, Opcodes/GOTO, ((get-label nil) :continue))
+    (throw (new Exception "Cannot continue outside of loop"))))
+
 (defmethod compile-code :mug.ast/for-in-stat [node context ast mw]
 	(let [check-label (new Label) stat-label (new Label)]
+    (push-label nil stat-label check-label)
+   
     (compile-code (node :expr) context ast mw)
     (asm-to-object context ast mw)
 		(.visitMethodInsn mw, Opcodes/INVOKEVIRTUAL, "mug/js/JSObject", "getKeys", "()[Ljava/lang/String;")
@@ -504,7 +558,9 @@
 			(.visitInsn mw, Opcodes/SWAP)
 			(.visitInsn mw, Opcodes/ARRAYLENGTH)
 			(.visitJumpInsn mw, Opcodes/IF_ICMPLT, stat-label)
-      (.visitInsn mw, Opcodes/POP2)))
+      (.visitInsn mw, Opcodes/POP2)
+      
+      (pop-label nil)))
 
 (comment
 (defmethod compile-code :mug.ast/class-stat [node context ast mw]
