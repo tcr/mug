@@ -6,6 +6,7 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;
 ; object
+; NOTE: not currently used
 ;
 
 (defn asm-compile-object-methods [accessors cw]

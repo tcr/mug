@@ -50,7 +50,8 @@ public class JSUtils {
 		if (a instanceof JSBoolean)
 			return ((JSBoolean) a).value;
 		// 
-		// 
+		if (a instanceof JSString)
+			return ((JSString) a).value.length() > 0;
 		if (a instanceof JSObject)
 			return true;
 		return false;
@@ -89,6 +90,16 @@ public class JSUtils {
 			return Boolean.toString(((JSBoolean) a).value);
 		if (a instanceof JSFunction)
 			return "function () { }";
+		if (a instanceof JSArray) {
+			JSPrimitive[] arr = JSUtils.toJavaArray((JSObject) a);
+			StringBuffer buf = new StringBuffer();
+			for (int i = 0; i < arr.length; i++) {
+				if (i > 0)
+					buf.append(",");
+				buf.append(asString(arr[i]));
+			}
+			return buf.toString();
+		}
 		if (a instanceof JSObject)
 			return "[object Object]";
 		if (a instanceof JSNull)
@@ -117,6 +128,8 @@ public class JSUtils {
 		if (a instanceof JSNumber && b instanceof JSNumber)
 			return ((JSNumber) a).value == ((JSNumber) b).value ? JSAtoms.TRUE : JSAtoms.FALSE;
 		//
+		if ((a == null || JSAtoms.NULL.equals(a)) && (b == null || JSAtoms.NULL.equals(b)))
+			return JSAtoms.TRUE;
 		return JSAtoms.FALSE;
 	}
 	
@@ -126,7 +139,9 @@ public class JSUtils {
 		if (a instanceof JSNumber && b instanceof JSNumber)
 			return ((JSNumber) a).value == ((JSNumber) b).value ? JSAtoms.FALSE : JSAtoms.TRUE;
 		//
-		return JSAtoms.FALSE;
+		if ((a == null || JSAtoms.NULL.equals(a)) && (b == null || JSAtoms.NULL.equals(b)))
+			return JSAtoms.FALSE;
+		return JSAtoms.TRUE;
 	}
 	
 	static public JSBoolean testStrictEquality(JSPrimitive a, JSPrimitive b) {

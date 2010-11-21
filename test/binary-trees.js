@@ -1,3 +1,9 @@
+// emulate arguments
+
+var arguments = [16]
+
+//=========================================================
+
 /* The Great Computer Language Shootout
    http://shootout.alioth.debian.org/
    contributed by Isaac Gouy */
@@ -28,8 +34,8 @@ function bottomUpTree(item,depth){
 
 
 var minDepth = 4;
-var n = 16; //arguments[0];
-var maxDepth = 16; //Math.max(minDepth + 2, n);
+var n = arguments[0];
+var maxDepth = Math.max(minDepth + 2, n);
 var stretchDepth = maxDepth + 1;
 
 var check = bottomUpTree(0,stretchDepth).itemCheck();

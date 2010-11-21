@@ -2,7 +2,6 @@
 <project default="package_all" name="Mug Jar">
     <target name="mug_jar">
         <jar destfile="lib/mug.jar">
-            <fileset dir="bin/" excludes="mug/js/*" />
             <zipfileset excludes="META-INF/*.SF" src="clojure.jar"/>
             <zipfileset excludes="META-INF/*.SF" src="clojure-contrib.jar"/>
             <fileset dir="classes"/>
@@ -13,6 +12,7 @@
 	
     <target name="mug_js_jar">
         <jar destfile="lib/mug-js.jar">
+            <fileset dir="bin/" includes="mug/modules/*"/>
             <fileset dir="bin/" includes="mug/js/*"/>
         	<fileset dir="bin/" includes="mug/*"/>
         </jar>

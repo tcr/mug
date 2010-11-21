@@ -1,5 +1,8 @@
 package mug.js;
 
+import java.text.DecimalFormat;
+import java.util.Arrays;
+import java.util.Comparator;
 import java.util.regex.MatchResult;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -135,6 +138,40 @@ public class JSTopLevel {
 				return out;
 			}
 		});
+		
+		set("sort", new JSFunction(functionPrototype) {
+			@Override
+			public JSPrimitive invoke(final JSPrimitive ths, int argc, JSPrimitive l0, JSPrimitive l1, JSPrimitive l2, JSPrimitive l3, JSPrimitive l4, JSPrimitive l5, JSPrimitive l6, JSPrimitive l7, JSPrimitive[] rest) throws Exception
+			{
+				// cast to strings
+				JSPrimitive[] arr = JSUtils.toJavaArray((JSObject) ths);
+				for (int i = 0; i < arr.length; i++)
+					arr[i] = new JSString(JSUtils.asString(arr[i]));
+				// sort
+				final JSObject func = l0 != null ? (JSObject) l0 :
+					new JSFunction(functionPrototype) {
+						@Override
+						public JSPrimitive invoke(final JSPrimitive ths, int argc, JSPrimitive l0, JSPrimitive l1, JSPrimitive l2, JSPrimitive l3, JSPrimitive l4, JSPrimitive l5, JSPrimitive l6, JSPrimitive l7, JSPrimitive[] rest) throws Exception
+						{
+							return new JSNumber(((JSString) l0).value.compareTo(((JSString) l1).value));
+						}
+					};
+				Arrays.sort(arr, new Comparator<JSPrimitive>() {
+					@Override
+					public int compare(JSPrimitive a, JSPrimitive b) {
+						try {
+							return (int) JSUtils.asNumber(func.invoke(ths, a, b));
+						} catch (Exception e) {
+							return 0;
+						}
+					}
+				});
+				// return new array
+				JSArray out = new JSArray(getArrayPrototype());
+				out.append(arr);
+				return out;
+			}
+		});
 	} };
 	
 	final JSObject stringPrototype = new JSObject(objectPrototype) { {
@@ -170,6 +207,17 @@ public class JSTopLevel {
 			}
 		});
 		
+		set("substring", new JSFunction (functionPrototype) {
+			@Override
+			public JSPrimitive invoke(JSPrimitive ths, int argc, JSPrimitive l0, JSPrimitive l1, JSPrimitive l2, JSPrimitive l3, JSPrimitive l4, JSPrimitive l5, JSPrimitive l6, JSPrimitive l7, JSPrimitive[] rest) throws Exception
+			{
+				String value = JSUtils.asString(ths);
+				int start = (int) JSUtils.asNumber(l0);
+				int end = l1 == null ? value.length() : (int) JSUtils.asNumber(l1);
+				return new JSString(value.substring(start, end));
+			}
+		});
+		
 		set("substr", new JSFunction (functionPrototype) {
 			@Override
 			public JSPrimitive invoke(JSPrimitive ths, int argc, JSPrimitive l0, JSPrimitive l1, JSPrimitive l2, JSPrimitive l3, JSPrimitive l4, JSPrimitive l5, JSPrimitive l6, JSPrimitive l7, JSPrimitive[] rest) throws Exception
@@ -198,6 +246,50 @@ public class JSTopLevel {
 				return new JSString(JSUtils.asString(ths).toLowerCase());
 			}
 		});
+		
+		set("toUpperCase", new JSFunction (functionPrototype) {
+			@Override
+			public JSPrimitive invoke(JSPrimitive ths, int argc, JSPrimitive index, JSPrimitive l1, JSPrimitive l2, JSPrimitive l3, JSPrimitive l4, JSPrimitive l5, JSPrimitive l6, JSPrimitive l7, JSPrimitive[] rest) throws Exception
+			{
+				return new JSString(JSUtils.asString(ths).toUpperCase());
+			}
+		});
+		
+		set("split", new JSFunction(functionPrototype) {
+			@Override
+			public JSPrimitive invoke(JSPrimitive ths, int argc, JSPrimitive l0, JSPrimitive l1, JSPrimitive l2, JSPrimitive l3, JSPrimitive l4, JSPrimitive l5, JSPrimitive l6, JSPrimitive l7, JSPrimitive[] rest) throws Exception
+			{
+				Pattern pattern = (l0 instanceof JSRegExp) ? ((JSRegExp) l0).getPattern() : Pattern.compile(Pattern.quote(JSUtils.asString(l0)));
+				String[] result = pattern.split(JSUtils.asString(ths));
+				JSArray out = new JSArray(arrayPrototype);
+				for (int i = 0; i < result.length; i++)
+					out.push(new JSString(result[i]));
+				return out;
+			}
+		});
+		
+		set("match", new JSFunction (functionPrototype) {
+			@Override
+			public JSPrimitive invoke(JSPrimitive ths, int argc, JSPrimitive l0, JSPrimitive l1, JSPrimitive l2, JSPrimitive l3, JSPrimitive l4, JSPrimitive l5, JSPrimitive l6, JSPrimitive l7, JSPrimitive[] rest) throws Exception
+			{
+				//[TODO] if l0 is string, compile
+				Pattern pattern = ((JSRegExp) l0).getPattern();
+				JSArray out = new JSArray(getArrayPrototype());
+				Matcher matcher = pattern.matcher(JSUtils.asString(ths));
+				if (!((JSRegExp) l0).isGlobal()) {
+					if (!matcher.find())
+						return JSAtoms.NULL;
+					for (int i = 0; i < matcher.groupCount() + 1; i++)
+						out.push(new JSString(matcher.group(i)));
+				} else {
+					while (matcher.find())
+						out.push(new JSString(matcher.group(0)));
+					if (out.getLength() == 0)
+						return JSAtoms.NULL;
+				}
+				return out;
+			}
+		});
 	} };
 	
 	final JSObject numberPrototype = new JSObject(objectPrototype) { {
@@ -213,6 +305,18 @@ public class JSTopLevel {
 				case 16: return new JSString(Integer.toHexString((int) value));
 				}
 				return new JSString(Double.toString(value));
+			}
+		});
+		
+		set("toFixed", new JSFunction(functionPrototype) {
+			@Override
+			public JSPrimitive invoke(JSPrimitive ths, int argc, JSPrimitive l0, JSPrimitive l1, JSPrimitive l2, JSPrimitive l3, JSPrimitive l4, JSPrimitive l5, JSPrimitive l6, JSPrimitive l7, JSPrimitive[] rest) throws Exception
+			{
+				double value = JSUtils.asNumber(ths);
+				int fixed = (int) JSUtils.asNumber(l0); 
+				DecimalFormat formatter = new DecimalFormat("0" +
+					(fixed > 0 ? "." + String.format(String.format("%%0%dd", fixed), 0) : ""));
+				return new JSString(formatter.format(value));
 			}
 		});
 	} };
@@ -237,9 +341,17 @@ public class JSTopLevel {
 				Pattern pattern = ((JSRegExp) ths).getPattern();
 				JSArray out = new JSArray(getArrayPrototype());
 				Matcher matcher = pattern.matcher(JSUtils.asString(l0));
-				matcher.find();
-				for (int i = 0; i < matcher.groupCount() + 1; i++)
-					out.push(new JSString(matcher.group(i)));
+				if (!((JSRegExp) ths).isGlobal()) {
+					if (!matcher.find())
+						return JSAtoms.NULL;
+					for (int i = 0; i < matcher.groupCount() + 1; i++)
+						out.push(new JSString(matcher.group(i)));
+				} else {
+					while (matcher.find())
+						out.push(new JSString(matcher.group(0)));
+					if (out.getLength() == 0)
+						return JSAtoms.NULL;
+				}
 				return out;
 			}
 		});
@@ -263,18 +375,47 @@ public class JSTopLevel {
 		@Override
 		public JSPrimitive invoke(JSPrimitive ths, int argc, JSPrimitive l0, JSPrimitive l1, JSPrimitive l2, JSPrimitive l3, JSPrimitive l4, JSPrimitive l5, JSPrimitive l6, JSPrimitive l7, JSPrimitive[] rest)
 				throws Exception {
-			//System.out.println(JSUtils.asString(l0) + " <" + l0 + ">");
-			System.out.println(JSUtils.asString(l0));
+			JSPrimitive[] arguments = JSUtils.arguments(argc, l0, l1, l2, l3, l4, l5, l6, l7, rest);
+			for (int i = 0; i < arguments.length; i++) {
+				if (i > 0)
+					System.out.print(" ");
+				System.out.print(JSUtils.asString(arguments[i]));
+			}
+			System.out.println("");
 			return null;
 		}
 	};
 	
 	final JSObject mathObject = new JSObject(objectPrototype) { {
+		set("abs", new JSFunction(functionPrototype) {
+			@Override
+			public JSPrimitive invoke(JSPrimitive ths, int argc, JSPrimitive l0, JSPrimitive l1, JSPrimitive l2, JSPrimitive l3, JSPrimitive l4, JSPrimitive l5, JSPrimitive l6, JSPrimitive l7, JSPrimitive[] rest) throws Exception
+			{
+				return new JSNumber(Math.abs(JSUtils.asNumber(l0)));
+			}
+		});
+		
+		set("pow", new JSFunction(functionPrototype) {
+			@Override
+			public JSPrimitive invoke(JSPrimitive ths, int argc, JSPrimitive l0, JSPrimitive l1, JSPrimitive l2, JSPrimitive l3, JSPrimitive l4, JSPrimitive l5, JSPrimitive l6, JSPrimitive l7, JSPrimitive[] rest) throws Exception
+			{
+				return new JSNumber(Math.pow(JSUtils.asNumber(l0), JSUtils.asNumber(l1)));
+			}
+		});
+		
 		set("sqrt", new JSFunction(functionPrototype) {
 			@Override
 			public JSPrimitive invoke(JSPrimitive ths, int argc, JSPrimitive l0, JSPrimitive l1, JSPrimitive l2, JSPrimitive l3, JSPrimitive l4, JSPrimitive l5, JSPrimitive l6, JSPrimitive l7, JSPrimitive[] rest) throws Exception
 			{
 				return new JSNumber(Math.sqrt(JSUtils.asNumber(l0)));
+			}
+		});
+		
+		set("max", new JSFunction(functionPrototype) {
+			@Override
+			public JSPrimitive invoke(JSPrimitive ths, int argc, JSPrimitive l0, JSPrimitive l1, JSPrimitive l2, JSPrimitive l3, JSPrimitive l4, JSPrimitive l5, JSPrimitive l6, JSPrimitive l7, JSPrimitive[] rest) throws Exception
+			{
+				return new JSNumber(Math.max(JSUtils.asNumber(l0), JSUtils.asNumber(l1)));
 			}
 		});
 		

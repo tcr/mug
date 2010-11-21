@@ -1,6 +1,7 @@
 package mug.js;
 
 import java.util.HashMap;
+import java.util.Set;
 
 /**
  * Object base (without accessors).
@@ -56,6 +57,13 @@ public class JSObject extends JSPrimitive {
 		if (hash == null)
 			hash = new HashMap<String, JSPrimitive>();
 		hash.put(key, value);
+	}
+	
+	public String[] getKeys() {
+		Set<String> set = hash.keySet();
+		String[] out = new String[set.size()];
+		set.toArray(out);
+		return out;
 	}
 	
 	/*
@@ -162,7 +170,6 @@ public class JSObject extends JSPrimitive {
 	
 	public static JSObject createObjectPrototype() {
 		JSObject obj = new JSObject();
-		obj.__proto__ = obj;
 		return obj;
 	}
 }

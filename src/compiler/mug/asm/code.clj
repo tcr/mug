@@ -118,10 +118,19 @@
   (asm-toplevel context ast mw)
   (.visitMethodInsn mw Opcodes/INVOKEVIRTUAL, qn-js-primitive, "toObject", (sig-call (sig-obj qn-js-toplevel) (sig-obj qn-js-object))))
 
+; SEARCH SCOPES
+; loads scope object, then return the qn of the scope
+; in which it is located
 (defn asm-compile-closure-search-scopes [name parents context ast mw]
+  (if (contains? (context-scope-vars context) name)
+    ; variable found in current scope
+    (do
+      (.visitVarInsn mw Opcodes/ALOAD, (+ 1 3 arg-limit))
+      (qn-js-scope (context-index context ast)))
   (loop [parent (last parents) parents (butlast parents)]
 	  (if (nil? parent)
 	    (if (contains? script-default-vars name)
+        ; found variable in global scope
 	      (do
 	        (println (str " . Found in global scope: " name))
           (if (= (context-index context ast) 0) ; script-context scope inherits from globals
@@ -130,31 +139,39 @@
 		          (.visitVarInsn mw Opcodes/ALOAD, 0)
 		          (.visitFieldInsn mw Opcodes/GETFIELD, (qn-js-context (index-of (ast :contexts) context)),
 		            (str "SCOPE_" 0), (sig-obj (qn-js-scope 0)))))
-		      (.visitMethodInsn mw Opcodes/INVOKEVIRTUAL, qn-js-toplevel,
-	          (str "get_" name), (sig-call (sig-obj qn-js-primitive))))
+          qn-js-toplevel)
+;		      (.visitMethodInsn mw Opcodes/INVOKEVIRTUAL, qn-js-toplevel,
+;	          (str "get_" name), (sig-call (sig-obj qn-js-primitive))))
+        ; identifier not found at all
 	      (throw (new Exception (str "Identifier not defined in any scope: " name))))
 		  (if (contains? (context-scope-vars ((ast :contexts) parent)) name)
+        ; found variable in ancestor scope
 		    (do
 		      (println (str " . Found in higher scope: " name))
 		      (.visitVarInsn mw Opcodes/ALOAD, 0)
 		      (.visitFieldInsn mw Opcodes/GETFIELD, (qn-js-context (index-of (ast :contexts) context)),
 		        (str "SCOPE_" parent), (sig-obj (qn-js-scope parent)))
-		      (.visitMethodInsn mw Opcodes/INVOKEVIRTUAL, (qn-js-scope parent),
-	          (str "get_" name), (sig-call (sig-obj qn-js-primitive))))
+          (qn-js-scope parent))
+;		      (.visitMethodInsn mw Opcodes/INVOKEVIRTUAL, (qn-js-scope parent),
+;	          (str "get_" name), (sig-call (sig-obj qn-js-primitive))))
+        ; must recur to parent scope
 	      (do
           (println (str " . Not found in parent scope " (context-scope-vars ((ast :contexts) parent))))
-          (recur (last parents) (butlast parents)))))))
+          (recur (last parents) (butlast parents))))))))
 
 (defmethod compile-code :mug.ast/scope-ref-expr [node context ast mw]
   (println (str "Seeking var \"" (node :value) "\" in current scope (" (context-scope-vars context) ")"))
-  (if (contains? (context-scope-vars context) (node :value))
+  (let [qn-parent (asm-compile-closure-search-scopes (node :value) (context :parents) context ast mw)]
+    (.visitMethodInsn mw Opcodes/INVOKEVIRTUAL, qn-parent, (str "get_" (node :value)), (sig-call (sig-obj qn-js-primitive)))))
+  
+;  (if (contains? (context-scope-vars context) (node :value))
     ; in current scope?
-    (do
-      (.visitVarInsn mw Opcodes/ALOAD, (+ 1 3 arg-limit))
-      (.visitMethodInsn mw Opcodes/INVOKEVIRTUAL, (qn-js-scope (context-index context ast)), (str "get_" (node :value)), (sig-call (sig-obj qn-js-primitive))))
+;    (do
+;      (.visitVarInsn mw Opcodes/ALOAD, (+ 1 3 arg-limit))
+ ;     (.visitMethodInsn mw Opcodes/INVOKEVIRTUAL, (qn-js-scope (context-index context ast)), (str "get_" (node :value)), (sig-call (sig-obj qn-js-primitive))))
     ; we have to search parent scopes
-    (do
-      (asm-compile-closure-search-scopes (node :value) (context :parents) context ast mw))))
+ ;   (do
+;      (asm-compile-closure-search-scopes (node :value) (context :parents) context ast mw))))
 
 (defmethod compile-code :mug.ast/static-ref-expr [node context ast mw]
   (compile-code (node :base) context ast mw)
@@ -225,9 +242,9 @@
 (defmethod compile-code :mug.ast/scope-assign-expr [node context ast mw]
 	(compile-code (node :expr) context ast mw)
   (.visitInsn mw Opcodes/DUP)
-  (.visitVarInsn mw Opcodes/ALOAD, (+ 1 3 arg-limit))
-  (.visitInsn mw Opcodes/SWAP)
-	(.visitMethodInsn mw Opcodes/INVOKEVIRTUAL, (qn-js-scope (context-index context ast)), (str "set_" (node :value)), (sig-call (sig-obj qn-js-primitive) sig-void)))
+  (let [qn-parent (asm-compile-closure-search-scopes (node :value) (context :parents) context ast mw)]
+    (.visitInsn mw Opcodes/SWAP)
+	  (.visitMethodInsn mw Opcodes/INVOKEVIRTUAL, qn-parent, (str "set_" (node :value)), (sig-call (sig-obj qn-js-primitive) sig-void))))
 
 (defmethod compile-code :mug.ast/static-assign-expr [node context ast mw]
 	(compile-code (node :expr) context ast mw)
@@ -250,7 +267,7 @@
   (compile-code (node :index) context ast mw)
   (.visitMethodInsn mw Opcodes/INVOKESTATIC, qn-js-utils, "asString", (sig-call (sig-obj qn-js-primitive) (sig-obj qn-string)))
   (.visitInsn mw Opcodes/SWAP)
-	(.visitMethodInsn mw Opcodes/INVOKEVIRTUAL, qn-js-primitive, "set", (sig-call (sig-obj qn-string) (sig-obj qn-js-primitive) sig-void)))
+	(.visitMethodInsn mw Opcodes/INVOKEVIRTUAL, qn-js-object, "set", (sig-call (sig-obj qn-string) (sig-obj qn-js-primitive) sig-void)))
 
 ;(defmethod compile-code :mug.ast/post-inc-op-expr [node context ast mw]
 ;  (compile-code (node :left) context ast mw)
@@ -270,6 +287,7 @@
   (.visitMethodInsn mw Opcodes/INVOKESTATIC, qn-js-utils, "asNumber", (sig-call (sig-obj qn-js-primitive) sig-double))
   (compile-code (node :right) context ast mw)
   (.visitMethodInsn mw Opcodes/INVOKESTATIC, qn-js-utils, "asNumber", (sig-call (sig-obj qn-js-primitive) sig-double))
+  (.visitInsn mw Opcodes/DSUB)
   (.visitMethodInsn mw Opcodes/INVOKESPECIAL, qn-js-number, "<init>", (sig-call sig-double sig-void)))
 
 (defmethod compile-code :mug.ast/div-op-expr [node context ast mw]
@@ -315,6 +333,18 @@
   (compile-code (node :right) context ast mw)
   (.visitMethodInsn mw Opcodes/INVOKESTATIC, qn-js-utils, "testInequality", (sig-call (sig-obj qn-js-primitive) (sig-obj qn-js-primitive) (sig-obj qn-js-boolean))))
 
+(defmethod compile-code :mug.ast/not-op-expr [node context ast mw]
+  (let [false-case (new Label) true-case (new Label)]
+    (compile-code (node :expr) context ast mw)
+    (doto mw
+      (.visitMethodInsn Opcodes/INVOKESTATIC, qn-js-utils, "asBoolean", (sig-call (sig-obj qn-js-primitive) sig-boolean))
+      (.visitJumpInsn Opcodes/IFNE, false-case)
+      (.visitFieldInsn Opcodes/GETSTATIC, qn-js-atoms, "TRUE", (sig-obj qn-js-boolean))
+      (.visitJumpInsn Opcodes/GOTO, true-case)
+		  (.visitLabel false-case)
+		  (.visitFieldInsn Opcodes/GETSTATIC, qn-js-atoms, "FALSE", (sig-obj qn-js-boolean))
+		  (.visitLabel true-case))))
+
 (defmethod compile-code :mug.ast/eqs-op-expr [node context ast mw]
   (compile-code (node :left) context ast mw)
   (compile-code (node :right) context ast mw)
@@ -325,65 +355,32 @@
   (compile-code (node :right) context ast mw)
   (.visitMethodInsn mw Opcodes/INVOKESTATIC, qn-js-utils, "testStrictInequality", (sig-call (sig-obj qn-js-primitive) (sig-obj qn-js-primitive) (sig-obj qn-js-boolean))))
 
-(defmethod compile-code :mug.ast/lt-op-expr [node context ast mw]
+(defn asm-compare-op [op left right context ast mw]
   (let [false-case (new Label) true-case (new Label)]
-    (compile-code (node :left) context ast mw)
+    (compile-code left context ast mw)
     (.visitMethodInsn mw Opcodes/INVOKESTATIC, qn-js-utils, "asNumber", (sig-call (sig-obj qn-js-primitive) sig-double))
-    (compile-code (node :right) context ast mw)
+    (compile-code right context ast mw)
     (.visitMethodInsn mw Opcodes/INVOKESTATIC, qn-js-utils, "asNumber", (sig-call (sig-obj qn-js-primitive) sig-double))
     (doto mw
       (.visitInsn Opcodes/DCMPG)
-      (.visitJumpInsn Opcodes/IFGE, false-case)
-      (.visitFieldInsn Opcodes/GETSTATIC, qn-js-atoms, "TRUE", (sig-obj qn-js-boolean))
-      (.visitJumpInsn Opcodes/GOTO, true-case)
-		  (.visitLabel false-case)
-		  (.visitFieldInsn Opcodes/GETSTATIC, qn-js-atoms, "FALSE", (sig-obj qn-js-boolean))
-		  (.visitLabel true-case))))
+      (.visitJumpInsn op, true-case)
+      (.visitFieldInsn Opcodes/GETSTATIC, qn-js-atoms, "FALSE", (sig-obj qn-js-boolean))
+      (.visitJumpInsn Opcodes/GOTO, false-case)
+		  (.visitLabel true-case)
+		  (.visitFieldInsn Opcodes/GETSTATIC, qn-js-atoms, "TRUE", (sig-obj qn-js-boolean))
+		  (.visitLabel false-case))))
+  
+(defmethod compile-code :mug.ast/lt-op-expr [node context ast mw]
+  (asm-compare-op Opcodes/IFLT (node :left) (node :right) context ast mw))
 
 (defmethod compile-code :mug.ast/lte-op-expr [node context ast mw]
-  (let [false-case (new Label) true-case (new Label)]
-    (compile-code (node :left) context ast mw)
-    (.visitMethodInsn mw Opcodes/INVOKESTATIC, qn-js-utils, "asNumber", (sig-call (sig-obj qn-js-primitive) sig-double))
-    (compile-code (node :right) context ast mw)
-    (.visitMethodInsn mw Opcodes/INVOKESTATIC, qn-js-utils, "asNumber", (sig-call (sig-obj qn-js-primitive) sig-double))
-    (doto mw
-      (.visitInsn Opcodes/DCMPG)
-      (.visitJumpInsn Opcodes/IFGT, false-case)
-      (.visitFieldInsn Opcodes/GETSTATIC, qn-js-atoms, "TRUE", (sig-obj qn-js-boolean))
-      (.visitJumpInsn Opcodes/GOTO, true-case)
-		  (.visitLabel false-case)
-		  (.visitFieldInsn Opcodes/GETSTATIC, qn-js-atoms, "FALSE", (sig-obj qn-js-boolean))
-		  (.visitLabel true-case))))
+  (asm-compare-op Opcodes/IFLE (node :left) (node :right) context ast mw))
 
 (defmethod compile-code :mug.ast/gt-op-expr [node context ast mw]
-  (let [false-case (new Label) true-case (new Label)]
-    (compile-code (node :left) context ast mw)
-    (.visitMethodInsn mw Opcodes/INVOKESTATIC, qn-js-utils, "asNumber", (sig-call (sig-obj qn-js-primitive) sig-double))
-    (compile-code (node :right) context ast mw)
-    (.visitMethodInsn mw Opcodes/INVOKESTATIC, qn-js-utils, "asNumber", (sig-call (sig-obj qn-js-primitive) sig-double))
-    (doto mw
-      (.visitInsn Opcodes/DCMPG)
-      (.visitJumpInsn Opcodes/IFLE, false-case)
-      (.visitFieldInsn Opcodes/GETSTATIC, qn-js-atoms, "TRUE", (sig-obj qn-js-boolean))
-      (.visitJumpInsn Opcodes/GOTO, true-case)
-		  (.visitLabel false-case)
-		  (.visitFieldInsn Opcodes/GETSTATIC, qn-js-atoms, "FALSE", (sig-obj qn-js-boolean))
-		  (.visitLabel true-case))))
+  (asm-compare-op Opcodes/IFGT (node :left) (node :right) context ast mw))
 
 (defmethod compile-code :mug.ast/gte-op-expr [node context ast mw]
-  (let [false-case (new Label) true-case (new Label)]
-    (compile-code (node :left) context ast mw)
-    (.visitMethodInsn mw Opcodes/INVOKESTATIC, qn-js-utils, "asNumber", (sig-call (sig-obj qn-js-primitive) sig-double))
-    (compile-code (node :right) context ast mw)
-    (.visitMethodInsn mw Opcodes/INVOKESTATIC, qn-js-utils, "asNumber", (sig-call (sig-obj qn-js-primitive) sig-double))
-    (doto mw
-      (.visitInsn Opcodes/DCMPG)
-      (.visitJumpInsn Opcodes/IFLT, false-case)
-      (.visitFieldInsn Opcodes/GETSTATIC, qn-js-atoms, "TRUE", (sig-obj qn-js-boolean))
-      (.visitJumpInsn Opcodes/GOTO, true-case)
-		  (.visitLabel false-case)
-		  (.visitFieldInsn Opcodes/GETSTATIC, qn-js-atoms, "FALSE", (sig-obj qn-js-boolean))
-		  (.visitLabel true-case))))
+  (asm-compare-op Opcodes/IFGE (node :left) (node :right) context ast mw))
 
 (defmethod compile-code :mug.ast/neg-op-expr [node context ast mw]
   (.visitTypeInsn mw Opcodes/NEW, qn-js-number)
@@ -400,6 +397,16 @@
 (defmethod compile-code :mug.ast/this-expr [node context ast mw]
   (.visitVarInsn mw Opcodes/ALOAD, 1))
 
+(defmethod compile-code :mug.ast/or-op-expr [node context ast mw]
+  (compile-code (node :left) context ast mw)
+  (.visitInsn mw Opcodes/DUP)
+  (.visitMethodInsn mw Opcodes/INVOKESTATIC, qn-js-utils, "asBoolean", (sig-call (sig-obj qn-js-primitive) sig-boolean))
+  (let [true-case (new Label)]
+    (.visitJumpInsn mw, Opcodes/IFNE, true-case)
+    (.visitInsn mw Opcodes/POP)
+    (compile-code (node :right) context ast mw)
+    (.visitLabel mw true-case)))
+
 (defmethod compile-code :mug.ast/if-expr [node context ast mw]
   (compile-code (node :expr) context ast mw)
   (.visitMethodInsn mw Opcodes/INVOKESTATIC, qn-js-utils, "asBoolean", (sig-call (sig-obj qn-js-primitive) sig-boolean))
@@ -410,6 +417,11 @@
     (.visitLabel mw false-case)
     (compile-code (node :else-expr) context ast mw)
     (.visitLabel mw true-case)))
+
+(defmethod compile-code :mug.ast/seq-expr [node context ast mw]
+  (compile-code (node :pre) context ast mw)
+  (.visitInsn mw Opcodes/POP)
+  (compile-code (node :expr) context ast mw))
 
 ;
 ; statements
@@ -430,14 +442,24 @@
   (.visitInsn mw Opcodes/ARETURN))
 
 (defmethod compile-code :mug.ast/while-stat [node context ast mw]
-  (let [test-case (new Label) false-case (new Label)]
-    (.visitLabel mw test-case)
+  (let [true-case (new Label) false-case (new Label)]
+    (.visitLabel mw true-case)
     (compile-code (node :expr) context ast mw)
     (.visitMethodInsn mw Opcodes/INVOKESTATIC, qn-js-utils, "asBoolean", (sig-call (sig-obj qn-js-primitive) sig-boolean))
     (.visitJumpInsn mw, Opcodes/IFEQ, false-case)
-    (compile-code (node :stat) context ast mw)
-    (.visitJumpInsn mw, Opcodes/GOTO, test-case)
+    (when (node :stat)
+      (compile-code (node :stat) context ast mw))
+    (.visitJumpInsn mw, Opcodes/GOTO, true-case)
     (.visitLabel mw false-case)))
+
+(defmethod compile-code :mug.ast/do-while-stat [node context ast mw]
+  (let [true-case (new Label)]
+    (.visitLabel mw true-case)
+    (compile-code (node :stat) context ast mw)
+    (compile-code (node :expr) context ast mw)
+    (.visitMethodInsn mw Opcodes/INVOKESTATIC, qn-js-utils, "asBoolean", (sig-call (sig-obj qn-js-primitive) sig-boolean))
+    (.visitJumpInsn mw, Opcodes/IFNE, true-case)
+    ))
 
 (defmethod compile-code :mug.ast/if-stat [node context ast mw]
   (compile-code (node :expr) context ast mw)
@@ -451,45 +473,38 @@
       (compile-code (node :else-stat) context ast mw))
     (.visitLabel mw true-case)))
 
-(comment
 (defmethod compile-code :mug.ast/for-in-stat [node context ast mw]
-  (let [test-label (new Label) body-label (new Label)]
-    ; assign variable
-	  (.visitVarInsn mw Opcodes/ALOAD, (+ 1 3 arg-limit))
-    (.visitTypeInsn mw Opcodes/NEW, qn-js-number)
-    (.visitInsn mw Opcodes/DUP)
-	  (compile-code (node :from) context ast mw)
-    (.visitMethodInsn mw Opcodes/INVOKESTATIC, qn-js-utils, "asNumber", (sig-call (sig-obj qn-js-primitive) sig-double))
-    (.visitMethodInsn mw Opcodes/INVOKESPECIAL, qn-js-number, "<init>", (sig-call sig-double sig-void))
-		(.visitMethodInsn mw Opcodes/INVOKEVIRTUAL, (qn-js-scope (context-index context ast)), (str "set_" (node :value)), (sig-call (sig-obj qn-js-primitive) sig-void))
-    ; label
-    (.visitJumpInsn mw Opcodes/GOTO, test-label)
-  
-    ; body
-    (.visitLabel mw body-label)
-    (compile-code (node :stat) context ast mw)
-    
-    ; increment
-		(.visitVarInsn mw Opcodes/ALOAD, (+ 1 3 arg-limit))
-		(.visitMethodInsn mw Opcodes/INVOKEVIRTUAL, (qn-js-scope (context-index context ast)), (str "get_" (node :value)), (sig-call (sig-obj qn-js-primitive)))
-    (.visitTypeInsn mw Opcodes/CHECKCAST, qn-js-number)
-    (.visitInsn mw Opcodes/DUP)
-    (.visitFieldInsn mw Opcodes/GETFIELD, qn-js-number, "value", sig-double)
-    (compile-code (node :by) context ast mw)
-    (.visitMethodInsn mw Opcodes/INVOKESTATIC, qn-js-utils, "asNumber", (sig-call (sig-obj qn-js-primitive) sig-double))
-    (.visitInsn mw Opcodes/DADD)
-    (.visitFieldInsn mw Opcodes/PUTFIELD, qn-js-number, "value", sig-double)
-    
-    ; condition
-    (.visitLabel mw test-label)
-		(.visitVarInsn mw Opcodes/ALOAD, (+ 1 3 arg-limit))
-		(.visitMethodInsn mw Opcodes/INVOKEVIRTUAL, (qn-js-scope (context-index context ast)), (str "get_" (node :value)), (sig-call (sig-obj qn-js-primitive)))
-    (.visitMethodInsn mw Opcodes/INVOKESTATIC, qn-js-utils, "asNumber", (sig-call (sig-obj qn-js-primitive) sig-double))
-    (compile-code (node :to) context ast mw)
-    (.visitMethodInsn mw Opcodes/INVOKESTATIC, qn-js-utils, "asNumber", (sig-call (sig-obj qn-js-primitive) sig-double))
-    (.visitInsn mw Opcodes/DCMPG)
-    (.visitJumpInsn mw Opcodes/IFLT, body-label)))
-)
+	(let [check-label (new Label) stat-label (new Label)]
+    (compile-code (node :expr) context ast mw)
+    (asm-to-object context ast mw)
+		(.visitMethodInsn mw, Opcodes/INVOKEVIRTUAL, "mug/js/JSObject", "getKeys", "()[Ljava/lang/String;")
+  	(.visitInsn mw, Opcodes/ICONST_0)
+		(.visitJumpInsn mw, Opcodes/GOTO, check-label)
+		(.visitLabel mw stat-label)
+      ; load from array
+      (.visitInsn mw, Opcodes/DUP2)
+			(.visitInsn mw, Opcodes/AALOAD)
+      ; create string obj
+			(.visitTypeInsn mw Opcodes/NEW qn-js-string)
+			(.visitInsn mw Opcodes/DUP2)
+      (.visitInsn mw Opcodes/SWAP)
+			(.visitMethodInsn mw Opcodes/INVOKESPECIAL, qn-js-string, "<init>", (sig-call (sig-obj qn-string) sig-void))
+      ; store in scope
+      (let [qn-parent (asm-compile-closure-search-scopes (node :value) (context :parents) context ast mw)]
+        (.visitInsn mw Opcodes/SWAP)
+	      (.visitMethodInsn mw Opcodes/INVOKEVIRTUAL, qn-parent, (str "set_" (node :value)), (sig-call (sig-obj qn-js-primitive) sig-void)))
+	
+			(compile-code (node :stat) context ast mw)
+   
+      (.visitInsn mw Opcodes/POP)
+			(.visitInsn mw, Opcodes/ICONST_1)
+			(.visitInsn mw, Opcodes/IADD)
+		(.visitLabel mw, check-label)
+			(.visitInsn mw, Opcodes/DUP2)
+			(.visitInsn mw, Opcodes/SWAP)
+			(.visitInsn mw, Opcodes/ARRAYLENGTH)
+			(.visitJumpInsn mw, Opcodes/IF_ICMPLT, stat-label)
+      (.visitInsn mw, Opcodes/POP2)))
 
 (comment
 (defmethod compile-code :mug.ast/class-stat [node context ast mw]

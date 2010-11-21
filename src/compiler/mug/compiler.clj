@@ -54,7 +54,7 @@
 	(doseq [[qn bytes] (asm-compile-scope-classes ast)]
 		(write-file (str out-dir qn ".class") bytes))
  
-  (println "Done. Output is in \"out/\" directory."))
+  (println "Done. Output is in \"out/\" directory.\n"))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;

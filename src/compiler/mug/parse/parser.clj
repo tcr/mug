@@ -85,10 +85,12 @@
 (defmethod walk-input :continue [[_ label] walker] )
 (defmethod walk-input :while [[_ cond body] walker]
   (concat (walker body walker) (walker cond walker)))
-(defmethod walk-input :do [[_ cond body] walker] )
+(defmethod walk-input :do [[_ cond body] walker]
+  (concat (walker body walker) (walker cond walker)))
 (defmethod walk-input :for [[_ init cond step body] walker]
   (concat (walker init walker) (walker cond walker) (walker step walker) (walker body walker)))
-(defmethod walk-input :for-in [[_ var name obj body] walker] )
+(defmethod walk-input :for-in [[_ var name obj body] walker]
+  (concat (walker obj walker) (walker body walker)))
 (defmethod walk-input :switch [[_ val body] walker] )
 (defmethod walk-input :case [[_ expr] walker] )
 (defmethod walk-input :default [[_] walker] )
@@ -98,11 +100,15 @@
 ; input analysis
 ;
 
+; strings
+
 (defmulti find-strings (fn [node & args] (first node)) :default :no-match)
 (defmethod find-strings :no-match [node & args]
   (walk-input node find-strings))
 (defmethod find-strings :string [[_ value] walker]
   [value])
+
+; numbers
 
 (defmulti find-numbers (fn [node & args] (first node)) :default :no-match)
 (defmethod find-numbers :no-match [node & args]
@@ -111,9 +117,17 @@
   [value])
 ;[TODO] if ++, --, etc.
 (defmethod find-numbers :unary-postfix [[_ op place] walker]
-  [1])
+  (case op
+    "++" [1]
+    "--" [1]
+    (walk-input (list _ op place) find-numbers)))
 (defmethod find-numbers :unary-prefix [[_ op place] walker]
-  [1])
+  (case op
+    "++" [1]
+    "--" [1]
+    (walk-input (list _ op place) find-numbers)))
+
+; regexes
 
 (defmulti find-regexes (fn [node & args] (first node)) :default :no-match)
 (defmethod find-regexes :no-match [node & args]
@@ -121,11 +135,15 @@
 (defmethod find-regexes :regexp [[_ expr flags] walker]
   [[expr flags]])
 
+; accessors
+
 (defmulti find-accessors (fn [node & args] (first node)) :default :no-match)
 (defmethod find-accessors :no-match [node & args]
   (walk-input node find-accessors))
 (defmethod find-accessors :dot [[_ obj attr] walker]
   (concat [attr] (find-accessors obj find-accessors)))
+
+; variables
 
 (defn find-vars-in-scope [context]
   ; mock a toplevel context so we don't miss in-function definitions
@@ -146,6 +164,8 @@
 	  [name])
 	(defmethod vars-in-scope-walker :var [[_ bindings] walker]
 	  (vec (map (fn [[k v]] (name k)) bindings)))
+  (defmethod vars-in-scope-walker :for-in [[_ var name obj body] walker]
+    (if var [name] []))
  
   (set (vars-in-scope-walker (mock-toplevel context) vars-in-scope-walker)))
 
@@ -259,32 +279,36 @@
 	  "===" eqs-op-expr
 	  "!=" neq-op-expr
 	  "!==" neqs-op-expr
+    "||" or-op-expr
+    "&&" and-op-expr
 	  "<<" lsh-op-expr} op) (gen-ast-code lhs input) (gen-ast-code rhs input)))
 (defmethod gen-ast-code :unary-postfix [[_ op place] input]
   (case op
     "++" (gen-ast-code (list :binary "-" (list :assign "+" place (list :num 1)) (list :num 1)) input)
     "--" (gen-ast-code (list :binary "+" (list :assign "-" place (list :num 1)) (list :num 1)) input)
-    :else (println (str "###ERROR: Bad unary postfix: " op))))
+    (println (str "###ERROR: Bad unary postfix: " op))))
 (defmethod gen-ast-code :unary-prefix [[_ op place] input]
   (case op
     "+" (num-op-expr (gen-ast-code place input))
     "-" (neg-op-expr (gen-ast-code place input))
     "++" (gen-ast-code (list :assign "+" place (list :num 1)) input)
     "--" (gen-ast-code (list :assign "-" place (list :num 1)) input)
+    "!" (not-op-expr (gen-ast-code place input))
     "typeof" (typeof-expr (gen-ast-code place input))
-    :else (println (str "###ERROR: Bad unary prefix: " op))))
+    (println (str "###ERROR: Bad unary prefix: " op))))
 (defmethod gen-ast-code :call [[_ func args] input]
   (case (first func)
     :name (apply call-expr (into [(gen-ast-code func input)] (map #(gen-ast-code %1 input) args)))
     :dot
       (let [[_ base value] func]
         (apply static-method-call-expr (into [(gen-ast-code base input) value] (map #(gen-ast-code %1 input) args))))
-    :else (println (str "###ERROR: Unrecognized call format: " (first func)))))
+    (println (str "###ERROR: Unrecognized call format: " (first func)))))
 (defmethod gen-ast-code :dot [[_ obj attr] input]
   (static-ref-expr (gen-ast-code obj input) attr))
 (defmethod gen-ast-code :sub [[_ obj attr] input]
   (dyn-ref-expr (gen-ast-code obj input) (gen-ast-code attr input)))
-;(defmethod gen-ast-code :seq [[_ form1 result]])
+(defmethod gen-ast-code :seq [[_ form1 result] input]
+  (seq-expr (gen-ast-code form1 input) (gen-ast-code result input)))
 (defmethod gen-ast-code :conditional [[_ test then else] input]
   (if-expr (gen-ast-code test input)
     (gen-ast-code then input)
@@ -326,14 +350,20 @@
 ;(defmethod gen-ast-code :continue [[_ label] input] )
 (defmethod gen-ast-code :while [[_ cond body] input]
   (while-stat (gen-ast-code cond input) (gen-ast-code body input)))
-;(defmethod gen-ast-code :do [[_ cond body] input] )
+(defmethod gen-ast-code :do [[_ cond body] input]
+  (do-while-stat (gen-ast-code cond input) (gen-ast-code body input)))
 (defmethod gen-ast-code :for [[_ init cond step body] input]
   (apply block-stat
-    (into (if init [(gen-ast-code init input)] [])
+    (into (if init
+        (if (= (first init) :var)
+          [(gen-ast-code init input)]
+          [(expr-stat (gen-ast-code init input))])
+        [])
       [(while-stat (if cond (gen-ast-code cond input) (boolean-literal true))
          (apply block-stat (into [(gen-ast-code body input)]
            (if step [(expr-stat (gen-ast-code step input))] []))))])))
-;(defmethod gen-ast-code :for-in [[_ var name obj body] input] )
+(defmethod gen-ast-code :for-in [[_ var name obj body] input]
+  (for-in-stat name (gen-ast-code obj input) (gen-ast-code body input)))
 ;(defmethod gen-ast-code :switch [[_ val body] input] )
 ;(defmethod gen-ast-code :case [[_ expr] input] )
 ;(defmethod gen-ast-code :default [[_] input] )

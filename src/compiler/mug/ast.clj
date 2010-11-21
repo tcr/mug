@@ -50,6 +50,7 @@
 (defast ::pre-inc-op-expr ::unary-op-expr [expr])
 (defast ::num-op-expr ::unary-op-expr [expr])
 (defast ::neg-op-expr ::unary-op-expr [expr])
+(defast ::not-op-expr ::unary-op-expr [expr])
 (defast ::lt-op-expr ::binary-op-expr [left right])
 (defast ::lte-op-expr ::binary-op-expr [left right])
 (defast ::gt-op-expr ::binary-op-expr [left right])
@@ -59,6 +60,8 @@
 (defast ::mul-op-expr ::binary-op-expr [left right])
 (defast ::div-op-expr ::binary-op-expr [left right])
 (defast ::mod-op-expr ::binary-op-expr [left right])
+(defast ::or-op-expr ::binary-op-expr [left right])
+(defast ::and-op-expr ::binary-op-expr [left right])
 (defast ::lsh-op-expr ::binary-op-expr [left right])
 (defast ::eq-op-expr ::binary-op-expr [left right])
 (defast ::eqs-op-expr ::binary-op-expr [left right])
@@ -67,7 +70,8 @@
 
 ; expressions
 (derive ::expr ::ast-node)
-(defast ::stats-expr ::expr [stats expr])
+;(defast ::stats-expr ::expr [stats expr])
+(defast ::seq-expr ::expr [pre expr])
 (defast ::this-expr ::expr [])
 (defast ::scope-ref-expr ::expr [value])
 (defast ::static-ref-expr ::expr [base value])
@@ -95,8 +99,7 @@
 (defast ::class-stat ::stat [name prototype constructor static])
 (defast ::ret-stat ::stat [expr])
 (defast ::while-stat ::stat [expr stat])
+(defast ::do-while-stat ::stat [expr stat])
 (defast ::expr-stat ::stat [expr])
 (defast ::block-stat ::stat [& stats])
-(comment
-  (defast ::for-in-stat ::stat [value from to by stat])
-)
+(defast ::for-in-stat ::stat [value expr stat])

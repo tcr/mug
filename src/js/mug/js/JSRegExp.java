@@ -12,11 +12,25 @@ public class JSRegExp extends JSObject {
 		this.global = global;
 	}
 	
+	/*
+	 * api
+	 */
+	
 	public Pattern getPattern() {
 		return pattern;
 	}
 	
 	public boolean isGlobal() {
 		return global;
+	}
+	
+	/*
+	 * object
+	 */
+	
+	public JSPrimitive get(String key) {
+		if (key.equals("source"))
+			return new JSString(pattern.pattern());
+		return super.get(key);
 	}
 }

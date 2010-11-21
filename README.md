@@ -34,9 +34,10 @@ To-dos, in some particular order.
 
 *ECMAScript Implementation*
 
-* Currently unsupported constructs: labels, `with`, `void`, `try/catch/throw`, `break/continue`, `do`...`while`, `for`...`in`, `switch/case/default`
-* Much of the standard library
-* More complete type cases for operator
+* Currently unsupported constructs: labels, `with`, `void`, `try/catch/throw`, `break/continue`, `switch/case/default`
+* Incomplete standard library
+* Incomplete operator cases for some combinations of types
+* Replace regexp implementation (java.util.regex) 
 
 *Mug API*
 

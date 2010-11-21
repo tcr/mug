@@ -134,7 +134,7 @@ var OPERATOR_CHARS = array_to_hash(characters("+-*&%=<>!?|~^"));
 
 var RE_HEX_NUMBER = /^0x[0-9a-f]+$/i;
 var RE_OCT_NUMBER = /^0[0-7]+$/;
-var RE_DEC_NUMBER = /^\d*\.?\d*(?:e-?\d*(?:\d\.?|\.?\d)\d*)?$/i;
+var RE_DEC_NUMBER = /^\d*\.?\d*(?:e[-+]?\d*(?:\d\.?|\.?\d)\d*)?$/i;
 
 var OPERATORS = array_to_hash([
         "in",
@@ -337,6 +337,11 @@ function tokenizer($TEXT, skip_comments) {
                                 if (has_e) return false;
                                 return has_e = after_e = true;
                         }
+//<BEGIN ADD>
+                        if (ch == "+") {
+                                return after_e;
+                        }
+//<END ADD>
                         if (ch == "-") {
                                 if (after_e || (i == 0 && !prefix)) return true;
                                 return false;

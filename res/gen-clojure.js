@@ -47,8 +47,8 @@ function gen_clojure(ast) {
 		"sub": function(expr, subscript) {
 			return [make(expr), make(subscript)];
 		},
-		"seq": function() {
-			return [].concat(arguments).map(make);
+		"seq": function(pre, expr) {
+			return [make(pre), make(expr)];
 		},
 		"conditional": function(co, th, el) {
 			return [make(co), make(th), make(el)];
@@ -121,7 +121,10 @@ function gen_clojure(ast) {
 			return [make(condition), make(block)];
 		},
 		"for": function(init, cond, step, block) {
-			return [make(init), make(cond), make(step), make(block)];
+			return [init ? make(init) : "nil",
+			        cond ? make(cond) : "nil",
+			        step ? make(step) : "nil",
+			        block ? make(block) : "nil"];
 		},
 		"for-in": function(has_var, key, hash, block) {
 			return [has_var ? "true" : "false", make_string(key), make(hash), make(block)];
@@ -148,7 +151,7 @@ function gen_clojure(ast) {
 		var type = node[0];
 		var gen = generators[type];
 		if (!gen)
-			throw new Error("Can't find generator for \"" + type + "\"");
+			throw new Error("Can't find generator for \"" + type.toSource() + "\"");
 		return add_spaces(["(:" + type].concat(gen.apply(type, node.slice(1))).concat([")"]));
 	};
 
@@ -170,6 +173,11 @@ function best_of(a) {
 	return best_of([ a[0], best_of(a.slice(1)) ]);
 };
 
+function make_number(value) {
+	return isFinite(value) ? String(value) : 'null';
+}
+
+/*
 function make_number(num) {
 	var str = num.toString(10), a = [ str ], m;
 	if (Math.floor(num) === num) {
@@ -184,6 +192,7 @@ function make_number(num) {
 	}
 	return best_of(a);
 };
+*/
 
 function make_string(str) {
 	if (str == null) return "nil";
