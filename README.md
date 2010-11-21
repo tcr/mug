@@ -27,6 +27,13 @@ Why?
 * Compiled JavaScript has as little overhead as possible compared to a full interpreter. Preferrable for embedded devices.
 * It's a neat party trick.
 
+Development
+-----------
+
+Mug is an Eclipse project developed using the Counterclockwise extension.
+
+Submitting bug reports/feature requests would be excellent. If you're interested in writing code, I'd love your help with: JavaScript testcases (language features you find are broken), writing modules (see source for mug.modules.fs), and then any items on the TODO list.
+
 Roadmap
 -------
 
@@ -35,8 +42,8 @@ To-dos, in some particular order.
 *ECMAScript Implementation*
 
 * Currently unsupported constructs: `try/catch/throw`, `switch/case/default`, labels, `with`, `void`
-* Incomplete standard library
-* Incomplete operator cases for some combinations of types
+* Complete the standard library
+* Complete operator cases for some combinations of types
 * Replace regexp implementation (java.util.regex) 
 
 *Mug API*
@@ -56,7 +63,7 @@ To-dos, in some particular order.
 
 *ASM*
 
-* More functional ASM building (constructing bytecode AST, then compiling)
+* Switch to `GeneratorAdapter` in ASM library (can use Clojure's built-in)
 
 *Optimizations*
 
