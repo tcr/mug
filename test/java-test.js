@@ -12,7 +12,8 @@ var celsius_label = new JLabel("Celsius")
 var convert_button = new JButton("Convert")
 var fahrenheit_label = new JLabel("Fahrenheit")
 
-convert_button.addActionListener(new java.Proxy("java.awt.event.ActionListener",
+convert_button.addActionListener(
+	new java.Proxy("java.awt.event.ActionListener",
 	{
 		actionPerformed: function (evt) {
 			var c = Number(temp_text.getText());
