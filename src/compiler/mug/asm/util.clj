@@ -15,7 +15,7 @@
 ;
 
 (def arg-limit 8)
-(def script-default-vars #{"exports" "require" "print" "Math" "Array"})
+(def script-default-vars #{"exports" "require" "print" "Math" "Array" "parseInt" "parseFloat" "Number" "Object" "String" "Boolean"})
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;

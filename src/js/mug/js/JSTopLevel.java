@@ -428,6 +428,14 @@ public class JSTopLevel {
 		});
 	} };
 	
+	final JSFunction numberConstructor = new JSFunction(functionPrototype) {
+		@Override
+		public JSPrimitive invoke(JSPrimitive ths, int argc, JSPrimitive l0, JSPrimitive l1, JSPrimitive l2, JSPrimitive l3, JSPrimitive l4, JSPrimitive l5, JSPrimitive l6, JSPrimitive l7, JSPrimitive[] rest)
+				throws Exception {
+			return new JSNumber(JSUtils.asNumber(l0));
+		}
+	};
+	
 	final JSFunction arrayConstructor = new JSFunction(functionPrototype) {
 		public JSPrimitive instantiate(int argc, JSPrimitive l0, JSPrimitive l1, JSPrimitive l2, JSPrimitive l3, JSPrimitive l4, JSPrimitive l5, JSPrimitive l6, JSPrimitive l7, JSPrimitive[] rest) throws Exception {
 			return invoke(null, argc, l0, l1, l2, l3, l4, l5, l6, l7, rest);
@@ -507,4 +515,8 @@ public class JSTopLevel {
 	JSPrimitive _Array = arrayConstructor;
 	public JSPrimitive get_Array() { return _Array; }
 	public void set_Array(JSPrimitive value) { _Array = value; }
+	
+	JSPrimitive _Number = numberConstructor;
+	public JSPrimitive get_Number() { return _Number; }
+	public void set_Number(JSPrimitive value) { _Number = value; }
 }

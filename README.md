@@ -20,6 +20,14 @@ the "exports" object:
     ...
     JSObject fs = Modules.getModule("fs").load();
 
+To interface with java in Mug, use the `java` module.
+
+    var java = require("java")
+    var JFrame = java.import("javax.swing.JFrame")
+    var frame = new JFrame("Window")
+    frame.add(new JButton("Click me"))
+    frame.setVisible(true)
+
 Why?
 ----
 
@@ -54,8 +62,8 @@ To-dos, in some particular order.
 
 *Java Interop*
 
-* Some method for Java<->JS interfacing (Rhino-style)
-* `import('java.package.Class');` imports a Java class 
+* Java compilation into modules
+* Better Java interfacing
 
 *Debug/Logging*
 

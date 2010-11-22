@@ -11,6 +11,7 @@ Available test modules:
 
 * *regression* - Tests various lanugage features.
 * *fs-test* - Tests the `fs` filesystem module.
+* *java-test* - Tests Java integration module (with Swing).
 
 The following benchmarks borrowed from [The Computer Language Benchmark Game](http://shootout.alioth.debian.org/) to test speed and ECMAScript implementation:
 
