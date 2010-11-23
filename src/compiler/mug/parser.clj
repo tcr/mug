@@ -1,4 +1,12 @@
-(ns mug.parse.parser
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;
+; mug.parser
+;
+; A post-processor for parse-js.js to convert our JSON parse
+; tree into our custom AST structure (defined in mug.ast)
+;
+
+(ns mug.parser
   (:use clojure.set mug.ast)
   (:require [clojure.contrib.json :as json])
   (:import [org.mozilla.javascript Context Scriptable ScriptableObject]))
@@ -7,13 +15,14 @@
 ;
 ; input walking
 ;
-
-; NOTE: not sure what's actually a rest parameter (& stat) and what isn't
-; probably actually analyze this part some time
+; Default multimethod for walking the JSON parse tree and
+; iterating through all nodes; custom walkers defer to this
+; tree for all nodes except the ones they're interested in
+;
 
 (defmulti walk-input (fn [node & args] (first node)))
 (defmethod walk-input :default [node & args]
-  (println (str "No AST walker found for type " (first node) " (contents: " node ")")))
+  (println (str "Warning: No AST walker found for type " (first node) " (contents: " node ")")))
 
 (defmethod walk-input "atom" [[_ atom] walker]
   (walker atom walker))
@@ -84,7 +93,11 @@
 (defmethod walk-input "do" [[_ cond body] walker]
   (concat (walker body walker) (walker cond walker)))
 (defmethod walk-input "for" [[_ init cond step body] walker]
-  (concat (walker init walker) (walker cond walker) (walker step walker) (walker body walker)))
+  (concat
+    (if init (walker init walker) [])
+    (if cond (walker cond walker) [])
+    (if step (walker step walker) [])
+    (if body (walker body walker) [])))
 (defmethod walk-input "for-in" [[_ var name obj body] walker]
   (concat (walker obj walker) (walker body walker)))
 (defmethod walk-input "switch" [[_ val body] walker] )
@@ -175,13 +188,13 @@
 	(defmethod globals-walker "function" [[_ name args stats] walker]
     (find-globals ["toplevel" stats] (union vars args)))
 	(defmethod globals-walker "defun" [[_ name args stats] walker]
-	  (find-globals ["toplevel" stats] stats) (union vars args))
+	  (find-globals ["toplevel" stats] (union vars args)))
 	(defmethod globals-walker "name" [[_ ident] walker]
 	  (if (contains? (union vars *reserved-words*) ident) [] [ident]))
 
   (set (globals-walker context globals-walker)))
 
-; find context parents
+; context hierarchy
 
 (defn find-context-info [toplevel & [parents]]
 	(defmulti contexts-walker (fn [node & args] (first node)))
@@ -223,8 +236,6 @@
 ;
 ; code generation
 ;
-
-; code
 
 (defmulti gen-ast-code (fn [node & args] (first node)))
 (defmethod gen-ast-code :default [node & args]
@@ -293,10 +304,10 @@
     (println (str "###ERROR: Bad unary prefix: " op))))
 (defmethod gen-ast-code "call" [[_ func args] input]
   (case (first func)
-    "name" (apply call-expr (into [(gen-ast-code func input)] (map #(gen-ast-code %1 input) args)))
+    "name" (call-expr (gen-ast-code func input) (map #(gen-ast-code %1 input) args))
     "dot"
       (let [[_ base value] func]
-        (apply static-method-call-expr (into [(gen-ast-code base input) value] (map #(gen-ast-code %1 input) args))))
+        (static-method-call-expr (gen-ast-code base input) value (map #(gen-ast-code %1 input) args)))
     (println (str "###ERROR: Unrecognized call format: " (first func)))))
 (defmethod gen-ast-code "dot" [[_ obj attr] input]
   (static-ref-expr (gen-ast-code obj input) attr))
@@ -311,11 +322,11 @@
 (defmethod gen-ast-code "function" [node input]
   (func-literal (find-context-index node input)))
 (defmethod gen-ast-code "new" [[_ func args] input]
-  (apply new-expr (concat [(gen-ast-code func input)] (map #(gen-ast-code %1 input) args))))
+  (new-expr (gen-ast-code func input) (map #(gen-ast-code %1 input) args)))
 
 ;(defmethod gen-ast-code "toplevel" [context])
 (defmethod gen-ast-code "block" [[_ stats] input]
-  (apply block-stat (map #(gen-ast-code %1 input) stats)))
+  (block-stat (map #(gen-ast-code %1 input) stats)))
 (defmethod gen-ast-code "stat" [[_ form] input]
   (case _
     ;"stat" (gen-ast-code (form) input)
@@ -329,7 +340,7 @@
     (if else (gen-ast-code else input) else)))
 ;(defmethod gen-ast-code "with" [[_ obj body]])
 (defmethod gen-ast-code "var" [[_ bindings] input]
-  (apply block-stat
+  (block-stat
     (map (fn [[k v]] (expr-stat (scope-assign-expr (name k) (gen-ast-code v input))))
       (filter (fn [[k v]] (not (nil? v))) bindings))))
 (defmethod gen-ast-code "defun" [node input]
@@ -351,18 +362,19 @@
   (do-while-stat (gen-ast-code cond input) (gen-ast-code body input)))
 (defmethod gen-ast-code "for" [[_ init cond step body] input]
   (for-stat
-    (gen-ast-code init input)
-    (gen-ast-code cond input)
-    (gen-ast-code step input)
-    (gen-ast-code body input)))
+    (when init (gen-ast-code init input))
+    (when cond (gen-ast-code cond input))
+    (when step (gen-ast-code step input))
+    (if body (gen-ast-code body input) [])))
 (defmethod gen-ast-code "for-in" [[_ var name obj body] input]
   (for-in-stat name (gen-ast-code obj input) (gen-ast-code body input)))
 ;(defmethod gen-ast-code "switch" [[_ val body] input] )
 ;(defmethod gen-ast-code "case" [[_ expr] input] )
 ;(defmethod gen-ast-code "default" [[_] input] )
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;
-; contexts
+; context generation
 ;
 
 (defmulti gen-ast-context (fn [node & args] (first node)))
@@ -371,19 +383,26 @@
 
 (defmethod gen-ast-context "toplevel" [context input]
   (let [[_ stats] context]
-    (apply script-context
-      (into [(find-globals context) (find-vars-in-scope context)]
-        (vec (map #(gen-ast-code %1 input) stats))))))
+    (script-context
+      (find-globals context)
+      (find-vars-in-scope context)
+      (vec (map #(gen-ast-code %1 input) stats)))))
 (defmethod gen-ast-context "function" [context input]
   (let [[_ name args stats] context]
-    (apply closure-context
-      (into [(find-context-parents context input) name (vec args) (find-vars-in-scope context)]
-        (vec (map #(gen-ast-code %1 input) stats))))))
+    (closure-context
+      (find-context-parents context input)
+      name
+      (vec args)
+      (find-vars-in-scope context)
+      (vec (map #(gen-ast-code %1 input) stats)))))
 (defmethod gen-ast-context "defun" [context input]
   (let [[_ name args stats] context]
-    (apply closure-context
-      (into [(find-context-parents context input) name (vec args) (find-vars-in-scope context)]
-        (vec (map #(gen-ast-code %1 input) stats))))))
+    (closure-context
+      (find-context-parents context input)
+      name
+      (vec args)
+      (find-vars-in-scope context)
+      (vec (map #(gen-ast-code %1 input) stats)))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;

@@ -12,6 +12,7 @@
 
 ; ast
 
+(comment
 (defmacro defast [type parent types]
 	(do
 		(derive type parent)
@@ -21,11 +22,18 @@
 			(eval (concat (list 'defstruct ast-struct) keywords))
 			(eval (list 'defn (symbol (name type)) types
 				(list 'apply 'struct (list 'cons ast-struct (vec symbols))))))))
+)
+
+(defmacro defast [type parent types]
+  (do
+		(derive type parent)
+	  (eval (list 'defn (symbol (name type)) types
+	    (concat (list 'list type) types)))))
 				
 ; contexts
 (derive ::context ::ast-node)
-(defast ::closure-context ::closure [parents name args vars & stats])
-(defast ::script-context ::closure [globals vars & stats])
+(defast ::script-context ::closure [globals vars stats])
+(defast ::closure-context ::closure [parents name args vars stats])
 
 ; literals
 (derive ::literal ::expr)
@@ -76,10 +84,10 @@
 (defast ::scope-ref-expr ::expr [value])
 (defast ::static-ref-expr ::expr [base value])
 (defast ::dyn-ref-expr ::expr [base index])
-(defast ::static-method-call-expr ::expr [base value & args])
-(defast ::dyn-method-call-expr ::expr [base index & args])
-(defast ::new-expr ::expr [constructor & args])
-(defast ::call-expr ::expr [ref & args])
+(defast ::static-method-call-expr ::expr [base value args])
+(defast ::dyn-method-call-expr ::expr [base index args])
+(defast ::new-expr ::expr [constructor args])
+(defast ::call-expr ::expr [ref args])
 (defast ::scope-assign-expr ::expr [value expr])
 (defast ::static-assign-expr ::expr [base value expr])
 (defast ::dyn-assign-expr ::expr [base index expr])
@@ -88,7 +96,7 @@
 
 ; statements
 (derive ::stat ::ast-node)
-(defast ::block-stat ::stat [& stats])
+(defast ::block-stat ::stat [stats])
 (defast ::expr-stat ::stat [expr])
 (defast ::ret-stat ::stat [expr])
 (defast ::if-stat ::stat [expr then-stat else-stat])

@@ -8,10 +8,11 @@
 ; init
 ;
 
-(defmulti compile-context-init (fn [& args] (:type (first args))))
+(defmulti compile-context-init (fn [context ast cw] (first context)))
 
 (defmethod compile-context-init :mug.ast/script-context [context ast cw]
-  (let [sig (sig-context-init context ast)
+  (let [[_ globals vars stats] context
+        sig (sig-context-init context ast)
         mw (.visitMethod cw, Opcodes/ACC_PUBLIC, "<init>", sig, nil, nil)]
 		(.visitCode mw)
 		(.visitVarInsn mw Opcodes/ALOAD, 0)
@@ -21,14 +22,15 @@
 		(.visitEnd mw)))
 
 (defmethod compile-context-init :mug.ast/closure-context [context ast cw]
-  (let [mw (.visitMethod cw, Opcodes/ACC_PUBLIC, "<init>", (sig-context-init context ast), nil, nil)
+  (let [[_ parents name args vars stats] context
+        mw (.visitMethod cw, Opcodes/ACC_PUBLIC, "<init>", (sig-context-init context ast), nil, nil)
         qn (qn-js-context (context-index context ast))]
 		(.visitCode mw)
 		(.visitVarInsn mw Opcodes/ALOAD, 0)
     (.visitVarInsn mw Opcodes/ALOAD, 1)
 		(.visitMethodInsn mw Opcodes/INVOKESPECIAL, qn-js-function, "<init>", (sig-call (sig-obj qn-js-object) sig-void))
  
-    (doseq [[i parent] (index (context :parents))]
+    (doseq [[i parent] (index parents)]
       (.visitVarInsn mw Opcodes/ALOAD, 0)
       (.visitVarInsn mw Opcodes/ALOAD, (+ i 2))
       (.visitFieldInsn mw Opcodes/PUTFIELD, qn, (ident-scope parent), (sig-obj (qn-js-scope parent))))
@@ -42,10 +44,11 @@
 ; method
 ;
 
-(defmulti compile-context-method (fn [& args] (:type (first args))))
+(defmulti compile-context-method (fn [context ast cw] (first context)))
 
 (defmethod compile-context-method :mug.ast/script-context [context ast cw]
-	(let [mw (.visitMethod cw, Opcodes/ACC_PUBLIC, "load", (sig-load), nil, (into-array ["java/lang/Exception"]))]
+  (let [[_ globals vars stats] context
+	      mw (.visitMethod cw, Opcodes/ACC_PUBLIC, "load", (sig-load), nil, (into-array ["java/lang/Exception"]))]
 		(.visitCode mw)
 		
 		; scope
@@ -64,7 +67,7 @@
     ;[TODO] THIS object
 	
     ; compile body
-		(doseq [stat (context :stats)]
+		(doseq [stat stats]
 			(compile-code stat context ast mw))
 		
   	; return "exports" object
@@ -77,7 +80,8 @@
 		(.visitEnd mw)))
 	
 (defmethod compile-context-method :mug.ast/closure-context [context ast cw]
-	(let [mw (.visitMethod cw, Opcodes/ACC_PUBLIC, "invoke", sig-invoke, nil, (into-array ["java/lang/Exception"]))
+	(let [[_ parents name args vars stats] context
+        mw (.visitMethod cw, Opcodes/ACC_PUBLIC, "invoke", sig-invoke, nil, (into-array ["java/lang/Exception"]))
         qn (qn-js-context (context-index context ast))
         qn-scope (qn-js-scope (context-index context ast))]
 		(.visitCode mw)
@@ -90,20 +94,20 @@
 			(.visitVarInsn Opcodes/ASTORE, (+ 1 3 arg-limit)))
 		
 		; initialize arguments
-		(doseq [[i arg] (index (context :args))]
+		(doseq [[i arg] (index args)]
 			(doto mw
 				(.visitVarInsn Opcodes/ALOAD, (+ 1 3 arg-limit))
 				(.visitVarInsn Opcodes/ALOAD, (+ i 3))
 				(.visitMethodInsn Opcodes/INVOKEVIRTUAL, qn-scope, (str "set_" arg), (sig-call (sig-obj qn-js-primitive) sig-void))))
     ; initialize self
-    (when (not (nil? (context :name)))
+    (when (not (nil? name))
       (doto mw
 				(.visitVarInsn Opcodes/ALOAD, (+ 1 3 arg-limit))
 				(.visitVarInsn Opcodes/ALOAD, 0)
-				(.visitMethodInsn Opcodes/INVOKEVIRTUAL, qn-scope, (str "set_" (context :name)), (sig-call (sig-obj qn-js-primitive) sig-void))))
+				(.visitMethodInsn Opcodes/INVOKEVIRTUAL, qn-scope, (str "set_" name), (sig-call (sig-obj qn-js-primitive) sig-void))))
 		
 		; compile body
-		(doseq [stat (context :stats)]
+		(doseq [stat stats]
 			(compile-code stat context ast mw))
 		
 		; catch-all return
@@ -120,21 +124,22 @@
 ; fields
 ;
 
-(defmulti compile-context-fields (fn [& args] (:type (first args))))
+(defmulti compile-context-fields (fn [context ast cw] (first context)))
 
 (defmethod compile-context-fields :mug.ast/script-context [context ast cw])
 
 (defmethod compile-context-fields :mug.ast/closure-context [context ast cw]
-  ; scopes
-  (doseq [parent (context :parents)]
-    (.visitEnd (.visitField cw, 0, (ident-scope parent), (sig-obj (qn-js-scope parent)), nil, nil))))
+  (let [[_ parents name args vars stats] context]
+    ; scopes
+	  (doseq [parent parents]
+	    (.visitEnd (.visitField cw, 0, (ident-scope parent), (sig-obj (qn-js-scope parent)), nil, nil)))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;
 ; class
 ;
 
-(defmulti compile-context-class (fn [& args] (:type (first args))))
+(defmulti compile-context-class (fn [context ast] (first context)))
 
 (defmethod compile-context-class :mug.ast/script-context [context ast]
   (let [qn (qn-js-context (context-index context ast))
@@ -179,7 +184,7 @@
 ; context compilation
 ;
 
-(defn asm-compile-closure-classes [ast]
+(defn compile-context-classes [ast]
 	(into {} (map-indexed
     (fn [i context] (compile-context-class context ast))
     (ast :contexts))))

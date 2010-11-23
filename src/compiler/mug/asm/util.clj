@@ -1,13 +1,28 @@
 (ns mug.asm.util
   (:use
     clojure.contrib.str-utils
-    [clojure.set :only (difference)]))
+    [clojure.set :only (difference)])
+  (:import
+    [java.io FileOutputStream File]))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;
+; utility functions
+;
 		
 (defn index [coll]
 	(map vector (iterate inc 0) coll))
 
 (defn index-of [s x]
 	((zipmap (vec s) (iterate inc 0)) x))
+
+; writes bytes to path
+; creating directories if they don't exist
+(defn write-file-mkdirs [path bytes]
+  (.mkdirs (.getParentFile (new File path)))
+	(let [fos (new FileOutputStream path)]
+		(.write fos bytes)
+		(.close fos)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;
@@ -78,11 +93,11 @@
     (vec (repeat arg-limit (sig-obj qn-js-primitive))))
     (sig-array (sig-obj qn-js-primitive))) (sig-obj qn-js-primitive))))
 
-(defmulti sig-context-init (fn [& args] (:type (first args))))
-(defmethod sig-context-init :mug.ast/script-context [context ast]
+(defmulti sig-context-init (fn [context ast] (first context)))
+(defmethod sig-context-init :mug.ast/script-context [[_ globals vars stats] ast]
   (sig-call sig-void))
-(defmethod sig-context-init :mug.ast/closure-context [context ast] 
-  (apply sig-call (conj (into [(sig-obj qn-js-object)] (vec (map (fn [x] (sig-obj (qn-js-scope x))) (context :parents)))) sig-void)))  
+(defmethod sig-context-init :mug.ast/closure-context [[_ parents name args vars stats] ast] 
+  (apply sig-call (conj (into [(sig-obj qn-js-object)] (vec (map (fn [x] (sig-obj (qn-js-scope x))) parents))) sig-void)))  
 
 (defn ident-num [x] (str "NUM_" x))
 (defn ident-str [x] (str "STR_" x))
@@ -94,14 +109,20 @@
 ; analysis
 ;
 
-(defmulti context-scope-vars (fn [& args] (:type (first args))))
-(defmethod context-scope-vars :mug.ast/script-context [context]
-  (difference (into #{} (into (context :globals) (context :vars))) script-default-vars))
-(defmethod context-scope-vars :mug.ast/closure-context [context]
-  (into #{} (into (context :args) (into (context :vars) (if (context :name) [(context :name)] [])))))
+(defmulti context-scope-vars (fn [context] (first context)))
+(defmethod context-scope-vars :mug.ast/script-context [[_ globals vars stats]]
+  (difference (into #{} (into globals vars)) script-default-vars))
+(defmethod context-scope-vars :mug.ast/closure-context [[_ parents name args vars stats]]
+  (into #{} (into args (into vars (if name [name] [])))))
 
 (defn context-index [context ast]
   (index-of (ast :contexts) context))
+
+(defmulti context-parents (fn [context] (first context)))
+(defmethod context-parents :mug.ast/script-context [[_ globals vars stats]]
+  [])
+(defmethod context-parents :mug.ast/closure-context [[_ parents name args vars stats]]
+  parents)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;
