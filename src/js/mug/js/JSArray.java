@@ -1,5 +1,10 @@
 package mug.js;
 
+import java.util.ArrayList;
+import java.util.regex.Pattern;
+
+import cern.colt.map.OpenIntObjectHashMap;
+
 public class JSArray extends JSObject {
 	public JSArray(JSObject proto) {
 		super(proto);
@@ -10,19 +15,17 @@ public class JSArray extends JSObject {
 	 */
 	
 	public void push(JSPrimitive value) {
-		super.set(String.valueOf(_length), value);
-		_length++;
+		list.put(list.size(), value);
 	}
 	
 	public JSPrimitive pop() {
-		JSPrimitive value = super.get(String.valueOf(_length));
-		super.set(String.valueOf(_length), null);
-		_length--;
-		return value;
+		JSPrimitive item = (JSPrimitive) list.get(list.size()-1);
+		list.removeKey(list.size()-1);
+		return item;
 	}
 	
 	public int getLength() {
-		return _length;
+		return list.size();
 	}
 	
 	public void append(JSPrimitive[] arr) {
@@ -34,32 +37,42 @@ public class JSArray extends JSObject {
 	 * length property
 	 */
 	
-	int _length = 0;
+	OpenIntObjectHashMap list = new OpenIntObjectHashMap();
 	
 	public JSPrimitive get(String key) {
-		return key.equals("length") ? new JSNumber(_length) : super.get(key);
+		if (key.equals("length"))
+			return new JSNumber(list.size());
+		
+		// try index
+		int index = ((int) Double.parseDouble(key));
+		if (String.valueOf(index).equals(key))
+			return (JSPrimitive) list.get(index);
+		
+		// else
+		return super.get(key);
 	}
 	
 	public void set(String key, JSPrimitive value) {
-		if (key == "length") {
+		if (key.equals("length")) {
 			double dbl = JSUtils.asNumber(value);
 			int len = (int) dbl;
 			if (dbl == Double.NaN || len != dbl)
 				return;
 			// to contract, delete hash values
-			if (_length > len)
-				for (int i = len; i < _length; i++)
-					hash.remove(String.valueOf(i));
-			_length = len;
+			if (len < list.size())
+				System.out.println("can't resize smaller :(");
+				//list = new ArrayList(list.subList(0, len));
 			return;
 		}
-		super.set(key, value);
 		
-		// for setting higher indices, 
-		try {
-			int index = ((int) Double.parseDouble(key));
-			if (index + 1 > _length)
-				_length = index+1;
-		} catch (Exception e) { }
+		// try index
+		int index = Integer.parseInt(key);
+		if (String.valueOf(index).equals(key)) {
+			list.put(index, value);
+			return;
+		}
+		
+		// else
+		super.set(key, value);
 	}
 }

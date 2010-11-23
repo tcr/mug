@@ -26,7 +26,7 @@ function fannkuch(n) {
                sum += sign*flips;
 	       if (flips > maxflips) maxflips = flips;   // New maximum?
                break; 
-            } 
+            }
  	    q[q0] = q0; 
 	    if (q0 >= 3){
 	       var i = 1, j = q0 - 1, t;

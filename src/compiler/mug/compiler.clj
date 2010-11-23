@@ -76,6 +76,6 @@
       (println (str "Compiling \"" path "\""))
      
       ; parse
-      (let [ast (gen-ast (parse-js (slurp path)))]
+      (let [ast (parse-js-ast (slurp path))]
         ; compile
         (compile-js ast qn out-dir)))))
