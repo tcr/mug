@@ -32,7 +32,8 @@ Why?
 ----
 
 * Faster than Rhino, sacrificing ECMAScript conformity for speed.
-* Compiled JavaScript has as little overhead as possible compared to a full interpreter. Preferrable for embedded devices.
+* Minimal overhead, compared to a full interpreter. Standard library is < 75kb.
+* Mug's goal is that compiled code be as close to compiled Java as possible. 
 * It's a neat party trick.
 
 Development
@@ -40,7 +41,11 @@ Development
 
 Mug is an Eclipse project developed using the Counterclockwise extension.
 
-Submitting bug reports/feature requests would be excellent. If you're interested in writing code, I'd love your help with: JavaScript testcases (language features you find are broken), writing modules (see source for mug.modules.fs), and then any items on the TODO list.
+If you're interesting in helping out:
+
+* Submit bug reports/feature requests!
+* Looking for suggestions of possible applications, to refine the API.
+* For coders, I'd love help with writing: JavaScript testcases (obscure language features, edge cases), CommonJS modules (see source for mug.modules.fs), or any items on the TODO list.
 
 Roadmap
 -------
@@ -58,7 +63,6 @@ To-dos, in some particular order.
 
 * Compilation should be programmatic (string, file, stream, etc.)
 * Allow compilation/test cycle from source
-* Convert AST profiler from JS to Clojure/self-host
 
 *Java Interop*
 

@@ -43,7 +43,7 @@
 	(into {}
 		(map-indexed (fn [i context]
 			(let [qn (qn-js-scope i)
-            scope (context-scope-vars context)
+            scope (filter #(nil? (ref-reg context %)) (context-scope-vars context)) ; properties only for non-register references
             cw (new ClassWriter ClassWriter/COMPUTE_MAXS)
             super (if (= i 0) qn-js-toplevel qn-object)]
 				(.visit cw, Opcodes/V1_6, (+ Opcodes/ACC_SUPER Opcodes/ACC_PUBLIC), qn, nil,

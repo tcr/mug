@@ -1,13 +1,13 @@
 package mug.js;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.regex.Pattern;
 
-import cern.colt.map.OpenIntObjectHashMap;
-
 public class JSArray extends JSObject {
-	public JSArray(JSObject proto) {
+	public JSArray(JSObject proto, int initialCapacity) {
 		super(proto);
+		list = new ArrayList<JSPrimitive>(initialCapacity);
 	}
 	
 	/*
@@ -15,12 +15,12 @@ public class JSArray extends JSObject {
 	 */
 	
 	public void push(JSPrimitive value) {
-		list.put(list.size(), value);
+		list.add(value);
 	}
 	
 	public JSPrimitive pop() {
-		JSPrimitive item = (JSPrimitive) list.get(list.size()-1);
-		list.removeKey(list.size()-1);
+		JSPrimitive item = (JSPrimitive) list.get(list.size() - 1);
+		list.remove(list.size() - 1);
 		return item;
 	}
 	
@@ -33,46 +33,94 @@ public class JSArray extends JSObject {
 			push(value);
 	}
 	
+	// used by literal constructor
+	public void load(JSPrimitive[] arr) {
+		for (int i = 0; i < arr.length; i++)
+			set(i, arr[i]);
+	}
+	
 	/*
-	 * length property
+	 * accessors
 	 */
 	
-	OpenIntObjectHashMap list = new OpenIntObjectHashMap();
+	ArrayList<JSPrimitive> list;
 	
 	public JSPrimitive get(String key) {
+		// length property
 		if (key.equals("length"))
 			return new JSNumber(list.size());
 		
-		// try index
+		// integer index
 		int index = ((int) Double.parseDouble(key));
 		if (String.valueOf(index).equals(key))
 			return (JSPrimitive) list.get(index);
 		
-		// else
+		// default
 		return super.get(key);
 	}
 	
+	public JSPrimitive get(JSPrimitive key) {
+		if (key instanceof JSObject && ((JSObject) key).getPrimitiveValue() != null)
+			key = ((JSObject) key).getPrimitiveValue();
+		
+		// integer index
+		if (key instanceof JSNumber) {
+			double dbl = ((JSNumber) key).value;
+			int index = (int) dbl;
+			if (index == dbl)
+				return (JSPrimitive) list.get(index);
+		}
+		
+		return get(JSUtils.asString(key));
+	}
+	
 	public void set(String key, JSPrimitive value) {
+		// length property
 		if (key.equals("length")) {
 			double dbl = JSUtils.asNumber(value);
 			int len = (int) dbl;
 			if (dbl == Double.NaN || len != dbl)
 				return;
 			// to contract, delete hash values
+			while (len > list.size())
+				list.add(null);
 			if (len < list.size())
-				System.out.println("can't resize smaller :(");
+				System.out.println("Not yet implemented: shrinking array by setting length property.");
 				//list = new ArrayList(list.subList(0, len));
 			return;
 		}
 		
-		// try index
+		// integer index
 		int index = Integer.parseInt(key);
 		if (String.valueOf(index).equals(key)) {
-			list.put(index, value);
+			set(index, value);
 			return;
 		}
 		
-		// else
+		// default
 		super.set(key, value);
+	}
+	
+	public void set(JSPrimitive key, JSPrimitive value) {
+		if (key instanceof JSObject && ((JSObject) key).getPrimitiveValue() != null)
+			key = ((JSObject) key).getPrimitiveValue();
+		
+		// integer index
+		if (key instanceof JSNumber) {
+			double dbl = ((JSNumber) key).value;
+			int index = (int) dbl;
+			if (index == dbl) {
+				set(index, value);
+				return;	
+			}
+		}
+		
+		set(JSUtils.asString(key), value);
+	}
+	
+	public void set(int index, JSPrimitive value) {
+		while (list.size() <= index)
+			list.add(null);
+		list.set(index, value);
 	}
 }

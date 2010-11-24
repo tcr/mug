@@ -40,7 +40,7 @@
 
 (defn asm-toplevel [context ast mw]
   (if (= (context-index context ast) 0)
-    (.visitVarInsn mw Opcodes/ALOAD, (+ 1 3 arg-limit))
+    (.visitVarInsn mw Opcodes/ALOAD, scope-reg)
     (do
       (.visitVarInsn mw Opcodes/ALOAD, 0)
       (.visitFieldInsn mw Opcodes/GETFIELD, (qn-js-context (index-of (ast :contexts) context)),
@@ -61,7 +61,7 @@
   (if (contains? (context-scope-vars context) name)
     ; variable found in current scope
     (do
-      (.visitVarInsn mw Opcodes/ALOAD, (+ 1 3 arg-limit))
+      (.visitVarInsn mw Opcodes/ALOAD, scope-reg)
       (qn-js-scope (context-index context ast)))
   (loop [parent (last parents) parents (butlast parents)]
 	  (if (nil? parent)
@@ -70,7 +70,7 @@
 	      (do
 ;	        (println (str " . Found in global scope: " name))
           (if (= (context-index context ast) 0) ; script-context scope inherits from globals
-            (.visitVarInsn mw Opcodes/ALOAD, (+ 1 3 arg-limit))
+            (.visitVarInsn mw Opcodes/ALOAD, scope-reg)
             (do
 		          (.visitVarInsn mw Opcodes/ALOAD, 0)
 		          (.visitFieldInsn mw Opcodes/GETFIELD, (qn-js-context (index-of (ast :contexts) context)),
@@ -169,7 +169,8 @@
 	(.visitInsn mw Opcodes/DUP)
   (asm-toplevel context ast mw)
   (.visitMethodInsn mw Opcodes/INVOKEVIRTUAL, qn-js-toplevel, "getArrayPrototype", (sig-call (sig-obj qn-js-object)))
-	(.visitMethodInsn mw Opcodes/INVOKESPECIAL, qn-js-array, "<init>", (sig-call (sig-obj qn-js-object) sig-void))
+  (.visitLdcInsn mw (count exprs))
+	(.visitMethodInsn mw Opcodes/INVOKESPECIAL, qn-js-array, "<init>", (sig-call (sig-obj qn-js-object) sig-integer sig-void))
 	(.visitInsn mw Opcodes/DUP)
   (.visitIntInsn mw Opcodes/BIPUSH, (count exprs))
   (.visitTypeInsn mw Opcodes/ANEWARRAY, qn-js-primitive)
@@ -178,7 +179,7 @@
     (.visitIntInsn mw Opcodes/BIPUSH, i)
     (compile-code expr context ast mw)
     (.visitInsn mw Opcodes/AASTORE))
-  (.visitMethodInsn mw Opcodes/INVOKEVIRTUAL, qn-js-array, "append", (sig-call (sig-array (sig-obj qn-js-primitive)) sig-void)))
+  (.visitMethodInsn mw Opcodes/INVOKEVIRTUAL, qn-js-array, "load", (sig-call (sig-array (sig-obj qn-js-primitive)) sig-void)))
 
 (defmethod compile-code :mug.ast/obj-literal [[_ props] context ast mw]
 	(.visitTypeInsn mw Opcodes/NEW qn-js-object)
@@ -205,7 +206,7 @@
     ; load scopes
     (doseq [parent (context-parents closure)]
       (if (= ((ast :contexts) parent) context)
-        (.visitVarInsn mw Opcodes/ALOAD, (+ 1 3 arg-limit))
+        (.visitVarInsn mw Opcodes/ALOAD, scope-reg)
         (do
           (.visitVarInsn mw Opcodes/ALOAD, 0)
           (.visitFieldInsn mw Opcodes/GETFIELD, (qn-js-context (context-index context ast)), (str "SCOPE_" parent), (sig-obj (qn-js-scope parent))))))
@@ -336,8 +337,10 @@
 ;
 
 (defmethod compile-code :mug.ast/scope-ref-expr [[_ value] context ast mw]
-  (let [qn-parent (asm-search-scopes value (context-parents context) context ast mw)]
-    (.visitMethodInsn mw Opcodes/INVOKEVIRTUAL, qn-parent, (str "get_" value), (sig-call (sig-obj qn-js-primitive)))))
+  (if-let [reg (ref-reg context value)]
+    (.visitVarInsn mw Opcodes/ALOAD reg) 
+    (let [qn-parent (asm-search-scopes value (context-parents context) context ast mw)]
+      (.visitMethodInsn mw Opcodes/INVOKEVIRTUAL, qn-parent, (str "get_" value), (sig-call (sig-obj qn-js-primitive))))))
 
 (defmethod compile-code :mug.ast/static-ref-expr [[_ base value] context ast mw]
   (compile-code base context ast mw)
@@ -350,8 +353,8 @@
   (compile-code base context ast mw)
   (asm-to-object context ast mw)
   (compile-code index context ast mw)
-  (.visitMethodInsn mw Opcodes/INVOKESTATIC, qn-js-utils, "asString", (sig-call (sig-obj qn-js-primitive) (sig-obj qn-string)))
-	(.visitMethodInsn mw Opcodes/INVOKEVIRTUAL, qn-js-object, "get", (sig-call (sig-obj qn-string) (sig-obj qn-js-primitive))))
+;  (.visitMethodInsn mw Opcodes/INVOKESTATIC, qn-js-utils, "asString", (sig-call (sig-obj qn-js-primitive) (sig-obj qn-string)))
+	(.visitMethodInsn mw Opcodes/INVOKEVIRTUAL, qn-js-object, "get", (sig-call (sig-obj qn-js-primitive) (sig-obj qn-js-primitive))))
 
 (defmethod compile-code :mug.ast/static-method-call-expr [[_ base value args] context ast mw]
   (compile-code base context ast mw)
@@ -383,9 +386,11 @@
 (defmethod compile-code :mug.ast/scope-assign-expr [[_ value expr] context ast mw]
 	(compile-code expr context ast mw)
   (.visitInsn mw Opcodes/DUP)
-  (let [qn-parent (asm-search-scopes value (context-parents context) context ast mw)]
-    (.visitInsn mw Opcodes/SWAP)
-	  (.visitMethodInsn mw Opcodes/INVOKEVIRTUAL, qn-parent, (str "set_" value), (sig-call (sig-obj qn-js-primitive) sig-void))))
+  (if-let [reg (ref-reg context value)]
+    (.visitVarInsn mw Opcodes/ASTORE reg) 
+	  (let [qn-parent (asm-search-scopes value (context-parents context) context ast mw)]
+	    (.visitInsn mw Opcodes/SWAP)
+		  (.visitMethodInsn mw Opcodes/INVOKEVIRTUAL, qn-parent, (str "set_" value), (sig-call (sig-obj qn-js-primitive) sig-void)))))
 
 (defmethod compile-code :mug.ast/static-assign-expr [[_ base value expr] context ast mw]
 	(compile-code expr context ast mw)
@@ -402,13 +407,12 @@
 	(compile-code expr context ast mw)
   (.visitInsn mw Opcodes/DUP)
   (compile-code base context ast mw)
-;  (.visitTypeInsn mw, Opcodes/CHECKCAST, qn-js-object)
   (asm-to-object context ast mw)
   (.visitInsn mw Opcodes/SWAP)
   (compile-code index context ast mw)
-  (.visitMethodInsn mw Opcodes/INVOKESTATIC, qn-js-utils, "asString", (sig-call (sig-obj qn-js-primitive) (sig-obj qn-string)))
+;  (.visitMethodInsn mw Opcodes/INVOKESTATIC, qn-js-utils, "asString", (sig-call (sig-obj qn-js-primitive) (sig-obj qn-string)))
   (.visitInsn mw Opcodes/SWAP)
-	(.visitMethodInsn mw Opcodes/INVOKEVIRTUAL, qn-js-object, "set", (sig-call (sig-obj qn-string) (sig-obj qn-js-primitive) sig-void)))
+	(.visitMethodInsn mw Opcodes/INVOKEVIRTUAL, qn-js-object, "set", (sig-call (sig-obj qn-js-primitive) (sig-obj qn-js-primitive) sig-void)))
 
 (defmethod compile-code :mug.ast/typeof-expr [[_ expr] context ast mw]
   (compile-code expr context ast mw)

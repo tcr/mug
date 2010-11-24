@@ -11,7 +11,5 @@
 	<classpathentry kind="lib" path="rhino-js.jar"/>
 	<classpathentry kind="lib" path="test/out"/>
 	<classpathentry kind="lib" path="sandbox/out"/>
-	<classpathentry kind="lib" path="colt.jar"/>
-	<classpathentry kind="lib" path="concurrent.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

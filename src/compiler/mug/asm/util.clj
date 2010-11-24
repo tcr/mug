@@ -13,6 +13,9 @@
 (defn index [coll]
 	(map vector (iterate inc 0) coll))
 
+(defn enumerate [coll]
+	(map vector coll (iterate inc 0)))
+
 (defn index-of [s x]
 	((zipmap (vec s) (iterate inc 0)) x))
 
@@ -103,6 +106,29 @@
 (defn ident-str [x] (str "STR_" x))
 (defn ident-regex [x] (str "REGEX_" x))
 (defn ident-scope [x] (str "SCOPE_" x))
+
+; registers
+
+(def offset-reg 3) ; [this, "ths", count]
+(def scope-reg (+ 1 offset-reg arg-limit))
+(def exports-reg (+ 2 offset-reg arg-limit)) ;[TODO] this shouldn't be a register?
+(def ref-offset-reg (+ exports-reg 1)) 
+
+;[TODO] Optimization: local register writes
+; this should only return a register if the following cases are true:
+;   the register is not used in a child closure
+; it should assign a register if not used as argument (+ exports-reg 2)
+(defmulti ref-reg (fn [context value] (first context)))
+(defmethod ref-reg :mug.ast/script-context [[_ globals vars stats] value]
+  nil)
+(defmethod ref-reg :mug.ast/closure-context [[_ parents name args vars stats] value]
+  nil)
+;  (if-let [pos (index-of args value)]
+;    (+ offset-reg pos)
+;;    nil))
+;    (when-let [pos (index-of (vec vars) value)]
+;;      (println (+ ref-offset-reg pos))
+;      (+ ref-offset-reg pos))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;

@@ -52,11 +52,19 @@ public class JSObject extends JSPrimitive {
 			return __proto__.get(key);
 		return ret;
 	}
+	
+	public JSPrimitive get(JSPrimitive key) {
+		return get(JSUtils.asString(key));
+	}
 
 	public void set(String key, JSPrimitive value) {
 		if (hash == null)
 			hash = new HashMap<String, JSPrimitive>();
 		hash.put(key, value);
+	}
+	
+	public void set(JSPrimitive key, JSPrimitive value) {
+		set(JSUtils.asString(key), value);
 	}
 	
 	public String[] getKeys() {

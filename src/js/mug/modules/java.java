@@ -141,11 +141,11 @@ public class java extends JSModule {
 
 		@Override
 		public JSPrimitive invoke(JSPrimitive ths, int argc, JSPrimitive l0, JSPrimitive l1, JSPrimitive l2, JSPrimitive l3, JSPrimitive l4, JSPrimitive l5, JSPrimitive l6, JSPrimitive l7, JSPrimitive[] rest) throws Exception
-		{
+		{			
 			// get parent class
 			Class javaClass = ths instanceof JSJavaClass ? ((JSJavaClass) ths).javaClass : ((JSJavaObject) ths).javaObject.getClass();
 			// get calling object
-			Object prnt = ths instanceof JSJavaClass ? null : ((JSJavaObject) ths).javaObject;
+			Object prnt = ths instanceof JSJavaClass ? ths : ((JSJavaObject) ths).javaObject;
 			// iterate methods
 			methodLoop: for (Method m : javaClass.getMethods()) {
 				// rudimentary arg length check
@@ -165,7 +165,8 @@ public class java extends JSModule {
 				// we can call method
 				return wrap(m.invoke(prnt, results));
 			}
-			return null;
+			
+			throw new Exception("No Java method found for " + javaClass.getName() + "::" + javaName);
 		}
 	};
 	
@@ -202,6 +203,8 @@ public class java extends JSModule {
 				return value;
 			if (javaClass.equals(Float.class) || javaClass.equals(float.class))
 				return (float) value;
+			if (javaClass.equals(Long.class) || javaClass.equals(long.class))
+				return (long) value;
 		}
 		if (p instanceof JSBoolean) {
 			boolean value = ((JSBoolean) p).value;

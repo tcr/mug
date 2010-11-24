@@ -54,7 +54,7 @@ public class JSTopLevel {
 			{
 				// concatenate arrays to new array
 				JSObject thsObj = (JSObject) ths;
-				JSArray out = new JSArray(arrayPrototype);
+				JSArray out = new JSArray(arrayPrototype, 0);
 				JSPrimitive[] arguments = JSUtils.arguments(argc, l0, l1, l2, l3, l4, l5, l6, l7, rest);
 				for (int j = 0, max = (int) JSUtils.asNumber(thsObj.get("length")); j < max; j++)
 					out.push(thsObj.get(String.valueOf(j)));
@@ -97,7 +97,7 @@ public class JSTopLevel {
 			{
 				JSObject thsObj = (JSObject) ths;
 				JSObject func = (JSObject) l0;
-				JSArray out = new JSArray(arrayPrototype);
+				JSArray out = new JSArray(arrayPrototype, 0);
 				int len = (int) JSUtils.asNumber(thsObj.get("length"));
 				for (int i = 0; i < len; i++)
 					out.push(func.invoke(ths, 2, thsObj.get(String.valueOf(i)), new JSNumber(i), null, null, null, null, null, null, null));
@@ -132,7 +132,7 @@ public class JSTopLevel {
 				int end = l1 == null ? len : (int) JSUtils.asNumber(l1);
 				if (end < 0)
 					end += len + 1;
-				JSArray out = new JSArray(arrayPrototype);
+				JSArray out = new JSArray(arrayPrototype, 0);
 				for (int i = start; i < end; i++)
 					out.push(thsObj.get(String.valueOf(i)));
 				return out;
@@ -167,7 +167,7 @@ public class JSTopLevel {
 					}
 				});
 				// return new array
-				JSArray out = new JSArray(getArrayPrototype());
+				JSArray out = new JSArray(getArrayPrototype(), 0);
 				out.append(arr);
 				return out;
 			}
@@ -261,7 +261,7 @@ public class JSTopLevel {
 			{
 				Pattern pattern = (l0 instanceof JSRegExp) ? ((JSRegExp) l0).getPattern() : Pattern.compile(Pattern.quote(JSUtils.asString(l0)));
 				String[] result = pattern.split(JSUtils.asString(ths));
-				JSArray out = new JSArray(arrayPrototype);
+				JSArray out = new JSArray(arrayPrototype, 0);
 				for (int i = 0; i < result.length; i++)
 					out.push(new JSString(result[i]));
 				return out;
@@ -274,7 +274,7 @@ public class JSTopLevel {
 			{
 				//[TODO] if l0 is string, compile
 				Pattern pattern = ((JSRegExp) l0).getPattern();
-				JSArray out = new JSArray(getArrayPrototype());
+				JSArray out = new JSArray(getArrayPrototype(), 0);
 				Matcher matcher = pattern.matcher(JSUtils.asString(ths));
 				if (!((JSRegExp) l0).isGlobal()) {
 					if (!matcher.find())
@@ -339,7 +339,7 @@ public class JSTopLevel {
 			public JSPrimitive invoke(JSPrimitive ths, int argc, JSPrimitive l0, JSPrimitive l1, JSPrimitive l2, JSPrimitive l3, JSPrimitive l4, JSPrimitive l5, JSPrimitive l6, JSPrimitive l7, JSPrimitive[] rest) throws Exception
 			{
 				Pattern pattern = ((JSRegExp) ths).getPattern();
-				JSArray out = new JSArray(getArrayPrototype());
+				JSArray out = new JSArray(getArrayPrototype(), 0);
 				Matcher matcher = pattern.matcher(JSUtils.asString(l0));
 				if (!((JSRegExp) ths).isGlobal()) {
 					if (!matcher.find())
@@ -443,20 +443,22 @@ public class JSTopLevel {
 		
 		@Override
 		public JSPrimitive invoke(JSPrimitive ths, int argc, JSPrimitive l0, JSPrimitive l1, JSPrimitive l2, JSPrimitive l3, JSPrimitive l4, JSPrimitive l5, JSPrimitive l6, JSPrimitive l7, JSPrimitive[] rest)
-				throws Exception {
-			JSArray obj = new JSArray(arrayPrototype);
-		
+				throws Exception {		
 			// single-argument constructor
 			if (argc == 1) {
-				obj.set("length", l0);
-				return obj;
+				int length = (int) JSUtils.asNumber(l0);
+				JSArray arr = new JSArray(arrayPrototype, length);
+				for (int i = 0; i < length; i++)
+					arr.push(null);
+				return arr;
 			}
+			
 			// literal declaration
 			JSPrimitive[] arguments = JSUtils.arguments(argc, l0, l1, l2, l3, l4, l5, l6, l7, rest);
+			JSArray arr = new JSArray(arrayPrototype, arguments.length);
 			for (int i = 0; i < arguments.length; i++)
-				obj.set(String.valueOf(i), arguments[i]);
-			
-			return obj;
+				arr.push(arguments[i]);
+			return arr;
 		}
 	};
 	
