@@ -6,7 +6,7 @@ It's currently in version crazy-alpha.
 
 Compiling with mug.jar in your classpath:
 
-	java -cp mug.jar mug.Compiler test test.js [module-id file2 module-id file3...]
+	java -cp mug.jar mug.Compiler test.js [module2.js module3.js ...]
 	
 Resulting class files are in the newly created out/ directory.
 Include this and mug-js.jar to run a module:
@@ -24,8 +24,10 @@ To interface with java in Mug, use the `java` module.
 
     var java = require("java")
     var JFrame = java.import("javax.swing.JFrame")
+    var JButton = java.import("javax.swing.JButton")
     var frame = new JFrame("Window")
     frame.add(new JButton("Click me"))
+    frame.setSize(200, 200)
     frame.setVisible(true)
 
 Why?

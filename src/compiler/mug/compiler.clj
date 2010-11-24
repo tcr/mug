@@ -68,8 +68,9 @@
 	(doseq [f (.listFiles (new File out-dir))]
     (delete-file-recursively f))
  
-  (doseq [[qn path] (apply hash-map args)]
-    (let [file (new File path)]
+  (doseq [path args]
+    (let [qn (second (re-find #"^(.*)\.js$" path))
+          file (new File path)]
       ; check file exists
 	    (when (not (.exists file))
 	      (throw (new Exception (str "File not found \"" path "\"."))))
