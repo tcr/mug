@@ -1,5 +1,7 @@
 (ns mug.asm.constants
-  (:use mug.asm.util))
+  (:use
+    mug.asm.util
+    mug.ast))
 
 (import (org.objectweb.asm ClassWriter Opcodes Label))
 
@@ -10,15 +12,15 @@
 
 (defn asm-compile-constants-fields [ast cw]
 	; strings
-	(doseq [[i v] (index (ast :strings))]
+	(doseq [[i v] (index (ast-strings ast))]
 			(.visitEnd (.visitField cw, (+ Opcodes/ACC_PUBLIC Opcodes/ACC_STATIC), (ident-str i), (sig-obj qn-js-string), nil, nil)))
  
  	; numbers
-	(doseq [[i v] (index (ast :numbers))]
+	(doseq [[i v] (index (ast-numbers ast))]
 			(.visitEnd (.visitField cw, (+ Opcodes/ACC_PUBLIC Opcodes/ACC_STATIC), (ident-num i), (sig-obj qn-js-number), nil, nil)))
 
  	; regexes
-	(doseq [[i [expr flags]] (index (ast :regexes))]
+	(doseq [[i [expr flags]] (index (ast-regexps ast))]
 			(.visitEnd (.visitField cw, (+ Opcodes/ACC_PUBLIC Opcodes/ACC_STATIC), (ident-regex i), (sig-obj qn-pattern), nil, nil))))
 
 (defn asm-compile-constants-clinit [ast cw]
@@ -26,7 +28,7 @@
 		(.visitCode mv)
 
 		; strings
-		(doseq [[i v] (index (ast :strings))]
+		(doseq [[i v] (index (ast-strings ast))]
 			(doto mv
 				(.visitTypeInsn Opcodes/NEW qn-js-string)
 				(.visitInsn Opcodes/DUP)
@@ -35,7 +37,7 @@
 				(.visitFieldInsn Opcodes/PUTSTATIC, (qn-js-constants), (ident-str i), (sig-obj qn-js-string))))
 
 		; numbers
-		(doseq [[i v] (index (ast :numbers))]
+		(doseq [[i v] (index (ast-numbers ast))]
 			(doto mv
 				(.visitTypeInsn Opcodes/NEW qn-js-number)
 				(.visitInsn Opcodes/DUP)
@@ -44,7 +46,7 @@
 				(.visitFieldInsn Opcodes/PUTSTATIC, (qn-js-constants), (ident-num i), (sig-obj qn-js-number))))
   
     ; regex
-		(doseq [[i [expr flags]] (index (ast :regexes))]
+		(doseq [[i [expr flags]] (index (ast-regexps ast))]
 			(doto mv
 				(.visitLdcInsn expr)
         (.visitLdcInsn flags)

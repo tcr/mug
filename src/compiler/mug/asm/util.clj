@@ -1,5 +1,6 @@
 (ns mug.asm.util
   (:use
+    mug.ast
     clojure.contrib.str-utils
     [clojure.set :only (difference)])
   (:import
@@ -27,13 +28,25 @@
 		(.write fos bytes)
 		(.close fos)))
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;
+; mutable compiler state
+;
+
+(def state (atom {}))
+
+(defn get-state [key]
+  (@state key))
+
+(defn update-state [key val]
+  (swap! state assoc key val))
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;
 ; configuration
 ;
 
 (def arg-limit 8)
-(def script-default-vars #{"exports" "require" "print" "Math" "Array" "parseInt" "parseFloat" "Number" "Object" "String" "Boolean"})
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;
@@ -96,11 +109,14 @@
     (vec (repeat arg-limit (sig-obj qn-js-primitive))))
     (sig-array (sig-obj qn-js-primitive))) (sig-obj qn-js-primitive))))
 
-(defmulti sig-context-init (fn [context ast] (first context)))
-(defmethod sig-context-init :mug.ast/script-context [[_ globals vars stats] ast]
+(defmulti sig-context-init (fn [ci ast] (first ((ast-contexts ast) ci))))
+(defmethod sig-context-init :mug.ast/script-context [ci ast]
   (sig-call sig-void))
-(defmethod sig-context-init :mug.ast/closure-context [[_ parents name args vars stats] ast] 
-  (apply sig-call (conj (into [(sig-obj qn-js-object)] (vec (map (fn [x] (sig-obj (qn-js-scope x))) parents))) sig-void)))  
+(defmethod sig-context-init :mug.ast/closure-context [ci ast] 
+  (apply sig-call (concat
+    [(sig-obj qn-js-object)]
+    (vec (map #(sig-obj (qn-js-scope %)) ((ast-context-hierarchy ast) ci)))
+    [sig-void])))  
 
 (defn ident-num [x] (str "NUM_" x))
 (defn ident-str [x] (str "STR_" x))
@@ -114,51 +130,27 @@
 (def exports-reg (+ 2 offset-reg arg-limit)) ;[TODO] this shouldn't be a register?
 (def ref-offset-reg (+ exports-reg 1)) 
 
-;[TODO] Optimization: local register writes
-; this should only return a register if the following cases are true:
-;   the register is not used in a child closure
-; it should assign a register if not used as argument (+ exports-reg 2)
+; local variable registers
+; only used when a register is not used in a child context
+; otherwise returns nil, and variable is saved as scope property
 (defmulti ref-reg (fn [context value] (first context)))
-(defmethod ref-reg :mug.ast/script-context [[_ globals vars stats] value]
-  nil)
-(defmethod ref-reg :mug.ast/closure-context [[_ parents name args vars stats] value]
-  nil)
-;  (if-let [pos (index-of args value)]
-;    (+ offset-reg pos)
-;;    nil))
-;    (when-let [pos (index-of (vec vars) value)]
-;;      (println (+ ref-offset-reg pos))
-;      (+ ref-offset-reg pos))))
+(defmethod ref-reg :default [& _] nil)
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;
-; analysis
-;
-
-(defmulti context-scope-vars (fn [context] (first context)))
-(defmethod context-scope-vars :mug.ast/script-context [[_ globals vars stats]]
-  (difference (into #{} (into globals vars)) script-default-vars))
-(defmethod context-scope-vars :mug.ast/closure-context [[_ parents name args vars stats]]
-  (into #{} (into args (into vars (if name [name] [])))))
-
-(defn context-index [context ast]
-  (index-of (ast :contexts) context))
-
-(defmulti context-parents (fn [context] (first context)))
-(defmethod context-parents :mug.ast/script-context [[_ globals vars stats]]
-  [])
-(defmethod context-parents :mug.ast/closure-context [[_ parents name args vars stats]]
-  parents)
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;
-; mutable compiler state
-;
-
-(def state (atom {}))
-
-(defn get-state [key]
-  (@state key))
-
-(defn update-state [key val]
-  (swap! state assoc key val))
+;[TODO] get these working
+(comment
+(defmethod ref-reg :mug.ast/script-context [context value]
+  (let [[_ stats] context
+        vars (ast-context-vars context)]
+	  (when (not (contains? (ast-context-globals context) value))
+	    (when-let [pos (index-of (vec vars) value)]
+	      (+ ref-offset-reg pos)))))
+(defmethod ref-reg :mug.ast/closure-context [context value]
+  (let [[_ name args stats] context
+        vars (ast-context-vars context)]
+	  (when (not (contains? (ast-context-globals context) value))
+      (do
+			  (if-let [pos (index-of args value)]
+			    (+ offset-reg pos)
+			    (when-let [pos (index-of (vec vars) value)]
+			      (+ ref-offset-reg pos)))))))
+)

@@ -51,9 +51,11 @@ public class JSArray extends JSObject {
 			return new JSNumber(list.size());
 		
 		// integer index
-		int index = ((int) Double.parseDouble(key));
-		if (String.valueOf(index).equals(key))
-			return (JSPrimitive) list.get(index);
+		try {
+			int index = ((int) Double.parseDouble(key));
+			if (String.valueOf(index).equals(key))
+				return (JSPrimitive) list.get(index);
+		} catch (Exception e) { };
 		
 		// default
 		return super.get(key);

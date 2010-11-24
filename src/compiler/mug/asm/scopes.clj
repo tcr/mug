@@ -1,5 +1,7 @@
 (ns mug.asm.scopes
-  (:use mug.asm.util))
+  (:use 
+    mug.ast
+    mug.asm.util))
 
 (import (org.objectweb.asm ClassWriter Opcodes Label))
 
@@ -43,7 +45,7 @@
 	(into {}
 		(map-indexed (fn [i context]
 			(let [qn (qn-js-scope i)
-            scope (filter #(nil? (ref-reg context %)) (context-scope-vars context)) ; properties only for non-register references
+            scope (filter #(nil? (ref-reg context %)) (ast-context-vars context)) ; properties only for non-register references
             cw (new ClassWriter ClassWriter/COMPUTE_MAXS)
             super (if (= i 0) qn-js-toplevel qn-object)]
 				(.visit cw, Opcodes/V1_6, (+ Opcodes/ACC_SUPER Opcodes/ACC_PUBLIC), qn, nil,
@@ -53,4 +55,4 @@
 				(asm-compile-scope-init qn super scope cw)
 				(.visitEnd cw)
 				[qn (.toByteArray cw)]))
-		(ast :contexts))))
+		(ast-contexts ast))))

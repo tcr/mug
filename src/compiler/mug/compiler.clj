@@ -33,7 +33,7 @@
   (swap! pkg-compiled #(identity %2)
     (str "mug/modules/" (replace-str "." "/" (replace-str "-" "_" qn)) "$"))
 
-  ; closures
+  ; contexts
   (println "  Contexts...")
 	(doseq [[qn bytes] (compile-context-classes ast)]
 		(write-file-mkdirs (str out-dir qn ".class") bytes)
@@ -42,13 +42,7 @@
   ; constants
   (println "  Constants...")
 	(write-file-mkdirs (str out-dir (qn-js-constants) ".class") (asm-compile-constants-class ast))
-	
-  ; object shim
-;  (println "  Objects...")
-;	(write-file-mkdirs (str out-dir qn-js-object ".class") (asm-compile-object-class ast))
-;	(write-file-mkdirs (str out-dir pkg-compiled "JSCompiledObject.class")
-;   (asm-compile-object-class ast))
-	
+
   ; scopes
   (println "  Scopes...")
 	(doseq [[qn bytes] (asm-compile-scope-classes ast)]
@@ -78,5 +72,6 @@
      
       ; parse
       (let [ast (parse-js-ast (slurp path))]
+        ;(pprint ast)
         ; compile
         (compile-js ast qn out-dir)))))

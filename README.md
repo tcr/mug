@@ -56,10 +56,11 @@ To-dos, in some particular order.
 
 *ECMAScript Implementation*
 
-* Currently unsupported constructs: `try/catch/throw`, `switch/case/default`, labels, `with`, `void`
+* Implement unsupported constructs: `try/catch/throw`, `switch/case/default`, labels, `with`, `void`, `delete`
 * Complete the standard library
 * Complete operator cases for some combinations of types
-* Replace regexp implementation (java.util.regex) 
+* Normalize DontDelete, DontEnum, ReadOnly
+* Replace RegExp implementation (java.util.regex) 
 
 *Mug API*
 
