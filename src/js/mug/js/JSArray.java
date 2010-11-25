@@ -87,8 +87,7 @@ public class JSArray extends JSObject {
 			while (len > list.size())
 				list.add(null);
 			if (len < list.size())
-				System.out.println("Not yet implemented: shrinking array by setting length property.");
-				//list = new ArrayList(list.subList(0, len));
+				list.remove(list.size()-1);
 			return;
 		}
 		

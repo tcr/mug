@@ -103,11 +103,15 @@
 					(.visitVarInsn Opcodes/ALOAD, (+ i 3))
 					(.visitMethodInsn Opcodes/INVOKEVIRTUAL, qn-scope, (str "set_" arg), (sig-call (sig-obj qn-js-primitive) sig-void)))))
     ; initialize self
-    (when (and (not (nil? name)) (nil? (ref-reg context name)))
-      (doto mw
-				(.visitVarInsn Opcodes/ALOAD, scope-reg)
-				(.visitVarInsn Opcodes/ALOAD, 0)
-				(.visitMethodInsn Opcodes/INVOKEVIRTUAL, qn-scope, (str "set_" name), (sig-call (sig-obj qn-js-primitive) sig-void))))
+    (when (not (nil? name))
+      (if (nil? (ref-reg context name))
+	      (doto mw
+					(.visitVarInsn Opcodes/ALOAD, scope-reg)
+					(.visitVarInsn Opcodes/ALOAD, 0)
+					(.visitMethodInsn Opcodes/INVOKEVIRTUAL, qn-scope, (str "set_" name), (sig-call (sig-obj qn-js-primitive) sig-void))))
+        (doto mw
+          (.visitVarInsn Opcodes/ALOAD, 0)
+          (.visitVarInsn Opcodes/ASTORE (ref-reg context name))))
 		
 		; compile body
 		(doseq [stat stats]

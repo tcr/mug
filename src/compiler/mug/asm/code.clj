@@ -570,9 +570,11 @@
       (.visitInsn mw Opcodes/SWAP)
 			(.visitMethodInsn mw Opcodes/INVOKESPECIAL, qn-js-string, "<init>", (sig-call (sig-obj qn-string) sig-void))
       ; store in scope
-      (let [qn-parent (asm-search-scopes value ci ast mw)]
-        (.visitInsn mw Opcodes/SWAP)
-	      (.visitMethodInsn mw Opcodes/INVOKEVIRTUAL, qn-parent, (str "set_" value), (sig-call (sig-obj qn-js-primitive) sig-void)))
+		  (if-let [reg (ref-reg ((ast-contexts ast) ci) value)]
+		    (.visitVarInsn mw Opcodes/ASTORE reg) 
+	      (let [qn-parent (asm-search-scopes value ci ast mw)]
+	        (.visitInsn mw Opcodes/SWAP)
+		      (.visitMethodInsn mw Opcodes/INVOKEVIRTUAL, qn-parent, (str "set_" value), (sig-call (sig-obj qn-js-primitive) sig-void))))
 	
 			(compile-code stat ci ast mw)
    

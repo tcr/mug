@@ -133,7 +133,7 @@
 ; local variable registers
 ; only used when a register is not used in a child context
 ; otherwise returns nil, and variable is saved as scope property
-(def *local-variable-opt* false)
+(def *local-variable-opt* true)
 
 (defmulti ref-reg (fn [context value] (first context)))
 (defmethod ref-reg :mug.ast/script-context [context value]
