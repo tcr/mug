@@ -122,7 +122,7 @@
     (if else (gen-ast-code else input) else)))
 ;(defmethod gen-ast-code "with" [[_ obj body]])
 (defmethod gen-ast-code "var" [[_ bindings] input]
-  (var-stat (vec (map (fn [[k v]] [k (gen-ast-code v input)]) bindings))))
+  (var-stat (vec (map (fn [[k v]] [k (if v (gen-ast-code v input) nil)]) bindings))))
 (defmethod gen-ast-code "defun" [node input]
   (let [[_ name args stats] node]
     (defn-stat (closure-context name args (map #(gen-ast-code % input) stats)))))

@@ -199,9 +199,16 @@
 (defmethod ast-walker ::do-while-stat [[_ expr stat] walker]
   (concat (walker expr walker) (walker stat walker)))
 (defmethod ast-walker ::for-stat [[_ init expr step stat] walker]
-  (concat (walker init walker) (walker expr walker) (walker step walker) (walker stat walker)))
+  (concat
+    (if init (walker init walker) [])
+    (if expr (walker expr walker) [])
+    (if step (walker step walker) [])
+    (walker stat walker)))
 (defmethod ast-walker ::if-stat [[_ expr then-stat else-stat] walker]
-  (concat (walker expr walker) (walker then-stat walker) (walker else-stat walker)))
+  (concat
+    (walker expr walker)
+    (walker then-stat walker)
+    (if else-stat (walker else-stat walker) [])))
 (defmethod ast-walker ::break-stat [[_ label] walker]
   [])
 (defmethod ast-walker ::continue-stat [[_ label] walker]
@@ -319,7 +326,7 @@
   (memoize (fn [node]
     (set (ast-context-vars-walker node)))))
 
-; undeclared globals
+; undeclared variables
 
 (defmulti ast-context-globals-walker (fn [node vars] (first node)))
 (defmethod ast-context-globals-walker :default [node vars]
@@ -327,7 +334,7 @@
 ; contexts
 (defmethod ast-context-globals-walker ::script-context [node vars]
   (let [[_ stats] node
-        vars (into vars (into script-default-vars (ast-context-vars node)))]
+        vars (into vars (ast-context-vars node))]
     (apply concat (map #(ast-context-globals-walker % vars) stats))))
 (defmethod ast-context-globals-walker ::closure-context [node vars]
   (let [[_ name args stats] node
@@ -339,6 +346,25 @@
 (defmethod ast-context-globals-walker ::scope-assign-expr [[_ value expr] vars]
   (if (contains? vars value) [] [value]))
 
-(def ast-context-globals
+(def ast-undeclared-vars
   (memoize (fn [node]
     (set (ast-context-globals-walker node #{})))))
+
+; enclosed variables
+
+(defmulti ast-descendent-contexts-walker (fn [node] (first node)))
+(defmethod ast-descendent-contexts-walker :default [node]
+  (ast-walker node (fn [node walker] (ast-descendent-contexts-walker node))))
+(defmethod ast-descendent-contexts-walker ::closure-context [node]
+  [node])
+
+(defmulti ast-descendent-contexts (fn [node] (first node)))
+(defmethod ast-descendent-contexts ::script-context [[_ stats]]
+  (apply concat (map ast-descendent-contexts-walker stats)))
+(defmethod ast-descendent-contexts ::closure-context [[_ name args stats]]
+  (apply concat (map ast-descendent-contexts-walker stats)))
+
+(defn ast-enclosed-vars [node vars]
+  (set (filter #(contains? vars %) (apply concat (map ast-undeclared-vars (ast-descendent-contexts node))))))
+;  (memoize (fn [node]
+;    (set (ast-context-globals-walker node #{})))))

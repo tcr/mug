@@ -133,22 +133,21 @@
 ; local variable registers
 ; only used when a register is not used in a child context
 ; otherwise returns nil, and variable is saved as scope property
-(def *local-variable-opt* false)
+(def *local-variable-opt* true)
 
 (defmulti ref-reg (fn [context value] (first context)))
 (defmethod ref-reg :mug.ast/script-context [context value]
   (when *local-variable-opt*
 	  (let [[_ stats] context
 	        vars (ast-context-vars context)]
-    (println (str "IN SCRIPT CONTEXT " value " " (set (apply concat (map #(ast-context-globals %) stats)))))
-		  (when (not (contains? (ast-context-globals context) value))
+		  (when (not (contains? (ast-enclosed-vars context vars) value))
 		    (when-let [pos (index-of (vec vars) value)]
 		      (+ ref-offset-reg pos))))))
 (defmethod ref-reg :mug.ast/closure-context [context value]
   (when *local-variable-opt*
 	  (let [[_ name args stats] context
 	        vars (ast-context-vars context)]
-		  (when (not (contains? (ast-context-globals context) value))
+		  (when (not (contains? (ast-enclosed-vars context vars) value))
 	      (do
 				  (if-let [pos (index-of args value)]
 				    (+ offset-reg pos)
