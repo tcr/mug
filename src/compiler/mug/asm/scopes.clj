@@ -1,7 +1,7 @@
 (ns mug.asm.scopes
   (:use 
     mug.ast
-    mug.asm.util))
+    [mug.asm util config analyze]))
 
 (import (org.objectweb.asm ClassWriter Opcodes Label))
 

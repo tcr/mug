@@ -1,7 +1,7 @@
 (ns mug.asm.code
   (:use
     mug.ast
-    mug.asm.util))
+    [mug.asm config analyze util]))
 
 (import (org.objectweb.asm ClassWriter Opcodes Label))
 

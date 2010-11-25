@@ -13,7 +13,7 @@
   (:use
     mug.ast
     mug.parser
-    [mug.asm code contexts constants scopes util]
+    [mug.asm code contexts constants scopes util analyze config]
     [clojure.contrib.io :only (delete-file-recursively)]
     [clojure.contrib.string :only (replace-str)]
     clojure.pprint)
