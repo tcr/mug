@@ -103,7 +103,7 @@
 					(.visitVarInsn Opcodes/ALOAD, (+ i 3))
 					(.visitMethodInsn Opcodes/INVOKEVIRTUAL, qn-scope, (str "set_" arg), (sig-call (sig-obj qn-js-primitive) sig-void)))))
     ; initialize self
-    (when (not (nil? name))
+    (when (and (not (nil? name)) (nil? (ref-reg context name)))
       (doto mw
 				(.visitVarInsn Opcodes/ALOAD, scope-reg)
 				(.visitVarInsn Opcodes/ALOAD, 0)

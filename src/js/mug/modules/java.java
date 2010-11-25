@@ -141,11 +141,14 @@ public class java extends JSModule {
 
 		@Override
 		public JSPrimitive invoke(JSPrimitive ths, int argc, JSPrimitive l0, JSPrimitive l1, JSPrimitive l2, JSPrimitive l3, JSPrimitive l4, JSPrimitive l5, JSPrimitive l6, JSPrimitive l7, JSPrimitive[] rest) throws Exception
-		{			
+		{
 			// get parent class
 			Class javaClass = ths instanceof JSJavaClass ? ((JSJavaClass) ths).javaClass : ((JSJavaObject) ths).javaObject.getClass();
 			// get calling object
 			Object prnt = ths instanceof JSJavaClass ? ths : ((JSJavaObject) ths).javaObject;
+			// get arguments
+			JSPrimitive[] primitives = JSUtils.arguments(argc, l0, l1, l2, l3, l4, l5, l6, l7, rest);
+			
 			// iterate methods
 			methodLoop: for (Method m : javaClass.getMethods()) {
 				// rudimentary arg length check
@@ -153,7 +156,6 @@ public class java extends JSModule {
 					continue;
 
 				// see if arguments are a match
-				JSPrimitive[] primitives = JSUtils.arguments(argc, l0, l1, l2, l3, l4, l5, l6, l7, rest);
 				Class[] types = m.getParameterTypes();
 				Object[] results;
 				try {
@@ -166,7 +168,13 @@ public class java extends JSModule {
 				return wrap(m.invoke(prnt, results));
 			}
 			
-			throw new Exception("No Java method found for " + javaClass.getName() + "::" + javaName);
+			StringBuilder primtypes = new StringBuilder();
+			for (JSPrimitive prim : primitives) {
+				if (primtypes.length() > 0)
+					primtypes.append(", ");
+				primtypes.append(prim != null ? prim.getClass() : "null");
+			}			
+			throw new Exception("No Java method found for " + javaClass.getName() + "::" + javaName + "(" + primtypes.toString() + ")");
 		}
 	};
 	
@@ -192,8 +200,8 @@ public class java extends JSModule {
 		// handle JS primitives first
 		if (p instanceof JSString) {
 			String value = ((JSString) p).value;
-			if (javaClass.equals(String.class))
-				return value;
+			if (javaClass.isAssignableFrom(String.class))
+				return javaClass.cast(value);
 		}
 		if (p instanceof JSNumber) {
 			double value = ((JSNumber) p).value;

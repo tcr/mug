@@ -407,7 +407,6 @@
 	(compile-code expr ci ast mw)
   (.visitInsn mw Opcodes/DUP)
   (compile-code base ci ast mw)
-;  (.visitTypeInsn mw, Opcodes/CHECKCAST, qn-js-object)
   (asm-to-object ci ast mw)
   (.visitInsn mw Opcodes/SWAP)
   (.visitLdcInsn mw value)
@@ -421,7 +420,6 @@
   (asm-to-object ci ast mw)
   (.visitInsn mw Opcodes/SWAP)
   (compile-code index ci ast mw)
-;  (.visitMethodInsn mw Opcodes/INVOKESTATIC, qn-js-utils, "asString", (sig-call (sig-obj qn-js-primitive) (sig-obj qn-string)))
   (.visitInsn mw Opcodes/SWAP)
 	(.visitMethodInsn mw Opcodes/INVOKEVIRTUAL, qn-js-object, "set", (sig-call (sig-obj qn-js-primitive) (sig-obj qn-js-primitive) sig-void)))
 
