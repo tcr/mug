@@ -1,7 +1,6 @@
 import mug.Modules;
 import mug.js.JSObject;
-import mug.js.JSFunction;
-import mug.js.JSString;
+import mug.js.JSBoolean;
 
 public class RegressionTest {
 	public static void main(String[] args) throws Exception {

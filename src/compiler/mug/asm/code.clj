@@ -1,7 +1,9 @@
 (ns mug.asm.code
   (:use
     mug.ast
-    [mug.asm config analyze util]))
+    [mug.asm config analyze util])
+  (:import
+    [mug.js JSArray JSAtoms JSBoolean JSFunction JSModule JSNull JSNumber JSObject JSPrimitive JSRegExp JSString JSTopLevel JSUtils]))
 
 (import (org.objectweb.asm ClassWriter Opcodes Label))
 
@@ -14,6 +16,111 @@
 ;   2    argument count
 ;   3-x  arguments
 ;   x+1    current scope object
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;
+; expression typing
+;
+; Determines the (lowest common denominator of) the object
+; or primitive type an expression will generate. Used for
+; optimizing type conversion.
+;
+
+(defmulti compile-code-type (fn [node] (first node)))
+
+;
+; literals
+;
+
+(defmethod compile-code-type :mug.ast/null-literal [[_]]
+  JSNull)
+(defmethod compile-code-type :mug.ast/boolean-literal [[_ value]]
+	JSBoolean)
+(defmethod compile-code-type :mug.ast/num-literal [[_ value]]
+	JSNumber)
+(defmethod compile-code-type :mug.ast/str-literal [[_ value]]
+	JSString)
+(defmethod compile-code-type :mug.ast/regexp-literal [[_ expr flags]]
+	JSRegExp)
+(defmethod compile-code-type :mug.ast/array-literal [[_ exprs]]
+	JSArray)
+(defmethod compile-code-type :mug.ast/obj-literal [[_ props]]
+	JSObject)
+(defmethod compile-code-type :mug.ast/func-literal [[_ closure]]
+  JSFunction)
+  
+;
+; operations
+;
+
+(defmethod compile-code-type :mug.ast/add-op-expr [[_ left right]]
+  JSPrimitive)
+(defmethod compile-code-type :mug.ast/sub-op-expr [[_ left right]]
+  JSNumber)
+(defmethod compile-code-type :mug.ast/div-op-expr [[_ left right]]
+  JSNumber)
+(defmethod compile-code-type :mug.ast/mul-op-expr [[_ left right]]
+  JSNumber)
+(defmethod compile-code-type :mug.ast/lsh-op-expr [[_ left right]]
+  JSNumber)
+(defmethod compile-code-type :mug.ast/eq-op-expr [[_ left right]]
+  JSBoolean)
+(defmethod compile-code-type :mug.ast/neq-op-expr [[_ left right]]
+  JSBoolean)
+(defmethod compile-code-type :mug.ast/not-op-expr [[_ expr]]
+  JSBoolean)
+(defmethod compile-code-type :mug.ast/eqs-op-expr [[_ left right]]
+  JSBoolean)
+(defmethod compile-code-type :mug.ast/neqs-op-expr [[_ left right]]
+  JSBoolean)
+(defmethod compile-code-type :mug.ast/lt-op-expr [[_ left right]]
+  JSBoolean)
+(defmethod compile-code-type :mug.ast/lte-op-expr [[_ left right]]
+  JSBoolean)
+(defmethod compile-code-type :mug.ast/gt-op-expr [[_ left right]]
+  JSBoolean)
+(defmethod compile-code-type :mug.ast/gte-op-expr [[_ left right]]
+  JSBoolean)
+(defmethod compile-code-type :mug.ast/neg-op-expr [[_ expr]]
+  JSBoolean)
+(defmethod compile-code-type :mug.ast/or-op-expr [[_ left right]]
+  JSBoolean)
+
+;
+; expressions
+;
+
+(defmethod compile-code-type :mug.ast/scope-ref-expr [[_ value]]
+  JSPrimitive)
+(defmethod compile-code-type :mug.ast/static-ref-expr [[_ base value]]
+  JSPrimitive)
+(defmethod compile-code-type :mug.ast/dyn-ref-expr [[_ base index]]
+  JSPrimitive)
+(defmethod compile-code-type :mug.ast/static-method-call-expr [[_ base value args]]
+  JSPrimitive)
+(defmethod compile-code-type :mug.ast/call-expr [[_ ref args]]
+	JSPrimitive)
+(defmethod compile-code-type :mug.ast/new-expr [[_ constructor args]]
+  JSPrimitive)
+(defmethod compile-code-type :mug.ast/scope-assign-expr [[_ value expr]]
+	(compile-code-type expr))
+(defmethod compile-code-type :mug.ast/static-assign-expr [[_ base value expr]]
+	(compile-code-type expr))
+(defmethod compile-code-type :mug.ast/dyn-assign-expr [[_ base index expr]]
+	(compile-code-type expr))
+(defmethod compile-code-type :mug.ast/typeof-expr [[_ expr]]
+  JSString)
+(defmethod compile-code-type :mug.ast/this-expr [[_]]
+  JSPrimitive)
+(defmethod compile-code-type :mug.ast/if-expr [[_ expr then-expr else-expr]]
+  JSPrimitive)
+(defmethod compile-code-type :mug.ast/seq-expr [[_ pre expr]]
+  (compile-code-type expr))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;
+; compilation prototype
+;
 
 (defmulti compile-code (fn [node ci ast mw] (first node)))
 
@@ -48,12 +155,6 @@
       (.visitFieldInsn mw Opcodes/GETFIELD, (qn-js-context ci),
 	      (str "SCOPE_" 0), (sig-obj (qn-js-scope 0)))
       (.visitTypeInsn mw Opcodes/CHECKCAST, qn-js-toplevel))))
-
-; to-object asm 
-
-(defn asm-to-object [ci ast mw]
-  (asm-toplevel ci ast mw)
-  (.visitMethodInsn mw Opcodes/INVOKEVIRTUAL, qn-js-primitive, "toObject", (sig-call (sig-obj qn-js-toplevel) (sig-obj qn-js-object))))
 
 ; search scopes
 ; asm loads scope object, fn returns qn of scope object
@@ -120,14 +221,32 @@
         (.visitInsn mw Opcodes/AASTORE)))
     (.visitInsn mw Opcodes/ACONST_NULL)))
 
+; to-object asm 
+
+(defn asm-to-object [ci ast mw]
+  (asm-toplevel ci ast mw)
+  (.visitMethodInsn mw Opcodes/INVOKEVIRTUAL, qn-js-primitive, "toObject", (sig-call (sig-obj qn-js-toplevel) (sig-obj qn-js-object))))
+
+; as-* conversion asm
+
+(defn asm-as-number [type ci ast mw]
+  (case type
+    JSNumber (.visitFieldInsn mw Opcodes/GETFIELD, qn-js-number, "value", sig-double)
+    (.visitMethodInsn mw Opcodes/INVOKESTATIC, qn-js-utils, "asNumber", (sig-call (sig-obj qn-js-primitive) sig-double))))
+
+(defn asm-as-boolean [type ci ast mw]
+  (case type
+    JSBoolean (.visitFieldInsn mw Opcodes/GETFIELD, qn-js-boolean, "value", sig-boolean)
+    (.visitMethodInsn mw Opcodes/INVOKESTATIC, qn-js-utils, "asBoolean", (sig-call (sig-obj qn-js-primitive) sig-boolean))))
+
 ; comparison operations
 
 (defn asm-compare-op [op left right ci ast mw]
   (let [false-case (new Label) true-case (new Label)]
     (compile-code left ci ast mw)
-    (.visitMethodInsn mw Opcodes/INVOKESTATIC, qn-js-utils, "asNumber", (sig-call (sig-obj qn-js-primitive) sig-double))
+    (asm-as-number (compile-code-type left) ci ast mw)
     (compile-code right ci ast mw)
-    (.visitMethodInsn mw Opcodes/INVOKESTATIC, qn-js-utils, "asNumber", (sig-call (sig-obj qn-js-primitive) sig-double))
+    (asm-as-number (compile-code-type right) ci ast mw)
     (doto mw
       (.visitInsn Opcodes/DCMPG)
       (.visitJumpInsn op, true-case)
@@ -242,9 +361,9 @@
   (.visitTypeInsn mw Opcodes/NEW, qn-js-number)
   (.visitInsn mw Opcodes/DUP)
   (compile-code left ci ast mw)
-  (.visitMethodInsn mw Opcodes/INVOKESTATIC, qn-js-utils, "asNumber", (sig-call (sig-obj qn-js-primitive) sig-double))
+  (asm-as-number (compile-code-type left) ci ast mw)
   (compile-code right ci ast mw)
-  (.visitMethodInsn mw Opcodes/INVOKESTATIC, qn-js-utils, "asNumber", (sig-call (sig-obj qn-js-primitive) sig-double))
+  (asm-as-number (compile-code-type right) ci ast mw)
   (.visitInsn mw Opcodes/DSUB)
   (.visitMethodInsn mw Opcodes/INVOKESPECIAL, qn-js-number, "<init>", (sig-call sig-double sig-void)))
 
@@ -252,9 +371,9 @@
   (.visitTypeInsn mw Opcodes/NEW, qn-js-number)
   (.visitInsn mw Opcodes/DUP)
   (compile-code left ci ast mw)
-  (.visitMethodInsn mw Opcodes/INVOKESTATIC, qn-js-utils, "asNumber", (sig-call (sig-obj qn-js-primitive) sig-double))
+  (asm-as-number (compile-code-type left) ci ast mw)
   (compile-code right ci ast mw)
-  (.visitMethodInsn mw Opcodes/INVOKESTATIC, qn-js-utils, "asNumber", (sig-call (sig-obj qn-js-primitive) sig-double))
+  (asm-as-number (compile-code-type right) ci ast mw)
   (.visitInsn mw Opcodes/DDIV)
   (.visitMethodInsn mw Opcodes/INVOKESPECIAL, qn-js-number, "<init>", (sig-call sig-double sig-void)))
 
@@ -262,9 +381,9 @@
   (.visitTypeInsn mw Opcodes/NEW, qn-js-number)
   (.visitInsn mw Opcodes/DUP)
   (compile-code left ci ast mw)
-  (.visitMethodInsn mw Opcodes/INVOKESTATIC, qn-js-utils, "asNumber", (sig-call (sig-obj qn-js-primitive) sig-double))
+  (asm-as-number (compile-code-type left) ci ast mw)
   (compile-code right ci ast mw)
-  (.visitMethodInsn mw Opcodes/INVOKESTATIC, qn-js-utils, "asNumber", (sig-call (sig-obj qn-js-primitive) sig-double))
+  (asm-as-number (compile-code-type right) ci ast mw)
   (.visitInsn mw Opcodes/DMUL)
   (.visitMethodInsn mw Opcodes/INVOKESPECIAL, qn-js-number, "<init>", (sig-call sig-double sig-void)))
 
@@ -272,10 +391,10 @@
   (.visitTypeInsn mw Opcodes/NEW, qn-js-number)
   (.visitInsn mw Opcodes/DUP)
   (compile-code left ci ast mw)
-  (.visitMethodInsn mw Opcodes/INVOKESTATIC, qn-js-utils, "asNumber", (sig-call (sig-obj qn-js-primitive) sig-double))
+  (asm-as-number (compile-code-type left) ci ast mw)
   (.visitInsn mw Opcodes/D2I)
   (compile-code right ci ast mw)
-  (.visitMethodInsn mw Opcodes/INVOKESTATIC, qn-js-utils, "asNumber", (sig-call (sig-obj qn-js-primitive) sig-double))
+  (asm-as-number (compile-code-type right) ci ast mw)
   (.visitInsn mw Opcodes/D2I)
   (.visitInsn mw Opcodes/ISHL)
   (.visitInsn mw Opcodes/I2D)
@@ -294,8 +413,8 @@
 (defmethod compile-code :mug.ast/not-op-expr [[_ expr] ci ast mw]
   (let [false-case (new Label) true-case (new Label)]
     (compile-code expr ci ast mw)
+    (asm-as-boolean (compile-code-type expr) ci ast mw)
     (doto mw
-      (.visitMethodInsn Opcodes/INVOKESTATIC, qn-js-utils, "asBoolean", (sig-call (sig-obj qn-js-primitive) sig-boolean))
       (.visitJumpInsn Opcodes/IFNE, false-case)
       (.visitFieldInsn Opcodes/GETSTATIC, qn-js-atoms, "TRUE", (sig-obj qn-js-boolean))
       (.visitJumpInsn Opcodes/GOTO, true-case)
@@ -329,14 +448,14 @@
   (.visitTypeInsn mw Opcodes/NEW, qn-js-number)
   (.visitInsn mw Opcodes/DUP)
   (compile-code expr ci ast mw)
-  (.visitMethodInsn mw Opcodes/INVOKESTATIC, qn-js-utils, "asNumber", (sig-call (sig-obj qn-js-primitive) sig-double))
+  (asm-as-number (compile-code-type expr) ci ast mw)
   (.visitInsn mw Opcodes/DNEG)
   (.visitMethodInsn mw Opcodes/INVOKESPECIAL, qn-js-number, "<init>", (sig-call sig-double sig-void)))
 
 (defmethod compile-code :mug.ast/or-op-expr [[_ left right] ci ast mw]
   (compile-code left ci ast mw)
   (.visitInsn mw Opcodes/DUP)
-  (.visitMethodInsn mw Opcodes/INVOKESTATIC, qn-js-utils, "asBoolean", (sig-call (sig-obj qn-js-primitive) sig-boolean))
+  (asm-as-boolean (compile-code-type left) ci ast mw)
   (let [true-case (new Label)]
     (.visitJumpInsn mw, Opcodes/IFNE, true-case)
     (.visitInsn mw Opcodes/POP)
@@ -364,7 +483,6 @@
   (compile-code base ci ast mw)
   (asm-to-object ci ast mw)
   (compile-code index ci ast mw)
-;  (.visitMethodInsn mw Opcodes/INVOKESTATIC, qn-js-utils, "asString", (sig-call (sig-obj qn-js-primitive) (sig-obj qn-string)))
 	(.visitMethodInsn mw Opcodes/INVOKEVIRTUAL, qn-js-object, "get", (sig-call (sig-obj qn-js-primitive) (sig-obj qn-js-primitive))))
 
 (defmethod compile-code :mug.ast/static-method-call-expr [[_ base value args] ci ast mw]
@@ -432,7 +550,7 @@
 
 (defmethod compile-code :mug.ast/if-expr [[_ expr then-expr else-expr] ci ast mw]
   (compile-code expr ci ast mw)
-  (.visitMethodInsn mw Opcodes/INVOKESTATIC, qn-js-utils, "asBoolean", (sig-call (sig-obj qn-js-primitive) sig-boolean))
+  (asm-as-boolean (compile-code-type expr) ci ast mw)
   (let [false-case (new Label) true-case (new Label)]
     (.visitJumpInsn mw, Opcodes/IFEQ, false-case)
     (compile-code then-expr ci ast mw)
@@ -470,7 +588,7 @@
     
     (.visitLabel mw true-case)
     (compile-code expr ci ast mw)
-    (.visitMethodInsn mw Opcodes/INVOKESTATIC, qn-js-utils, "asBoolean", (sig-call (sig-obj qn-js-primitive) sig-boolean))
+    (asm-as-boolean (compile-code-type expr) ci ast mw)
     (.visitJumpInsn mw, Opcodes/IFEQ, false-case)
     (when stat
       (compile-code stat ci ast mw))
@@ -486,7 +604,7 @@
     (.visitLabel mw true-case)
     (compile-code stat ci ast mw)
     (compile-code expr ci ast mw)
-    (.visitMethodInsn mw Opcodes/INVOKESTATIC, qn-js-utils, "asBoolean", (sig-call (sig-obj qn-js-primitive) sig-boolean))
+    (asm-as-boolean (compile-code-type expr) ci ast mw)
     (.visitJumpInsn mw, Opcodes/IFNE, true-case)
     (.visitLabel mw false-case)
     
@@ -503,7 +621,7 @@
     (.visitLabel mw start-label)
     (when expr
       (compile-code expr ci ast mw)
-      (.visitMethodInsn mw Opcodes/INVOKESTATIC, qn-js-utils, "asBoolean", (sig-call (sig-obj qn-js-primitive) sig-boolean))
+      (asm-as-boolean (compile-code-type expr) ci ast mw)
       (.visitJumpInsn mw, Opcodes/IFEQ, break-label))
     (when stat
       (compile-code stat ci ast mw))
@@ -518,7 +636,7 @@
 
 (defmethod compile-code :mug.ast/if-stat [[_ expr then-stat else-stat] ci ast mw]
   (compile-code expr ci ast mw)
-  (.visitMethodInsn mw Opcodes/INVOKESTATIC, qn-js-utils, "asBoolean", (sig-call (sig-obj qn-js-primitive) sig-boolean))
+  (asm-as-boolean (compile-code-type expr) ci ast mw)
   (let [false-case (new Label) true-case (new Label)]
     (.visitJumpInsn mw, Opcodes/IFEQ, false-case)
     (compile-code then-stat ci ast mw)
