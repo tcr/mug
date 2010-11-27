@@ -73,13 +73,18 @@
 
 (defn sig-load [] (sig-call (sig-obj qn-js-object)))
 (def sig-instantiate (apply sig-call
-  (conj (conj (into [sig-integer]
-    (vec (repeat arg-limit (sig-obj qn-js-primitive))))
-    (sig-array (sig-obj qn-js-primitive))) (sig-obj qn-js-primitive))))
+  (concat
+    [sig-integer]
+    (vec (repeat arg-limit (sig-obj qn-object)))
+    [(sig-array (sig-obj qn-object))
+     (sig-obj qn-object)])))
 (def sig-invoke (apply sig-call
-  (conj (conj (into [(sig-obj qn-js-primitive) sig-integer]
-    (vec (repeat arg-limit (sig-obj qn-js-primitive))))
-    (sig-array (sig-obj qn-js-primitive))) (sig-obj qn-js-primitive))))
+  (concat
+    [(sig-obj qn-object)
+     sig-integer]
+    (vec (repeat arg-limit (sig-obj qn-object)))
+    [(sig-array (sig-obj qn-object))
+     (sig-obj qn-object)])))
 
 (defn ident-num [x] (str "NUM_" x))
 (defn ident-str [x] (str "STR_" x))

@@ -28,9 +28,9 @@ public class JSRegExp extends JSObject {
 	 * object
 	 */
 	
-	public JSPrimitive get(String key) {
+	public Object get(String key) {
 		if (key.equals("source"))
-			return new JSString(pattern.pattern());
+			return pattern.pattern();
 		return super.get(key);
 	}
 }

@@ -7,21 +7,21 @@ public class JSUtils {
 	 * utilities
 	 */
 	
-	static public boolean isNull(JSPrimitive value) {
-		return value == null || value == JSAtoms.NULL;
+	static public boolean isNull(Object value) {
+		return value == null || value == JSNull.NULL;
 	}
 	
-	static public JSPrimitive[] toJavaArray(JSObject arr) {
+	static public Object[] toJavaArray(JSObject arr) {
 		int len = (int) JSUtils.asNumber(arr.get("length"));
-		JSPrimitive[] out = new JSPrimitive[len];
+		Object[] out = new Object[len];
 		for (int j = 0; j < len; j++)
 			out[j] = arr.get(String.valueOf(j));
 		return out;
 	}
 	
-	static public JSPrimitive[] arguments(int argc, JSPrimitive l0, JSPrimitive l1, JSPrimitive l2, JSPrimitive l3, JSPrimitive l4, JSPrimitive l5, JSPrimitive l6, JSPrimitive l7, JSPrimitive[] rest) {
+	static public Object[] arguments(int argc, Object l0, Object l1, Object l2, Object l3, Object l4, Object l5, Object l6, Object l7, Object[] rest) {
 		// return an array of arguments
-		JSPrimitive[] args = new JSPrimitive[argc];
+		Object[] args = new Object[argc];
 		// add arguments
 		switch (argc > 8 ? 8 : argc) {
 		case 8: args[7] = l7;
@@ -43,108 +43,135 @@ public class JSUtils {
 	 * conversions
 	 */
 
-	static public boolean asBoolean(JSPrimitive a) {
-		if (a instanceof JSObject && ((JSObject) a).getPrimitiveValue() != null) 
-			a = ((JSObject) a).getPrimitiveValue();
-		
-		if (a instanceof JSBoolean)
-			return ((JSBoolean) a).value;
-		// 
-		if (a instanceof JSString)
-			return ((JSString) a).value.length() > 0;
+	static public boolean asBoolean(Object a) {
 		if (a instanceof JSObject)
-			return true;
+			a = ((JSObject) a).valueOf();
+		
+		// js types
+		if (a instanceof Boolean)
+			return (Boolean) a;
+		if (a instanceof Double)
+			return (Double) a != 0;
+		if (a instanceof String)
+			return ((String) a).length() > 0;
+		if (a == null)
+			return false;
+		
+		// java types
+		if (a instanceof Number)
+			return ((Number) a).doubleValue() > 0;
+		
 		return false;
 	}
 
-	static public double asNumber(JSPrimitive a) {
-		if (a instanceof JSObject && ((JSObject) a).getPrimitiveValue() != null)
-			a = ((JSObject) a).getPrimitiveValue();
+	static public double asNumber(Object a) {
+		if (a instanceof JSObject)
+			a = ((JSObject) a).valueOf();
 		
-		if (a instanceof JSNumber)
-			return ((JSNumber) a).value;
-		if (a instanceof JSBoolean)
-			return ((JSBoolean) a).value ? 1 : 0;
-		if (a instanceof JSString)
+		// js types
+		if (a instanceof Double)
+			return (Double) a;
+		if (a instanceof Boolean)
+			return (Boolean) a ? 1 : 0;
+		if (a instanceof String)
 			try {
-				return Double.parseDouble(((JSString) a).value);
+				return Double.parseDouble((String) a);
 			} catch (Exception e) {
 				return Double.NaN;
 			}
-		// 
-		// 
+		
+		// java types
+		if (a instanceof Number)
+			return ((Number) a).doubleValue();
+
 		return Double.NaN;
 	}
 
-	static public String asString(JSPrimitive a) {
-		if (a instanceof JSObject && ((JSObject) a).getPrimitiveValue() != null)
-			a = ((JSObject) a).getPrimitiveValue();
-		
-		if (a instanceof JSString)
-			return ((JSString) a).value;
-		if (a instanceof JSNumber) {
-			double value = ((JSNumber) a).value;
-			return (int) value == value ? Integer.toString((int) value) : Double.toString(value);
-		}
-		if (a instanceof JSBoolean)
-			return Boolean.toString(((JSBoolean) a).value);
-		if (a instanceof JSFunction)
-			return "function () { }";
-		if (a instanceof JSArray) {
-			JSPrimitive[] arr = JSUtils.toJavaArray((JSObject) a);
-			StringBuffer buf = new StringBuffer();
-			for (int i = 0; i < arr.length; i++) {
-				if (i > 0)
-					buf.append(",");
-				buf.append(asString(arr[i]));
-			}
-			return buf.toString();
-		}
+	static public String asString(Object a) {
 		if (a instanceof JSObject)
-			return "[object Object]";
-		if (a instanceof JSNull)
+			a = ((JSObject) a).valueOf();
+		
+		// js types
+		if (a instanceof String)
+			return (String) a;
+		if (a instanceof Boolean)
+			return (Boolean) a ? "1" : "0";
+		if (a instanceof Double) {
+			double value = (Double) a;
+			int valuei = (int) value;
+			return valuei == value ? Integer.toString(valuei) : Double.toString(value);
+		}
+		if (a == null)
+			return "undefined";
+		
+		// java types
+		
+		return a.toString();
+	}
+	
+	static public JSObject asJSObject(Object a) {
+		// js types
+		if (a instanceof JSObject)
+			return (JSObject) a;
+		if (a == null)
+			return null;
+		
+		// java types
+		
+		return null;
+	}
+	
+	static public String typeof(Object a) {
+		// js types
+		if (a instanceof Boolean)
+			return "boolean";
+		if (a instanceof Double)
+			return "number";
+		if (a instanceof String)
+			return "string";
+		if (a instanceof JSFunction)
+			return "function";
+		if (a instanceof JSObject)
 			return "null";
 		if (a == null)
 			return "undefined";
-		return null;
+
+		// java types
+		
+		return "object";
 	}
 	
 	/*
 	 * operators
 	 */
 	
-	static public JSPrimitive add(JSPrimitive a, JSPrimitive b) {
+	static public Object add(Object a, Object b) {
 		//
-		if (a instanceof JSNumber && b instanceof JSNumber)
-			return new JSNumber(((JSNumber) a).value + ((JSNumber) b).value);
-		return new JSString(asString(a) + asString(b));
+		if (a instanceof String || b instanceof String)
+			return asString(a) + asString(b);
+		return new Double(asNumber(a) + asNumber(b));
 	}
 	
 	//[TODO] these shouldn't be so strict
 	
-	static public JSBoolean testEquality(JSPrimitive a, JSPrimitive b) {
+	static public boolean testEquality(Object a, Object b) {
 		if (a == null && b == null)
-			return JSAtoms.TRUE;
-		if (a instanceof JSNumber && b instanceof JSNumber)
-			return ((JSNumber) a).value == ((JSNumber) b).value ? JSAtoms.TRUE : JSAtoms.FALSE;
-		//
-		if ((a == null || JSAtoms.NULL.equals(a)) && (b == null || JSAtoms.NULL.equals(b)))
-			return JSAtoms.TRUE;
-		return JSAtoms.FALSE;
+			return true;
+		if (a == null || b == null)
+			return false;
+		return a.equals(b);
 	}
 	
-	static public JSBoolean testInequality(JSPrimitive a, JSPrimitive b) {
+	static public boolean testInequality(Object a, Object b) {
 		if (a == null && b == null)
-			return JSAtoms.FALSE;
-		if (a instanceof JSNumber && b instanceof JSNumber)
-			return ((JSNumber) a).value == ((JSNumber) b).value ? JSAtoms.FALSE : JSAtoms.TRUE;
-		//
-		if ((a == null || JSAtoms.NULL.equals(a)) && (b == null || JSAtoms.NULL.equals(b)))
-			return JSAtoms.FALSE;
-		return JSAtoms.TRUE;
+			return false;
+		if (a == null || b == null)
+			return true;
+		return !a.equals(b);
 	}
 	
-	static public JSBoolean testStrictEquality(JSPrimitive a, JSPrimitive b) {
+	/*	
+	static public boolean testStrictEquality(Object a, Object b) {
 		if (a == null && b == null)
 			return JSAtoms.TRUE;
 		if (a instanceof JSNumber && b instanceof JSNumber)
@@ -153,7 +180,7 @@ public class JSUtils {
 		return JSAtoms.FALSE;
 	}
 	
-	static public JSBoolean testStrictInequality(JSPrimitive a, JSPrimitive b) {
+	static public boolean testStrictInequality(JSPrimitive a, JSPrimitive b) {
 		if (a == null && b == null)
 			return JSAtoms.FALSE;
 		if (a instanceof JSNumber && b instanceof JSNumber)
@@ -161,24 +188,9 @@ public class JSUtils {
 		//
 		return JSAtoms.FALSE;
 	}
-
-	static public JSString typeof(JSPrimitive a) {
-		if (a instanceof JSString)
-			return new JSString("string");
-		if (a instanceof JSNumber)
-			return new JSString("number");
-		if (a instanceof JSBoolean)
-			return new JSString("boolean");
-		if (a instanceof JSNull)
-			return new JSString("null");
-		if (a == null)
-			return new JSString("undefined");
-		if (a instanceof JSFunction)
-			return new JSString("function");
-		if (a instanceof JSObject)
-			return new JSString("object");
-		return null;
-	}
+	*/
+	
+	// patterns
 	
 	static public Pattern compilePattern(String expr, String flags) {
 		return Pattern.compile(expr,

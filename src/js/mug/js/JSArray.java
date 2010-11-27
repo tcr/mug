@@ -7,19 +7,19 @@ import java.util.regex.Pattern;
 public class JSArray extends JSObject {
 	public JSArray(JSObject proto, int initialCapacity) {
 		super(proto);
-		list = new ArrayList<JSPrimitive>(initialCapacity);
+		list = new ArrayList<Object>(initialCapacity);
 	}
 	
 	/*
 	 * API functions
 	 */
 	
-	public void push(JSPrimitive value) {
+	public void push(Object value) {
 		list.add(value);
 	}
 	
-	public JSPrimitive pop() {
-		JSPrimitive item = (JSPrimitive) list.get(list.size() - 1);
+	public Object pop() {
+		Object item = list.get(list.size() - 1);
 		list.remove(list.size() - 1);
 		return item;
 	}
@@ -28,13 +28,13 @@ public class JSArray extends JSObject {
 		return list.size();
 	}
 	
-	public void append(JSPrimitive[] arr) {
-		for (JSPrimitive value : arr)
+	public void append(Object[] arr) {
+		for (Object value : arr)
 			push(value);
 	}
 	
 	// used by literal constructor
-	public void load(JSPrimitive[] arr) {
+	public void load(Object[] arr) {
 		for (int i = 0; i < arr.length; i++)
 			set(i, arr[i]);
 	}
@@ -43,40 +43,45 @@ public class JSArray extends JSObject {
 	 * accessors
 	 */
 	
-	ArrayList<JSPrimitive> list;
+	ArrayList<Object> list;
 	
-	public JSPrimitive get(String key) {
+	public Object get(String key) {
 		// length property
 		if (key.equals("length"))
-			return new JSNumber(list.size());
+			return list.size();
 		
 		// integer index
 		try {
 			int index = ((int) Double.parseDouble(key));
 			if (String.valueOf(index).equals(key))
-				return (JSPrimitive) list.get(index);
+				return list.get(index);
 		} catch (Exception e) { };
 		
 		// default
 		return super.get(key);
 	}
 	
-	public JSPrimitive get(JSPrimitive key) {
-		if (key instanceof JSObject && ((JSObject) key).getPrimitiveValue() != null)
-			key = ((JSObject) key).getPrimitiveValue();
+	public Object get(int index) {
+		return list.get(index);
+	}
+	
+	public Object get(Object key) {
+		if (key instanceof JSObject)
+			key = ((JSObject) key).valueOf();
 		
 		// integer index
-		if (key instanceof JSNumber) {
-			double dbl = ((JSNumber) key).value;
+		if (key instanceof Double) {
+			double dbl = (Double) key;
 			int index = (int) dbl;
 			if (index == dbl)
-				return (JSPrimitive) list.get(index);
+				return get(index);
 		}
+		//[TODO] instanceof Number
 		
 		return get(JSUtils.asString(key));
 	}
 	
-	public void set(String key, JSPrimitive value) {
+	public void set(String key, Object value) {
 		// length property
 		if (key.equals("length")) {
 			double dbl = JSUtils.asNumber(value);
@@ -102,26 +107,28 @@ public class JSArray extends JSObject {
 		super.set(key, value);
 	}
 	
-	public void set(JSPrimitive key, JSPrimitive value) {
-		if (key instanceof JSObject && ((JSObject) key).getPrimitiveValue() != null)
-			key = ((JSObject) key).getPrimitiveValue();
+	@Override
+	public void set(int index, Object value) {
+		while (list.size() <= index)
+			list.add(null);
+		list.set(index, value);
+	}
+	
+	public void set(Object key, Object value) {
+		if (key instanceof JSObject)
+			key = ((JSObject) key).valueOf();
 		
 		// integer index
-		if (key instanceof JSNumber) {
-			double dbl = ((JSNumber) key).value;
+		if (key instanceof Double) {
+			double dbl = (Double) key;
 			int index = (int) dbl;
 			if (index == dbl) {
 				set(index, value);
 				return;	
 			}
 		}
+		//[TODO] instanceof Number
 		
 		set(JSUtils.asString(key), value);
-	}
-	
-	public void set(int index, JSPrimitive value) {
-		while (list.size() <= index)
-			list.add(null);
-		list.set(index, value);
 	}
 }

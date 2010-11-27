@@ -7,7 +7,7 @@ import java.util.Set;
  * Object base (without accessors).
  */
 
-public class JSObject extends JSPrimitive {
+public class JSObject {
 	// private constructor for prototypes
 	private JSObject() {
 	}
@@ -26,44 +26,49 @@ public class JSObject extends JSPrimitive {
 	 * methods
 	 */
 	
-	public JSObject toObject(JSTopLevel top) {
-		return this;
-	}
-	
-	JSPrimitive value = null;
-	
-	public void setPrimitiveValue(JSPrimitive value) {
-		this.value = value;
-	}
-	
-	public JSPrimitive getPrimitiveValue() {
-		return value;
+	public Object valueOf() {
+		Object valueOf = get("valueOf");
+		if (valueOf instanceof JSObject)
+			try {
+				return ((JSObject) valueOf).invoke(this);
+			} catch (Exception e) {
+				return null;
+			}
+		return null;
 	}
 	
 	/*
 	 * hash
 	 */
 
-	protected HashMap<String, JSPrimitive> hash;
+	protected HashMap<String, Object> hash;
 
-	public JSPrimitive get(String key) {
-		JSPrimitive ret = null;
+	public Object get(String key) {
+		Object ret = null;
 		if ((hash == null || (ret = hash.get(key)) == null) && __proto__ != null)
 			return __proto__.get(key);
 		return ret;
 	}
 	
-	public JSPrimitive get(JSPrimitive key) {
+	public Object get(int key) {
+		return get(String.valueOf(key));
+	}
+	
+	public Object get(Object key) {
 		return get(JSUtils.asString(key));
 	}
 
-	public void set(String key, JSPrimitive value) {
+	public void set(String key, Object value) {
 		if (hash == null)
-			hash = new HashMap<String, JSPrimitive>();
+			hash = new HashMap<String, Object>();
 		hash.put(key, value);
 	}
 	
-	public void set(JSPrimitive key, JSPrimitive value) {
+	public void set(int key, Object value) {
+		set(String.valueOf(key), value);
+	}
+	
+	public void set(Object key, Object value) {
 		set(JSUtils.asString(key), value);
 	}
 	
@@ -78,48 +83,48 @@ public class JSObject extends JSPrimitive {
 	 * instantiate
 	 */
 
-	public JSPrimitive instantiate(int argc, JSPrimitive l0, JSPrimitive l1, JSPrimitive l2, JSPrimitive l3, JSPrimitive l4, JSPrimitive l5, JSPrimitive l6, JSPrimitive l7, JSPrimitive[] rest) throws Exception {
+	public Object instantiate(int argc, Object l0, Object l1, Object l2, Object l3, Object l4, Object l5, Object l6, Object l7, Object[] rest) throws Exception {
 		// objects that can instantiate overwrite this method
 		throw new Exception("Cannot instantiate non-callable object.");
 	}
 	
-	final public JSPrimitive instantiate() throws Exception {
+	final public Object instantiate() throws Exception {
 		return instantiate(0, null, null, null, null, null, null, null, null, null);
 	}
 	
-	final public JSPrimitive instantiate(JSPrimitive l0) throws Exception {
+	final public Object instantiate(Object l0) throws Exception {
 		return instantiate(1, l0, null, null, null, null, null, null, null, null);
 	}
 	
-	final public JSPrimitive instantiate(JSPrimitive l0, JSPrimitive l1) throws Exception {
+	final public Object instantiate(Object l0, Object l1) throws Exception {
 		return instantiate(2, l0, l1, null, null, null, null, null, null, null);
 	}
 	
-	final public JSPrimitive instantiate(JSPrimitive l0, JSPrimitive l1, JSPrimitive l2) throws Exception {
+	final public Object instantiate(Object l0, Object l1, Object l2) throws Exception {
 		return instantiate(3, l0, l1, l2, null, null, null, null, null, null);
 	}
 	
-	final public JSPrimitive instantiate(JSPrimitive l0, JSPrimitive l1, JSPrimitive l2, JSPrimitive l3) throws Exception {
+	final public Object instantiate(Object l0, Object l1, Object l2, Object l3) throws Exception {
 		return instantiate(4, l0, l1, l2, l3, null, null, null, null, null);
 	}
 	
-	final public JSPrimitive instantiate(JSPrimitive l0, JSPrimitive l1, JSPrimitive l2, JSPrimitive l3, JSPrimitive l4) throws Exception {
+	final public Object instantiate(Object l0, Object l1, Object l2, Object l3, Object l4) throws Exception {
 		return instantiate(5, l0, l1, l2, l3, l4, null, null, null, null);
 	}
 	
-	final public JSPrimitive instantiate(JSPrimitive l0, JSPrimitive l1, JSPrimitive l2, JSPrimitive l3, JSPrimitive l4, JSPrimitive l5) throws Exception {
+	final public Object instantiate(Object l0, Object l1, Object l2, Object l3, Object l4, Object l5) throws Exception {
 		return instantiate(6, l0, l1, l2, l3, l4, l5, null, null, null);
 	}
 	
-	final public JSPrimitive instantiate(JSPrimitive l0, JSPrimitive l1, JSPrimitive l2, JSPrimitive l3, JSPrimitive l4, JSPrimitive l5, JSPrimitive l6) throws Exception {
+	final public Object instantiate(Object l0, Object l1, Object l2, Object l3, Object l4, Object l5, Object l6) throws Exception {
 		return instantiate(7, l0, l1, l2, l3, l4, l5, l6, null, null);
 	}
 	
-	final public JSPrimitive instantiate(JSPrimitive l0, JSPrimitive l1, JSPrimitive l2, JSPrimitive l3, JSPrimitive l4, JSPrimitive l5, JSPrimitive l6, JSPrimitive l7) throws Exception {
+	final public Object instantiate(Object l0, Object l1, Object l2, Object l3, Object l4, Object l5, Object l6, Object l7) throws Exception {
 		return instantiate(8, l0, l1, l2, l3, l4, l5, l6, l7, null);
 	}	
 	
-	final public JSPrimitive instantiate(JSPrimitive l0, JSPrimitive l1, JSPrimitive l2, JSPrimitive l3, JSPrimitive l4, JSPrimitive l5, JSPrimitive l6, JSPrimitive l7, JSPrimitive[] rest) throws Exception {
+	final public Object instantiate(Object l0, Object l1, Object l2, Object l3, Object l4, Object l5, Object l6, Object l7, Object[] rest) throws Exception {
 		return instantiate(rest.length + 8, l0, l1, l2, l3, l4, l5, l6, l7, rest);
 	}	
 	
@@ -127,48 +132,48 @@ public class JSObject extends JSPrimitive {
 	 * invoke
 	 */
 
-	public JSPrimitive invoke(JSPrimitive ths, int argc, JSPrimitive l0, JSPrimitive l1, JSPrimitive l2, JSPrimitive l3, JSPrimitive l4, JSPrimitive l5, JSPrimitive l6, JSPrimitive l7, JSPrimitive[] rest) throws Exception {
+	public Object invoke(Object ths, int argc, Object l0, Object l1, Object l2, Object l3, Object l4, Object l5, Object l6, Object l7, Object[] rest) throws Exception {
 		// objects that can invoke overwrite this method
 		throw new Exception("Cannot invoke non-callable object.");
 	}
 	
-	final public JSPrimitive invoke(JSPrimitive ths) throws Exception {
+	final public Object invoke(Object ths) throws Exception {
 		return invoke(ths, 0, null, null, null, null, null, null, null, null, null);
 	}
 	
-	final public JSPrimitive invoke(JSPrimitive ths, JSPrimitive l0) throws Exception {
+	final public Object invoke(Object ths, Object l0) throws Exception {
 		return invoke(ths, 1, l0, null, null, null, null, null, null, null, null);
 	}
 	
-	final public JSPrimitive invoke(JSPrimitive ths, JSPrimitive l0, JSPrimitive l1) throws Exception {
+	final public Object invoke(Object ths, Object l0, Object l1) throws Exception {
 		return invoke(ths, 2, l0, l1, null, null, null, null, null, null, null);
 	}
 	
-	final public JSPrimitive invoke(JSPrimitive ths, JSPrimitive l0, JSPrimitive l1, JSPrimitive l2) throws Exception {
+	final public Object invoke(Object ths, Object l0, Object l1, Object l2) throws Exception {
 		return invoke(ths, 3, l0, l1, l2, null, null, null, null, null, null);
 	}
 	
-	final public JSPrimitive invoke(JSPrimitive ths, JSPrimitive l0, JSPrimitive l1, JSPrimitive l2, JSPrimitive l3) throws Exception {
+	final public Object invoke(Object ths, Object l0, Object l1, Object l2, Object l3) throws Exception {
 		return invoke(ths, 4, l0, l1, l2, l3, null, null, null, null, null);
 	}
 	
-	final public JSPrimitive invoke(JSPrimitive ths, JSPrimitive l0, JSPrimitive l1, JSPrimitive l2, JSPrimitive l3, JSPrimitive l4) throws Exception {
+	final public Object invoke(Object ths, Object l0, Object l1, Object l2, Object l3, Object l4) throws Exception {
 		return invoke(ths, 5, l0, l1, l2, l3, l4, null, null, null, null);
 	}
 	
-	final public JSPrimitive invoke(JSPrimitive ths, JSPrimitive l0, JSPrimitive l1, JSPrimitive l2, JSPrimitive l3, JSPrimitive l4, JSPrimitive l5) throws Exception {
+	final public Object invoke(Object ths, Object l0, Object l1, Object l2, Object l3, Object l4, Object l5) throws Exception {
 		return invoke(ths, 6, l0, l1, l2, l3, l4, l5, null, null, null);
 	}
 	
-	final public JSPrimitive invoke(JSPrimitive ths, JSPrimitive l0, JSPrimitive l1, JSPrimitive l2, JSPrimitive l3, JSPrimitive l4, JSPrimitive l5, JSPrimitive l6) throws Exception {
+	final public Object invoke(Object ths, Object l0, Object l1, Object l2, Object l3, Object l4, Object l5, Object l6) throws Exception {
 		return invoke(ths, 7, l0, l1, l2, l3, l4, l5, l6, null, null);
 	}
 	
-	final public JSPrimitive invoke(JSPrimitive ths, JSPrimitive l0, JSPrimitive l1, JSPrimitive l2, JSPrimitive l3, JSPrimitive l4, JSPrimitive l5, JSPrimitive l6, JSPrimitive l7) throws Exception {
+	final public Object invoke(Object ths, Object l0, Object l1, Object l2, Object l3, Object l4, Object l5, Object l6, Object l7) throws Exception {
 		return invoke(ths, 8, l0, l1, l2, l3, l4, l5, l6, l7, null);
 	}	
 	
-	final public JSPrimitive invoke(JSPrimitive ths, JSPrimitive l0, JSPrimitive l1, JSPrimitive l2, JSPrimitive l3, JSPrimitive l4, JSPrimitive l5, JSPrimitive l6, JSPrimitive l7, JSPrimitive[] rest) throws Exception {
+	final public Object invoke(Object ths, Object l0, Object l1, Object l2, Object l3, Object l4, Object l5, Object l6, Object l7, Object[] rest) throws Exception {
 		return invoke(ths, rest.length + 8, l0, l1, l2, l3, l4, l5, l6, l7, rest);
 	}	
 	

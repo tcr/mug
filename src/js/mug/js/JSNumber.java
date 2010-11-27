@@ -1,15 +1,10 @@
 package mug.js;
 
-public class JSNumber extends JSPrimitive {
+public class JSNumber extends JSObject {
 	public double value = 0;
 
-	public JSNumber(double value) {
+	public JSNumber(JSObject proto, double value) {
+		super(proto);
 		this.value = value;
-	}
-	
-	public JSObject toObject(JSTopLevel top) {
-		JSObject obj = new JSObject(top.getNumberPrototype());
-		obj.setPrimitiveValue(this);
-		return obj;
 	}
 }

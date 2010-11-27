@@ -61,7 +61,7 @@
       (.visitMethodInsn Opcodes/INVOKESPECIAL, (qn-js-scriptscope), "<init>", "()V")
 			(.visitVarInsn Opcodes/ASTORE, scope-reg)
       ; "exports" object
-      (.visitMethodInsn Opcodes/INVOKEVIRTUAL, (qn-js-scriptscope), "get_exports", (sig-call (sig-obj qn-js-primitive)))
+      (.visitMethodInsn Opcodes/INVOKEVIRTUAL, (qn-js-scriptscope), "get_exports", (sig-call (sig-obj qn-object)))
       (.visitTypeInsn Opcodes/CHECKCAST, qn-js-object)
       (.visitVarInsn Opcodes/ASTORE, exports-reg))
   
@@ -69,7 +69,7 @@
 	
     ; compile body
 		(doseq [stat stats]
-			(compile-code stat ci ast mw))
+			(asm-compile stat ci ast mw))
 		
   	; return "exports" object
 		(doto mw
@@ -101,21 +101,21 @@
         (doto mw
 					(.visitVarInsn Opcodes/ALOAD, scope-reg)
 					(.visitVarInsn Opcodes/ALOAD, (+ i 3))
-					(.visitMethodInsn Opcodes/INVOKEVIRTUAL, qn-scope, (str "set_" arg), (sig-call (sig-obj qn-js-primitive) sig-void)))))
+					(.visitMethodInsn Opcodes/INVOKEVIRTUAL, qn-scope, (str "set_" arg), (sig-call (sig-obj qn-object) sig-void)))))
     ; initialize self
     (when (not (nil? name))
       (if (nil? (ref-reg context name))
 	      (doto mw
 					(.visitVarInsn Opcodes/ALOAD, scope-reg)
 					(.visitVarInsn Opcodes/ALOAD, 0)
-					(.visitMethodInsn Opcodes/INVOKEVIRTUAL, qn-scope, (str "set_" name), (sig-call (sig-obj qn-js-primitive) sig-void))))
+					(.visitMethodInsn Opcodes/INVOKEVIRTUAL, qn-scope, (str "set_" name), (sig-call (sig-obj qn-object) sig-void))))
         (doto mw
           (.visitVarInsn Opcodes/ALOAD, 0)
           (.visitVarInsn Opcodes/ASTORE (ref-reg context name))))
 		
 		; compile body
 		(doseq [stat stats]
-			(compile-code stat ci ast mw))
+			(asm-compile stat ci ast mw))
 		
 		; catch-all return
 		(doto mw

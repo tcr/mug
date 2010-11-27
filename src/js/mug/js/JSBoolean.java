@@ -1,15 +1,10 @@
 package mug.js;
 
-public class JSBoolean extends JSPrimitive {
+public class JSBoolean extends JSObject {
 	public boolean value = false;
 
-	public JSBoolean(boolean value) {
+	public JSBoolean(JSObject proto, boolean value) {
+		super(proto);
 		this.value = value;
-	}
-	
-	public JSObject toObject(JSTopLevel top) {
-		JSObject obj = new JSObject(top.getBooleanPrototype());
-		obj.setPrimitiveValue(this);
-		return obj;
 	}
 }

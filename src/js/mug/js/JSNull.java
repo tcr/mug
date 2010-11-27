@@ -1,7 +1,9 @@
 package mug.js;
 
-public class JSNull extends JSPrimitive {
-	public JSObject toObject(JSTopLevel top) {
-		return null;
+public class JSNull extends JSObject {	
+	public JSNull() {
+		super(null);
 	}
+
+	public static JSNull NULL = new JSNull();
 }

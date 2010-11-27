@@ -12,22 +12,22 @@
 
 (defn asm-compile-scope-fields [qn scope cw]
 	(doseq [var scope]
-		(.visitEnd (.visitField cw, 0, (str "_" var), (sig-obj qn-js-primitive), nil, nil))))
+		(.visitEnd (.visitField cw, 0, (str "_" var), (sig-obj qn-object), nil, nil))))
 
 (defn asm-compile-scope-methods [qn scope cw]
 	(doseq [var scope]
-		(doto (.visitMethod cw, Opcodes/ACC_PUBLIC, (str "get_" var), (sig-call (sig-obj qn-js-primitive)), nil, nil)
+		(doto (.visitMethod cw, Opcodes/ACC_PUBLIC, (str "get_" var), (sig-call (sig-obj qn-object)), nil, nil)
 			(.visitCode)
 			(.visitVarInsn Opcodes/ALOAD, 0)
-			(.visitFieldInsn Opcodes/GETFIELD, qn, (str "_" var), (sig-obj qn-js-primitive));
+			(.visitFieldInsn Opcodes/GETFIELD, qn, (str "_" var), (sig-obj qn-object));
 			(.visitInsn Opcodes/ARETURN)
 			(.visitMaxs 1, 1)
 			(.visitEnd))
-		(doto (.visitMethod cw, Opcodes/ACC_PUBLIC, (str "set_" var), (sig-call (sig-obj qn-js-primitive) sig-void), nil, nil)
+		(doto (.visitMethod cw, Opcodes/ACC_PUBLIC, (str "set_" var), (sig-call (sig-obj qn-object) sig-void), nil, nil)
 			(.visitCode)
 			(.visitVarInsn Opcodes/ALOAD, 0)
 			(.visitVarInsn Opcodes/ALOAD, 1)
-			(.visitFieldInsn Opcodes/PUTFIELD, qn, (str "_" var), (sig-obj qn-js-primitive));
+			(.visitFieldInsn Opcodes/PUTFIELD, qn, (str "_" var), (sig-obj qn-object));
 			(.visitInsn Opcodes/RETURN)
 			(.visitMaxs 2, 2)
 			(.visitEnd))))
