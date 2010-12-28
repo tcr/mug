@@ -128,6 +128,26 @@ public class JSObject {
 		return instantiate(rest.length + 8, l0, l1, l2, l3, l4, l5, l6, l7, rest);
 	}	
 	
+	final public Object instantiate(Object[] args) throws Exception {
+		Object l0 = null, l1 = null, l2 = null, l3 = null, l4 = null, l5 = null, l6 = null, l7 = null;
+		switch (args.length) {
+		case 8: l7 = args[7];
+		case 7: l6 = args[6];
+		case 6: l5 = args[5];
+		case 5: l4 = args[4];
+		case 4: l3 = args[3];
+		case 3: l2 = args[2];
+		case 2: l1 = args[1];
+		case 1: l0 = args[0];
+		}
+		Object[] rest = null;
+		if (args.length > 8) {
+			rest = new Object[Math.max(args.length - 7, 0)];
+			System.arraycopy(args, 8, rest, 0, rest.length);
+		}
+		return instantiate(args.length, l0, l1, l2, l3, l4, l5, l6, l7, rest);
+	}
+	
 	/*
 	 * invoke
 	 */
@@ -175,6 +195,26 @@ public class JSObject {
 	
 	final public Object invoke(Object ths, Object l0, Object l1, Object l2, Object l3, Object l4, Object l5, Object l6, Object l7, Object[] rest) throws Exception {
 		return invoke(ths, rest.length + 8, l0, l1, l2, l3, l4, l5, l6, l7, rest);
+	}
+	
+	final public Object invoke(Object ths, Object[] args) throws Exception {
+		Object l0 = null, l1 = null, l2 = null, l3 = null, l4 = null, l5 = null, l6 = null, l7 = null;
+		switch (args.length) {
+		case 8: l7 = args[7];
+		case 7: l6 = args[6];
+		case 6: l5 = args[5];
+		case 5: l4 = args[4];
+		case 4: l3 = args[3];
+		case 3: l2 = args[2];
+		case 2: l1 = args[1];
+		case 1: l0 = args[0];
+		}
+		Object[] rest = null;
+		if (args.length > 8) {
+			rest = new Object[Math.max(args.length - 7, 0)];
+			System.arraycopy(args, 8, rest, 0, rest.length);
+		}
+		return invoke(ths, args.length, l0, l1, l2, l3, l4, l5, l6, l7, rest);
 	}	
 	
 	/*

@@ -20,38 +20,38 @@
 (defmethod gen-ast-code :default [node & args]
   (println (str "###Error: No AST generator found for type " (first node))))
 
-(defmethod gen-ast-code "atom" [[_ value] input]
+(defmethod gen-ast-code "atom" [[_ ln value] input]
   (case value
-    "true" (boolean-literal true)
-    "false" (boolean-literal false)
-    "this" (this-expr)
-    "null" (null-literal)))
-(defmethod gen-ast-code "num" [[_ value] input]
-  (num-literal value))
-(defmethod gen-ast-code "string" [[_ value] input]
-  (str-literal value))
-(defmethod gen-ast-code "name" [[_ value] input]
+    "true" (boolean-literal ln true)
+    "false" (boolean-literal ln false)
+    "this" (this-expr ln)
+    "null" (null-literal ln)))
+(defmethod gen-ast-code "num" [[_ ln value] input]
+  (num-literal ln value))
+(defmethod gen-ast-code "string" [[_ ln value] input]
+  (str-literal ln value))
+(defmethod gen-ast-code "name" [[_ ln value] input]
   (case value
-    "true" (boolean-literal true)
-    "false" (boolean-literal false)
-    "this" (this-expr)
-    "null" (null-literal)
-    (scope-ref-expr value)))
-(defmethod gen-ast-code "array" [[_ elems] input]
-  (array-literal (map #(gen-ast-code % input) elems)))
-(defmethod gen-ast-code "object" [[_ props] input]
-  (obj-literal (zipmap (map first props) (map #(gen-ast-code (second %) input) props))))
-(defmethod gen-ast-code "regexp" [[_ expr flags] input]
-  (regexp-literal expr flags))
+    "true" (boolean-literal ln true)
+    "false" (boolean-literal ln false)
+    "this" (this-expr ln)
+    "null" (null-literal ln)
+    (scope-ref-expr ln value)))
+(defmethod gen-ast-code "array" [[_ ln elems] input]
+  (array-literal ln (map #(gen-ast-code % input) elems)))
+(defmethod gen-ast-code "object" [[_ ln props] input]
+  (obj-literal ln (zipmap (map first props) (map #(gen-ast-code (second %) input) props))))
+(defmethod gen-ast-code "regexp" [[_ ln expr flags] input]
+  (regexp-literal ln expr flags))
 
-(defmethod gen-ast-code "assign" [[_ op place val] input]
-  (let [val (if (not= op true) (list "binary" op place val) val)]
+(defmethod gen-ast-code "assign" [[_ ln op place val] input]
+  (let [val (if (not= op true) (list "binary" ln op place val) val)]
     (case (first place)
-      "name" (scope-assign-expr ((vec place) 1) (gen-ast-code val input))
-      "dot" (static-assign-expr (gen-ast-code ((vec place) 1) input) ((vec place) 2) (gen-ast-code val input))
-      "sub" (dyn-assign-expr (gen-ast-code ((vec place) 1) input) (gen-ast-code ((vec place) 2) input) (gen-ast-code val input))
+      "name" (scope-assign-expr ln ((vec place) 2) (gen-ast-code val input))
+      "dot" (static-assign-expr ln (gen-ast-code ((vec place) 2) input) ((vec place) 3) (gen-ast-code val input))
+      "sub" (dyn-assign-expr ln (gen-ast-code ((vec place) 2) input) (gen-ast-code ((vec place) 3) input) (gen-ast-code val input))
       (println (str "###ERROR: Unrecognized assignment: " (first place))))))
-(defmethod gen-ast-code "binary" [[_ op lhs rhs] input]
+(defmethod gen-ast-code "binary" [[_ ln op lhs rhs] input]
   (({"+" add-op-expr
 	  "-" sub-op-expr
 	  "*" mul-op-expr
@@ -66,92 +66,92 @@
 	  "!==" neqs-op-expr
     "||" or-op-expr
     "&&" and-op-expr
-	  "<<" lsh-op-expr} op) (gen-ast-code lhs input) (gen-ast-code rhs input)))
-(defmethod gen-ast-code "unary-postfix" [[_ op place] input]
+	  "<<" lsh-op-expr} op) ln (gen-ast-code lhs input) (gen-ast-code rhs input)))
+(defmethod gen-ast-code "unary-postfix" [[_ ln op place] input]
   (case op
-    "++" (gen-ast-code (list "binary" "-" (list "assign" "+" place (list "num" 1)) (list "num" 1)) input)
-    "--" (gen-ast-code (list "binary" "+" (list "assign" "-" place (list "num" 1)) (list "num" 1)) input)
+    "++" (gen-ast-code (list "binary" ln "-" (list "assign" ln "+" place (list "num" ln 1)) (list "num" ln 1)) input)
+    "--" (gen-ast-code (list "binary" ln "+" (list "assign" ln "-" place (list "num" ln 1)) (list "num" ln 1)) input)
     (println (str "###ERROR: Bad unary postfix: " op))))
-(defmethod gen-ast-code "unary-prefix" [[_ op place] input]
+(defmethod gen-ast-code "unary-prefix" [[_ ln op place] input]
   (case op
-    "+" (num-op-expr (gen-ast-code place input))
-    "-" (neg-op-expr (gen-ast-code place input))
-    "++" (gen-ast-code (list "assign" "+" place (list "num" 1)) input)
-    "--" (gen-ast-code (list "assign" "-" place (list "num" 1)) input)
-    "!" (not-op-expr (gen-ast-code place input))
-    "typeof" (typeof-expr (gen-ast-code place input))
+    "+" (num-op-expr ln (gen-ast-code place input))
+    "-" (neg-op-expr ln (gen-ast-code place input))
+    "++" (gen-ast-code (list "assign" ln "+" place (list "num" ln 1)) input)
+    "--" (gen-ast-code (list "assign" ln "-" place (list "num" ln 1)) input)
+    "!" (not-op-expr ln (gen-ast-code place input))
+    "typeof" (typeof-expr ln (gen-ast-code place input))
     (println (str "###ERROR: Bad unary prefix: " op))))
-(defmethod gen-ast-code "call" [[_ func args] input]
+(defmethod gen-ast-code "call" [[_ ln func args] input]
   (case (first func)
-    "name" (call-expr (gen-ast-code func input) (map #(gen-ast-code %1 input) args))
+    "name" (call-expr ln (gen-ast-code func input) (map #(gen-ast-code %1 input) args))
     "dot"
-      (let [[_ base value] func]
-        (static-method-call-expr (gen-ast-code base input) value (map #(gen-ast-code %1 input) args)))
+      (let [[_ ln base value] func]
+        (static-method-call-expr ln (gen-ast-code base input) value (map #(gen-ast-code %1 input) args)))
     (println (str "###ERROR: Unrecognized call format: " (first func)))))
-(defmethod gen-ast-code "dot" [[_ obj attr] input]
-  (static-ref-expr (gen-ast-code obj input) attr))
-(defmethod gen-ast-code "sub" [[_ obj attr] input]
-  (dyn-ref-expr (gen-ast-code obj input) (gen-ast-code attr input)))
-(defmethod gen-ast-code "seq" [[_ form1 result] input]
-  (seq-expr (gen-ast-code form1 input) (gen-ast-code result input)))
-(defmethod gen-ast-code "conditional" [[_ test then else] input]
-  (if-expr (gen-ast-code test input)
+(defmethod gen-ast-code "dot" [[_ ln obj attr] input]
+  (static-ref-expr ln (gen-ast-code obj input) attr))
+(defmethod gen-ast-code "sub" [[_ ln obj attr] input]
+  (dyn-ref-expr ln (gen-ast-code obj input) (gen-ast-code attr input)))
+(defmethod gen-ast-code "seq" [[_ ln form1 result] input]
+  (seq-expr ln (gen-ast-code form1 input) (gen-ast-code result input)))
+(defmethod gen-ast-code "conditional" [[_ ln test then else] input]
+  (if-expr ln (gen-ast-code test input)
     (gen-ast-code then input)
     (gen-ast-code else input)))
 (defmethod gen-ast-code "function" [node input]
-  (let [[_ name args stats] node]
-    (func-literal (closure-context name args (map #(gen-ast-code % input) stats)))))
-(defmethod gen-ast-code "new" [[_ func args] input]
-  (new-expr (gen-ast-code func input) (map #(gen-ast-code %1 input) args)))
+  (let [[_ ln name args stats] node]
+    (func-literal ln (closure-context ln name args (map #(gen-ast-code % input) stats)))))
+(defmethod gen-ast-code "new" [[_ ln func args] input]
+  (new-expr ln (gen-ast-code func input) (map #(gen-ast-code %1 input) args)))
 
 (defmethod gen-ast-code "toplevel" [node input]
-  (let [[_ stats] node]
-    (script-context (map #(gen-ast-code % input) stats))))
-(defmethod gen-ast-code "block" [[_ stats] input]
-  (block-stat (map #(gen-ast-code %1 input) stats)))
-(defmethod gen-ast-code "stat" [[_ form] input]
+  (let [[_ ln stats] node]
+    (script-context ln (map #(gen-ast-code % input) stats))))
+(defmethod gen-ast-code "block" [[_ ln stats] input]
+  (block-stat ln (map #(gen-ast-code %1 input) stats)))
+(defmethod gen-ast-code "stat" [[_ ln form] input]
   (case _
     ;"stat" (gen-ast-code (form) input)
     "if" (gen-ast-code (form) input)
     ;"new" (gen-ast-code (form) input)
-    (expr-stat (gen-ast-code form input))))
-;(defmethod gen-ast-code "label" [[_ name form]])
-(defmethod gen-ast-code "if" [[_ test then else] input]
-  (if-stat (gen-ast-code test input)
+    (expr-stat ln (gen-ast-code form input))))
+;(defmethod gen-ast-code "label" [[_ ln name form]])
+(defmethod gen-ast-code "if" [[_ ln test then else] input]
+  (if-stat ln (gen-ast-code test input)
     (gen-ast-code then input)
     (if else (gen-ast-code else input) else)))
-;(defmethod gen-ast-code "with" [[_ obj body]])
-(defmethod gen-ast-code "var" [[_ bindings] input]
-  (var-stat (vec (map (fn [[k v]] [k (if v (gen-ast-code v input) nil)]) bindings))))
+;(defmethod gen-ast-code "with" [[_ ln obj body]])
+(defmethod gen-ast-code "var" [[_ ln bindings] input]
+  (var-stat ln (vec (map (fn [[k v]] [k (if v (gen-ast-code v input) nil)]) bindings))))
 (defmethod gen-ast-code "defun" [node input]
-  (let [[_ name args stats] node]
-    (defn-stat (closure-context name args (map #(gen-ast-code % input) stats)))))
-(defmethod gen-ast-code "return" [[_ value] input]
-  (ret-stat (if value (gen-ast-code value input) nil)))
-;(defmethod gen-ast-code "debugger" [[_] input])
+  (let [[_ ln name args stats] node]
+    (defn-stat ln (closure-context ln name args (map #(gen-ast-code % input) stats)))))
+(defmethod gen-ast-code "return" [[_ ln value] input]
+  (ret-stat ln (if value (gen-ast-code value input) nil)))
+;(defmethod gen-ast-code "debugger" [[_ ln] input])
 
-;(defmethod gen-ast-code "try" [[_ body catch finally] input] )
-;(defmethod gen-ast-code "throw" [[_ expr] input] )
+;(defmethod gen-ast-code "try" [[_ ln body catch finally] input] )
+;(defmethod gen-ast-code "throw" [[_ ln expr] input] )
 
-(defmethod gen-ast-code "break" [[_ label] input]
-  (break-stat label))
-(defmethod gen-ast-code "continue" [[_ label] input]
-  (continue-stat label))
-(defmethod gen-ast-code "while" [[_ cond body] input]
-  (while-stat (gen-ast-code cond input) (gen-ast-code body input)))
-(defmethod gen-ast-code "do" [[_ cond body] input]
-  (do-while-stat (gen-ast-code cond input) (gen-ast-code body input)))
-(defmethod gen-ast-code "for" [[_ init cond step body] input]
-  (for-stat
+(defmethod gen-ast-code "break" [[_ ln label] input]
+  (break-stat ln label))
+(defmethod gen-ast-code "continue" [[_ ln label] input]
+  (continue-stat ln label))
+(defmethod gen-ast-code "while" [[_ ln cond body] input]
+  (while-stat ln (gen-ast-code cond input) (gen-ast-code body input)))
+(defmethod gen-ast-code "do" [[_ ln cond body] input]
+  (do-while-stat ln (gen-ast-code cond input) (gen-ast-code body input)))
+(defmethod gen-ast-code "for" [[_ ln init cond step body] input]
+  (for-stat ln
     (when init (gen-ast-code init input))
     (when cond (gen-ast-code cond input))
     (when step (gen-ast-code step input))
     (if body (gen-ast-code body input) [])))
-(defmethod gen-ast-code "for-in" [[_ var name obj body] input]
-  (for-in-stat var name (gen-ast-code obj input) (gen-ast-code body input)))
-;(defmethod gen-ast-code "switch" [[_ val body] input] )
-;(defmethod gen-ast-code "case" [[_ expr] input] )
-;(defmethod gen-ast-code "default" [[_] input] )
+(defmethod gen-ast-code "for-in" [[_ ln var name obj body] input]
+  (for-in-stat ln var name (gen-ast-code obj input) (gen-ast-code body input)))
+;(defmethod gen-ast-code "switch" [[_ ln val body] input] )
+;(defmethod gen-ast-code "case" [[_ ln expr] input] )
+;(defmethod gen-ast-code "default" [[_ ln] input] )
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;
@@ -163,10 +163,11 @@
     (let [cx (Context/enter)
           scope (. cx initStandardObjects)
           wrappedString (Context/javaToJS input scope)]
+      (. cx evaluateString scope "var exports = {}" "<parse-script>" 1 nil)
       (. cx evaluateString scope (slurp (ClassLoader/getSystemResource "parse-js.js")) "parse-js.js" 1 nil)
       (. cx evaluateString scope (slurp (ClassLoader/getSystemResource "json2.js")) "parse-js.js" 1 nil)
       (ScriptableObject/putProperty scope "inputSource" wrappedString)
-      (json/read-json (. cx evaluateString scope "JSON.stringify(parse(inputSource))" "<parse-script>" 1 nil)))
+      (json/read-json (. cx evaluateString scope "JSON.stringify(exports.parse(inputSource))" "<parse-script>" 1 nil)))
     (catch Exception e
       (. e printStackTrace))
     (finally

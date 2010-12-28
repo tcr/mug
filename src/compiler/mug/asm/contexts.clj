@@ -48,7 +48,7 @@
 
 (defmethod compile-context-method :mug.ast/script-context [ci ast cw]
   (let [context ((ast-contexts ast) ci)
-        [_ stats] context
+        [_ ln stats] context
 	      mw (.visitMethod cw, Opcodes/ACC_PUBLIC, "load", (sig-load), nil, (into-array ["java/lang/Exception"]))]
 		(.visitCode mw)
 		
@@ -82,7 +82,7 @@
 	
 (defmethod compile-context-method :mug.ast/closure-context [ci ast cw]
 	(let [context ((ast-contexts ast) ci)
-        [_ name args stats] context
+        [_ ln name args stats] context
         mw (.visitMethod cw, Opcodes/ACC_PUBLIC, "invoke", sig-invoke, nil, (into-array ["java/lang/Exception"]))
         qn (qn-js-context ci)
         qn-scope (qn-js-scope ci)]
@@ -108,10 +108,10 @@
 	      (doto mw
 					(.visitVarInsn Opcodes/ALOAD, scope-reg)
 					(.visitVarInsn Opcodes/ALOAD, 0)
-					(.visitMethodInsn Opcodes/INVOKEVIRTUAL, qn-scope, (str "set_" name), (sig-call (sig-obj qn-object) sig-void))))
+					(.visitMethodInsn Opcodes/INVOKEVIRTUAL, qn-scope, (str "set_" name), (sig-call (sig-obj qn-object) sig-void)))
         (doto mw
           (.visitVarInsn Opcodes/ALOAD, 0)
-          (.visitVarInsn Opcodes/ASTORE (ref-reg context name))))
+          (.visitVarInsn Opcodes/ASTORE (ref-reg context name)))))
 		
 		; compile body
 		(doseq [stat stats]
@@ -145,12 +145,15 @@
 ; class
 ;
 
-(defmulti compile-context-class (fn [ci ast] (first ((ast-contexts ast) ci))))
+(defmulti compile-context-class (fn [ci ast qn] (first ((ast-contexts ast) ci))))
 
-(defmethod compile-context-class :mug.ast/script-context [ci ast]
+(defmethod compile-context-class :mug.ast/script-context [ci ast qn]
   (let [qn (qn-js-context ci)
 				cw (new ClassWriter ClassWriter/COMPUTE_MAXS)]
     (.visit cw, Opcodes/V1_6, (+ Opcodes/ACC_SUPER Opcodes/ACC_PUBLIC), qn, nil, qn-js-module, nil)
+    (.visitSource cw, (str qn ".js"), nil)
+    (update-state "line-number" -1)
+    
 		(compile-context-init ci ast cw)
 		(compile-context-method ci ast cw)
     (compile-context-fields ci ast cw)
@@ -171,10 +174,13 @@
 		(.visitEnd cw)
   	[qn (.toByteArray cw)]))
 
-(defmethod compile-context-class :mug.ast/closure-context [ci ast]
+(defmethod compile-context-class :mug.ast/closure-context [ci ast qn]
   (let [qn (qn-js-context ci)
 				cw (new ClassWriter ClassWriter/COMPUTE_MAXS)]
     (.visit cw, Opcodes/V1_6, (+ Opcodes/ACC_SUPER Opcodes/ACC_PUBLIC), qn, nil, qn-js-function, nil)
+    (.visitSource cw, (str qn ".js"), nil)
+    (update-state "line-number" -1)
+    
 		(compile-context-init ci ast cw)
 		(compile-context-method ci ast cw)
     (compile-context-fields ci ast cw)
@@ -186,7 +192,7 @@
 ; context compilation
 ;
 
-(defn compile-context-classes [ast]
+(defn compile-context-classes [ast qn]
 	(into {} (map-indexed
-    (fn [ci context] (compile-context-class ci ast))
+    (fn [ci context] (compile-context-class ci ast qn))
     (ast-contexts ast))))

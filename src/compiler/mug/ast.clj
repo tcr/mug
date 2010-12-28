@@ -15,8 +15,8 @@
 (defmacro defast [type parent types]
   (do
 		(derive type parent)
-	  (eval (list 'defn (symbol (name type)) types
-	    (concat (list 'list type) types)))))
+	  (eval (list 'defn (symbol (name type)) (vec (concat ['ln] types))
+	    (concat (list 'list type 'ln) types)))))
 				
 ; contexts
 

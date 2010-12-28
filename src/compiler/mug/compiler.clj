@@ -35,7 +35,7 @@
 
   ; contexts
   (println "  Contexts...")
-	(doseq [[qn bytes] (compile-context-classes ast)]
+	(doseq [[qn bytes] (compile-context-classes ast qn)]
 		(write-file-mkdirs (str out-dir qn ".class") bytes)
     (println (str "    Wrote out " qn)))
 	
@@ -72,6 +72,5 @@
      
       ; parse
       (let [ast (parse-js-ast (slurp path))]
-        ;(pprint ast)
         ; compile
         (compile-js ast qn out-dir)))))

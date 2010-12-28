@@ -6,4 +6,4 @@ var fs = require("fs");
 
 print("[\"fs\" Testbench]\n");
 
-print("fs-regression.js filesize: " + fs.open("fs-regression.js").read().length);
+print("fs-regression.js filesize: " + fs.open("fs-test.js").read().length);

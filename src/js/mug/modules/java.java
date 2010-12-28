@@ -1,18 +1,17 @@
 package mug.modules;
 
 import java.lang.reflect.Constructor;
+import java.lang.reflect.Field;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.Proxy;
 
-import mug.js.JSAtoms;
 import mug.js.JSBoolean;
 import mug.js.JSFunction;
 import mug.js.JSModule;
 import mug.js.JSNumber;
 import mug.js.JSObject;
-import mug.js.JSPrimitive;
 import mug.js.JSString;
 import mug.js.JSTopLevel;
 import mug.js.JSUtils;
@@ -22,7 +21,7 @@ public class java extends JSModule {
 	
 	JSFunction _import = new JSFunction (top.getFunctionPrototype()) {
 		@Override
-		public JSPrimitive invoke(JSPrimitive ths, int argc, JSPrimitive l0, JSPrimitive l1, JSPrimitive l2, JSPrimitive l3, JSPrimitive l4, JSPrimitive l5, JSPrimitive l6, JSPrimitive l7, JSPrimitive[] rest) throws Exception
+		public Object invoke(Object ths, int argc, Object l0, Object l1, Object l2, Object l3, Object l4, Object l5, Object l6, Object l7, Object[] rest) throws Exception
 		{
 			String qn = JSUtils.asString(l0);
 			return new JSJavaClass(top, Class.forName(qn));
@@ -31,7 +30,7 @@ public class java extends JSModule {
 	
 	JSFunction _Proxy = new JSFunction (top.getFunctionPrototype()) {
 		@Override
-		public JSPrimitive invoke(JSPrimitive ths, int argc, JSPrimitive l0, JSPrimitive l1, JSPrimitive l2, JSPrimitive l3, JSPrimitive l4, JSPrimitive l5, JSPrimitive l6, JSPrimitive l7, JSPrimitive[] rest) throws Exception
+		public Object invoke(Object ths, int argc, Object l0, Object l1, Object l2, Object l3, Object l4, Object l5, Object l6, Object l7, Object[] rest) throws Exception
 		{
 			// coerce path
 			String qn = JSUtils.asString(l0);
@@ -44,19 +43,7 @@ public class java extends JSModule {
 						@Override
 						public Object invoke(Object ths, Method method, Object[] args) throws Throwable {
 							JSObject meth = (JSObject) obj.get(method.getName());
-							JSObject l0 = null, l1 = null, l2 = null, l3 = null, l4 = null, l5 = null, l6 = null, l7 = null;
-							switch (args.length) {
-							case 8: l7 = new JSJavaObject(top.getObjectPrototype(), args[7]);
-							case 7: l6 = new JSJavaObject(top.getObjectPrototype(), args[6]);
-							case 6: l5 = new JSJavaObject(top.getObjectPrototype(), args[5]);
-							case 5: l4 = new JSJavaObject(top.getObjectPrototype(), args[4]);
-							case 4: l3 = new JSJavaObject(top.getObjectPrototype(), args[3]);
-							case 3: l2 = new JSJavaObject(top.getObjectPrototype(), args[2]);
-							case 2: l1 = new JSJavaObject(top.getObjectPrototype(), args[1]);
-							case 1: l0 = new JSJavaObject(top.getObjectPrototype(), args[0]);
-							}
-							return unwrap(meth.invoke(new JSJavaObject(top.getObjectPrototype(), ths)), method.getReturnType());
-							//return unwrap(meth.invoke(new JSJavaObject(top.getObjectPrototype(), ths), l0, l1, l2, l3, l4, l5, l6, l7, null), method.getReturnType());
+							return castObject(meth.invoke(ths, args), method.getReturnType());
 						}
 					}));
 		}
@@ -95,24 +82,40 @@ public class java extends JSModule {
 		}
 
 		@Override
-		public JSPrimitive invoke(JSPrimitive ths, int argc, JSPrimitive l0, JSPrimitive l1, JSPrimitive l2, JSPrimitive l3, JSPrimitive l4, JSPrimitive l5, JSPrimitive l6, JSPrimitive l7, JSPrimitive[] rest) throws Exception
+		public Object invoke(Object ths, int argc, Object l0, Object l1, Object l2, Object l3, Object l4, Object l5, Object l6, Object l7, Object[] rest) throws Exception
 		{
+			// get arguments
+			Object[] args = JSUtils.arguments(argc, l0, l1, l2, l3, l4, l5, l6, l7, rest);
+			
 			// iterate methods
-			methodLoop: for (Constructor m : javaClass.getConstructors()) {
-				// see if arguments are a match
-				JSPrimitive[] primitives = JSUtils.arguments(argc, l0, l1, l2, l3, l4, l5, l6, l7, rest);
-				Class[] types = m.getParameterTypes();
-				Object[] results;
-				try {
-					results = unwrapArgs(primitives, types);
-				} catch (ClassCastException e) {
-					continue methodLoop;
-				}
-				
+			for (Constructor m : javaClass.getConstructors()) {
+				// check if this method is matching
+				if (!isSupportedFunction(args, m.getParameterTypes()))
+					continue;
 				// we can call method
-				return new JSJavaObject(top.getObjectPrototype(), m.newInstance(results));
+				return new JSJavaObject(top.getObjectPrototype(), m.newInstance(args));
 			}
 			return null;
+		}
+		
+		@Override
+		public Object get(String key) {
+			try {
+				Field f = javaClass.getField(key);
+				return f.get(javaClass);
+			} catch (Exception e) {
+				return super.get(key);
+			}
+		}
+		
+		@Override
+		public void set(String key, Object value) {
+			try {
+				Field f = javaClass.getField(key);
+				f.set(javaClass, value);
+			} catch (Exception e) {
+				super.set(key, value);
+			}
 		}
 	};
 	
@@ -129,6 +132,26 @@ public class java extends JSModule {
 				this.set(m.getName(), new JSJavaMethod(proto, m.getName()));
 			}
 		}
+		
+		@Override
+		public Object get(String key) {
+			try {
+				Field f = javaObject.getClass().getField(key);
+				return f.get(javaObject);
+			} catch (Exception e) {
+				return super.get(key);
+			}
+		}
+		
+		@Override
+		public void set(String key, Object value) {
+			try {
+				Field f = javaObject.getClass().getField(key);
+				f.set(javaObject, value);
+			} catch (Exception e) {
+				super.set(key, value);
+			}
+		}
 	};
 	
 	static public class JSJavaMethod extends JSFunction {
@@ -140,93 +163,83 @@ public class java extends JSModule {
 		}
 
 		@Override
-		public JSPrimitive invoke(JSPrimitive ths, int argc, JSPrimitive l0, JSPrimitive l1, JSPrimitive l2, JSPrimitive l3, JSPrimitive l4, JSPrimitive l5, JSPrimitive l6, JSPrimitive l7, JSPrimitive[] rest) throws Exception
+		public Object invoke(Object ths, int argc, Object l0, Object l1, Object l2, Object l3, Object l4, Object l5, Object l6, Object l7, Object[] rest) throws Exception
 		{
 			// get parent class
 			Class javaClass = ths instanceof JSJavaClass ? ((JSJavaClass) ths).javaClass : ((JSJavaObject) ths).javaObject.getClass();
 			// get calling object
 			Object prnt = ths instanceof JSJavaClass ? ths : ((JSJavaObject) ths).javaObject;
 			// get arguments
-			JSPrimitive[] primitives = JSUtils.arguments(argc, l0, l1, l2, l3, l4, l5, l6, l7, rest);
+			Object[] args = JSUtils.arguments(argc, l0, l1, l2, l3, l4, l5, l6, l7, rest);
 			
 			// iterate methods
-			methodLoop: for (Method m : javaClass.getMethods()) {
-				// rudimentary arg length check
-				if (!m.getName().equals(javaName))
+			for (Method m : javaClass.getMethods()) {
+				// check if this method is matching
+				if (!javaName.equals(m.getName()))
 					continue;
-
-				// see if arguments are a match
-				Class[] types = m.getParameterTypes();
-				Object[] results;
-				try {
-					results = unwrapArgs(primitives, types);
-				} catch (ClassCastException e) {
-					continue methodLoop;
-				}
-				
+				if (!isSupportedFunction(args, m.getParameterTypes()))
+					continue;
 				// we can call method
-				return wrap(m.invoke(prnt, results));
+				return m.invoke(prnt, args);
 			}
 			
 			StringBuilder primtypes = new StringBuilder();
-			for (JSPrimitive prim : primitives) {
+			for (Object prim : args) {
 				if (primtypes.length() > 0)
 					primtypes.append(", ");
 				primtypes.append(prim != null ? prim.getClass() : "null");
-			}			
+			}
 			throw new Exception("No Java method found for " + javaClass.getName() + "::" + javaName + "(" + primtypes.toString() + ")");
 		}
 	};
 	
-	public static JSPrimitive wrap(Object a) {
-		if (a instanceof String)
-			return new JSString((String) a);
-		if (a == null)
-			return null;
-		return null;
-		//return new JSJavaObject(null, a);
+	/**
+	 * Checks if the Object array matches the array of types.
+	 * Will cast the array to types if possible.
+	 */
+	
+	@SuppressWarnings("unchecked")
+	static boolean isSupportedFunction(Object[] args, Class[] types) {
+		// argument length
+		if (args.length != types.length)
+			return false;
+		// and argument types
+		try {
+			for (int i = 0; i < types.length; i++)
+				args[i] = castObject(args[i], types[i]);
+			return true;
+		} catch (ClassCastException e) {
+			return false;
+		}
 	}
 	
-	public static Object[] unwrapArgs(JSPrimitive[] primitives, Class[] types) {
-		if (primitives.length != types.length)
-			throw new ClassCastException("Invalid number of args");
-		Object[] results = new Object[types.length];
-		for (int i = 0; i < types.length; i++)
-			results[i] = primitives[i] == null ? null : unwrap(primitives[i], types[i]);
-		return results;		
-	}
-	
-	public static Object unwrap(JSPrimitive p, Class javaClass) {		
-		// handle JS primitives first
-		if (p instanceof JSString) {
-			String value = ((JSString) p).value;
-			if (javaClass.isAssignableFrom(String.class))
-				return javaClass.cast(value);
-		}
-		if (p instanceof JSNumber) {
-			double value = ((JSNumber) p).value;
-			if (javaClass.equals(Integer.class) || javaClass.equals(int.class))
-				return (int) value;
-			if (javaClass.equals(Double.class) || javaClass.equals(double.class))
-				return value;
-			if (javaClass.equals(Float.class) || javaClass.equals(float.class))
-				return (float) value;
-			if (javaClass.equals(Long.class) || javaClass.equals(long.class))
-				return (long) value;
-		}
-		if (p instanceof JSBoolean) {
-			boolean value = ((JSBoolean) p).value;
-			if (javaClass.equals(Boolean.class) || javaClass.equals(boolean.class))
-				return value;
-		}
-		if (p instanceof JSJavaObject) {
-			Object javaObject = ((JSJavaObject) p).javaObject;
-			if (javaClass.isAssignableFrom(javaObject.getClass()))
-				return javaClass.cast(javaObject);
-		}
-		if (p == null || p.equals(JSAtoms.NULL))
+	static Object castObject(Object arg, Class type) {
+		// no conversion
+		if (arg == null)
 			return null;
+		if (type.isAssignableFrom(arg.getClass()))
+			return arg;
 		
-		throw new ClassCastException("Cannot convert JS type " + p.getClass() + " to " + javaClass.getName());
+		// js-wrapped object
+		if (arg instanceof JSJavaObject) {
+			arg = ((JSJavaObject) arg).javaObject;
+			if (type.isAssignableFrom(arg.getClass()))
+				return arg;
+		}
+		
+		// booleans
+		if (arg instanceof Boolean && type.equals(boolean.class))
+			return arg;
+		
+		// numbers
+		//[TODO] expand this
+		if (arg instanceof Number) {
+			Number num = (Number) arg;
+			if (type.equals(int.class) || type.equals(Integer.class))
+				return new Integer(num.intValue());
+		}
+		
+		// all choices exhausted
+		throw new ClassCastException("Could not convert arg");
 	}
 }

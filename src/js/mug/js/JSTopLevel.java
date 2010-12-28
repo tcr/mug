@@ -24,28 +24,21 @@ public class JSTopLevel {
 			@Override
 			public Object invoke(Object ths, int argc, Object l0, Object l1, Object l2, Object l3, Object l4, Object l5, Object l6, Object l7, Object[] rest) throws Exception
 			{
-				JSObject thsObj = JSUtils.asJSObject(ths);
-				Object[] args = JSUtils.toJavaArray(JSUtils.asJSObject(l1));
-				rest = null;
-				if (args.length > 8) {
-					rest = new Object[args.length - 8];
-					System.arraycopy(args, 8, rest, 0, args.length-8);
-				}
-				return thsObj.invoke(
-						l0,
-						args.length,
-						args.length > 0 ? args[0] : null,
-						args.length > 1 ? args[1] : null,
-						args.length > 2 ? args[2] : null,
-						args.length > 3 ? args[3] : null,
-						args.length > 4 ? args[4] : null,
-						args.length > 5 ? args[5] : null,
-						args.length > 6 ? args[6] : null,
-						args.length > 7 ? args[7] : null,
-						rest);
+				JSObject thsObj = JSUtils.asJSObject(JSTopLevel.this, ths);
+				return thsObj.invoke(l0, JSUtils.toJavaArray(JSUtils.asJSObject(JSTopLevel.this, l1)));
 			}
 		});
 	} };
+	
+	{
+		objectPrototype.set("valueOf", new JSFunction (functionPrototype) {
+			@Override
+			public Object invoke(Object ths, int argc, Object l0, Object l1, Object l2, Object l3, Object l4, Object l5, Object l6, Object l7, Object[] rest) throws Exception
+			{
+				return "[object Object]";
+			}
+		});
+	}
 	
 	final JSObject arrayPrototype = new JSObject(objectPrototype) { {
 		set("concat", new JSFunction(functionPrototype) {
@@ -53,13 +46,13 @@ public class JSTopLevel {
 			public Object invoke(Object ths, int argc, Object l0, Object l1, Object l2, Object l3, Object l4, Object l5, Object l6, Object l7, Object[] rest) throws Exception
 			{
 				// concatenate arrays to new array
-				JSObject thsObj = JSUtils.asJSObject(ths);
+				JSObject thsObj = JSUtils.asJSObject(JSTopLevel.this, ths);
 				JSArray out = new JSArray(arrayPrototype, 0);
 				Object[] arguments = JSUtils.arguments(argc, l0, l1, l2, l3, l4, l5, l6, l7, rest);
 				for (int j = 0, max = (int) JSUtils.asNumber(thsObj.get("length")); j < max; j++)
 					out.push(thsObj.get(String.valueOf(j)));
 				for (Object arg : arguments) {
-					JSObject arr = JSUtils.asJSObject(arg);
+					JSObject arr = JSUtils.asJSObject(JSTopLevel.this, arg);
 					for (int j = 0, max = (int) JSUtils.asNumber(arr.get("length")); j < max; j++)
 						out.push(arr.get(String.valueOf(j)));
 				}
@@ -93,8 +86,8 @@ public class JSTopLevel {
 			@Override
 			public Object invoke(Object ths, int argc, Object l0, Object l1, Object l2, Object l3, Object l4, Object l5, Object l6, Object l7, Object[] rest) throws Exception
 			{
-				JSObject thsObj = JSUtils.asJSObject(ths);
-				JSObject func = JSUtils.asJSObject(l0);
+				JSObject thsObj = JSUtils.asJSObject(JSTopLevel.this, ths);
+				JSObject func = JSUtils.asJSObject(JSTopLevel.this, l0);
 				JSArray out = new JSArray(arrayPrototype, 0);
 				int len = (int) JSUtils.asNumber(thsObj.get("length"));
 				for (int i = 0; i < len; i++)
@@ -107,7 +100,7 @@ public class JSTopLevel {
 			@Override
 			public Object invoke(Object ths, int argc, Object l0, Object l1, Object l2, Object l3, Object l4, Object l5, Object l6, Object l7, Object[] rest) throws Exception
 			{
-				JSObject thsObj = JSUtils.asJSObject(ths);
+				JSObject thsObj = JSUtils.asJSObject(JSTopLevel.this, ths);
 				StringBuffer sb = new StringBuffer();
 				String delim = (l0 == null || l0.equals(JSNull.NULL)) ? "" : JSUtils.asString(l0); 
 				int len = (int) JSUtils.asNumber(thsObj.get("length"));
@@ -124,7 +117,7 @@ public class JSTopLevel {
 			@Override
 			public Object invoke(Object ths, int argc, Object l0, Object l1, Object l2, Object l3, Object l4, Object l5, Object l6, Object l7, Object[] rest) throws Exception
 			{
-				JSObject thsObj = JSUtils.asJSObject(ths);
+				JSObject thsObj = JSUtils.asJSObject(JSTopLevel.this, ths);
 				int len = (int) JSUtils.asNumber(thsObj.get("length"));
 				int start = (int) JSUtils.asNumber(l0);
 				int end = l1 == null ? len : (int) JSUtils.asNumber(l1);

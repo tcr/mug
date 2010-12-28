@@ -12,9 +12,7 @@ import mug.js.JSFunction;
 import mug.js.JSModule;
 import mug.js.JSNumber;
 import mug.js.JSObject;
-import mug.js.JSPrimitive;
 import mug.js.JSString;
-import mug.js.JSString.JSStringObject;
 import mug.js.JSTopLevel;
 import mug.js.JSUtils;
 
@@ -25,17 +23,17 @@ public class fs extends JSModule {
 	final JSObject pathPrototype = new JSObject(top.getStringPrototype()) { {
 		set("read", new JSFunction(top.getFunctionPrototype()) {
 			@Override
-			public JSPrimitive invoke(JSPrimitive ths, int argc, JSPrimitive l0, JSPrimitive l1, JSPrimitive l2, JSPrimitive l3, JSPrimitive l4, JSPrimitive l5, JSPrimitive l6, JSPrimitive l7, JSPrimitive[] rest) throws Exception
+			public Object invoke(Object ths, int argc, Object l0, Object l1, Object l2, Object l3, Object l4, Object l5, Object l6, Object l7, Object[] rest) throws Exception
 			{
-				return _read.invoke(ths, new JSString(JSUtils.asString(ths)));
-			};
+				return _read.invoke(ths, JSUtils.asString(ths));
+			}
 		});
 	} };
 	
 	// open method
 	JSFunction _open = new JSFunction (top.getFunctionPrototype()) {
 		@Override
-		public JSPrimitive invoke(JSPrimitive ths, int argc, JSPrimitive l0, JSPrimitive l1, JSPrimitive l2, JSPrimitive l3, JSPrimitive l4, JSPrimitive l5, JSPrimitive l6, JSPrimitive l7, JSPrimitive[] rest) throws Exception
+		public Object invoke(Object ths, int argc, Object l0, Object l1, Object l2, Object l3, Object l4, Object l5, Object l6, Object l7, Object[] rest) throws Exception
 		{
 			// coerce path
 			String path = JSUtils.asString(l0);
@@ -43,14 +41,14 @@ public class fs extends JSModule {
 			//[TODO] later
 			
 			// path object extends string object
-			return new JSStringObject(pathPrototype, new JSString(path));
+			return new JSString(pathPrototype, path);
 		}
 	};
 	
 	// read method
 	JSFunction _read = new JSFunction (top.getFunctionPrototype()) {
 		@Override
-		public JSPrimitive invoke(JSPrimitive ths, int argc, JSPrimitive l0, JSPrimitive l1, JSPrimitive l2, JSPrimitive l3, JSPrimitive l4, JSPrimitive l5, JSPrimitive l6, JSPrimitive l7, JSPrimitive[] rest) throws Exception
+		public Object invoke(Object ths, int argc, Object l0, Object l1, Object l2, Object l3, Object l4, Object l5, Object l6, Object l7, Object[] rest) throws Exception
 		{
 			// coerce path
 			String path = JSUtils.asString(l0);
@@ -70,7 +68,7 @@ public class fs extends JSModule {
 		        }
 		        
 		        // return string object
-		        return new JSString(builder.toString());
+		        return builder.toString();
 		    } finally {
 		        stream.close();
 		    }        
@@ -80,7 +78,7 @@ public class fs extends JSModule {
 	// rename method
 	JSFunction _rename = new JSFunction (top.getFunctionPrototype()) {
 		@Override
-		public JSPrimitive invoke(JSPrimitive ths, int argc, JSPrimitive l0, JSPrimitive l1, JSPrimitive l2, JSPrimitive l3, JSPrimitive l4, JSPrimitive l5, JSPrimitive l6, JSPrimitive l7, JSPrimitive[] rest) throws Exception
+		public Object invoke(Object ths, int argc, Object l0, Object l1, Object l2, Object l3, Object l4, Object l5, Object l6, Object l7, Object[] rest) throws Exception
 		{
 			final String path1 = JSUtils.asString(l0);
 			final String path2 = JSUtils.asString(l1);
@@ -94,7 +92,7 @@ public class fs extends JSModule {
 						// pass exception to callback
 						if (callback != null)
 							//[TODO]
-							try { callback.invoke(new JSString(e1.getMessage())); } catch (Exception e2) { }
+							try { callback.invoke(e1.getMessage()); } catch (Exception e2) { }
 						return;
 					}
 					
@@ -110,7 +108,7 @@ public class fs extends JSModule {
 	// renameSync method
 	JSFunction _renameSync = new JSFunction (top.getFunctionPrototype()) {
 		@Override
-		public JSPrimitive invoke(JSPrimitive ths, int argc, JSPrimitive l0, JSPrimitive l1, JSPrimitive l2, JSPrimitive l3, JSPrimitive l4, JSPrimitive l5, JSPrimitive l6, JSPrimitive l7, JSPrimitive[] rest) throws Exception
+		public Object invoke(Object ths, int argc, Object l0, Object l1, Object l2, Object l3, Object l4, Object l5, Object l6, Object l7, Object[] rest) throws Exception
 		{
 			final String path1 = JSUtils.asString(l0);
 			final String path2 = JSUtils.asString(l1);

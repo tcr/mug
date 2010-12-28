@@ -32,90 +32,90 @@
 ; literals
 ;
 
-(defmethod compile-type :mug.ast/null-literal [[_]]
+(defmethod compile-type :mug.ast/null-literal [[_ ln]]
   JSNull)
-(defmethod compile-type :mug.ast/boolean-literal [[_ value]]
+(defmethod compile-type :mug.ast/boolean-literal [[_ ln value]]
 	:boolean)
-(defmethod compile-type :mug.ast/num-literal [[_ value]]
+(defmethod compile-type :mug.ast/num-literal [[_ ln value]]
 	:number)
-(defmethod compile-type :mug.ast/str-literal [[_ value]]
+(defmethod compile-type :mug.ast/str-literal [[_ ln value]]
 	String)
-(defmethod compile-type :mug.ast/regexp-literal [[_ expr flags]]
+(defmethod compile-type :mug.ast/regexp-literal [[_ ln expr flags]]
 	JSRegExp)
-(defmethod compile-type :mug.ast/array-literal [[_ exprs]]
+(defmethod compile-type :mug.ast/array-literal [[_ ln exprs]]
 	JSArray)
-(defmethod compile-type :mug.ast/obj-literal [[_ props]]
+(defmethod compile-type :mug.ast/obj-literal [[_ ln props]]
 	JSObject)
-(defmethod compile-type :mug.ast/func-literal [[_ closure]]
+(defmethod compile-type :mug.ast/func-literal [[_ ln closure]]
   JSFunction)
   
 ;
 ; operations
 ;
 
-(defmethod compile-type :mug.ast/add-op-expr [[_ left right]]
+(defmethod compile-type :mug.ast/add-op-expr [[_ ln left right]]
   ;[TODO] if types are known, then we know output type; so this should be dynamic
   Object)
-(defmethod compile-type :mug.ast/sub-op-expr [[_ left right]]
+(defmethod compile-type :mug.ast/sub-op-expr [[_ ln left right]]
   :number)
-(defmethod compile-type :mug.ast/div-op-expr [[_ left right]]
+(defmethod compile-type :mug.ast/div-op-expr [[_ ln left right]]
   :number)
-(defmethod compile-type :mug.ast/mul-op-expr [[_ left right]]
+(defmethod compile-type :mug.ast/mul-op-expr [[_ ln left right]]
   :number)
-(defmethod compile-type :mug.ast/lsh-op-expr [[_ left right]]
+(defmethod compile-type :mug.ast/lsh-op-expr [[_ ln left right]]
   :number)
-(defmethod compile-type :mug.ast/eq-op-expr [[_ left right]]
+(defmethod compile-type :mug.ast/eq-op-expr [[_ ln left right]]
   :boolean)
-(defmethod compile-type :mug.ast/neq-op-expr [[_ left right]]
+(defmethod compile-type :mug.ast/neq-op-expr [[_ ln left right]]
   :boolean)
-(defmethod compile-type :mug.ast/not-op-expr [[_ expr]]
+(defmethod compile-type :mug.ast/not-op-expr [[_ ln expr]]
   :boolean)
-(defmethod compile-type :mug.ast/eqs-op-expr [[_ left right]]
+(defmethod compile-type :mug.ast/eqs-op-expr [[_ ln left right]]
   :boolean)
-(defmethod compile-type :mug.ast/neqs-op-expr [[_ left right]]
+(defmethod compile-type :mug.ast/neqs-op-expr [[_ ln left right]]
   :boolean)
-(defmethod compile-type :mug.ast/lt-op-expr [[_ left right]]
+(defmethod compile-type :mug.ast/lt-op-expr [[_ ln left right]]
   :boolean)
-(defmethod compile-type :mug.ast/lte-op-expr [[_ left right]]
+(defmethod compile-type :mug.ast/lte-op-expr [[_ ln left right]]
   :boolean)
-(defmethod compile-type :mug.ast/gt-op-expr [[_ left right]]
+(defmethod compile-type :mug.ast/gt-op-expr [[_ ln left right]]
   :boolean)
-(defmethod compile-type :mug.ast/gte-op-expr [[_ left right]]
+(defmethod compile-type :mug.ast/gte-op-expr [[_ ln left right]]
   :boolean)
-(defmethod compile-type :mug.ast/neg-op-expr [[_ expr]]
+(defmethod compile-type :mug.ast/neg-op-expr [[_ ln expr]]
   :number)
-(defmethod compile-type :mug.ast/or-op-expr [[_ left right]]
+(defmethod compile-type :mug.ast/or-op-expr [[_ ln left right]]
   Object)
 
 ;
 ; expressions
 ;
 
-(defmethod compile-type :mug.ast/scope-ref-expr [[_ value]]
+(defmethod compile-type :mug.ast/scope-ref-expr [[_ ln value]]
   Object)
-(defmethod compile-type :mug.ast/static-ref-expr [[_ base value]]
+(defmethod compile-type :mug.ast/static-ref-expr [[_ ln base value]]
   Object)
-(defmethod compile-type :mug.ast/dyn-ref-expr [[_ base index]]
+(defmethod compile-type :mug.ast/dyn-ref-expr [[_ ln base index]]
   Object)
-(defmethod compile-type :mug.ast/static-method-call-expr [[_ base value args]]
+(defmethod compile-type :mug.ast/static-method-call-expr [[_ ln base value args]]
   Object)
-(defmethod compile-type :mug.ast/call-expr [[_ ref args]]
+(defmethod compile-type :mug.ast/call-expr [[_ ln ref args]]
 	Object)
-(defmethod compile-type :mug.ast/new-expr [[_ constructor args]]
+(defmethod compile-type :mug.ast/new-expr [[_ ln constructor args]]
   Object)
-(defmethod compile-type :mug.ast/scope-assign-expr [[_ value expr]]
+(defmethod compile-type :mug.ast/scope-assign-expr [[_ ln value expr]]
 	Object) ;(compile-type expr))
-(defmethod compile-type :mug.ast/static-assign-expr [[_ base value expr]]
+(defmethod compile-type :mug.ast/static-assign-expr [[_ ln base value expr]]
 	Object) ;(compile-type expr))
-(defmethod compile-type :mug.ast/dyn-assign-expr [[_ base index expr]]
+(defmethod compile-type :mug.ast/dyn-assign-expr [[_ ln base index expr]]
 	Object) ;(compile-type expr))
-(defmethod compile-type :mug.ast/typeof-expr [[_ expr]]
+(defmethod compile-type :mug.ast/typeof-expr [[_ ln expr]]
   String)
-(defmethod compile-type :mug.ast/this-expr [[_]]
+(defmethod compile-type :mug.ast/this-expr [[_ ln]]
   Object)
-(defmethod compile-type :mug.ast/if-expr [[_ expr then-expr else-expr]]
+(defmethod compile-type :mug.ast/if-expr [[_ ln expr then-expr else-expr]]
   Object)
-(defmethod compile-type :mug.ast/seq-expr [[_ pre expr]]
+(defmethod compile-type :mug.ast/seq-expr [[_ ln pre expr]]
   (compile-type expr))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -123,7 +123,21 @@
 ; compilation prototype
 ;
 
-(defmulti asm-compile (fn [node ci ast mw] (first node)))
+(defn compile-line-number [ln mw]
+  (if (not= (get-state "line-number") ln)
+	  (let [label (new Label)]
+	    (.visitLabel mw, label)
+	    (.visitLineNumber mw, ln, label)
+      (update-state "line-number" ln))))
+  
+
+(defmulti asm-compile
+  (fn [node ci ast mw]
+    (let [[type ln & args] node]
+	    ; compile line-number
+	    (compile-line-number (+ ln 1) mw)
+      ; return type
+	    type)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;
@@ -201,7 +215,7 @@
 
 (defn asm-compile-autobox [expr ci ast mw]
   (if (isa? (first expr) :mug.ast/num-literal)
-    (let [[_ value] expr]
+    (let [[_ ln value] expr]
       (println "Num literal optimization.")
       (.visitFieldInsn mw Opcodes/GETSTATIC, (qn-js-constants) (ident-num (index-of (ast-numbers ast) value)) (sig-obj "java/lang/Double")))
   (let [type (compile-type expr)]
@@ -249,8 +263,9 @@
         (asm-compile expr ci ast mw)
         (.visitMethodInsn mw Opcodes/INVOKESPECIAL, qn-js-string, "<init>", (sig-call (sig-obj qn-js-object) (sig-obj qn-string) sig-void)))
 	    (do
+        (asm-toplevel ci ast mw)
 	      (asm-compile expr ci ast mw)
-        (.visitMethodInsn mw Opcodes/INVOKESTATIC, qn-js-utils, "asJSObject", (sig-call (sig-obj qn-object) (sig-obj qn-js-object)))))))
+        (.visitMethodInsn mw Opcodes/INVOKESTATIC, qn-js-utils, "asJSObject", (sig-call (sig-obj qn-js-toplevel) (sig-obj qn-object) (sig-obj qn-js-object)))))))
 
 (defn asm-as-number [type ci ast mw]
   (case type
@@ -283,7 +298,7 @@
   (if (> (count args) arg-limit)
     (do
       (.visitIntInsn mw Opcodes/BIPUSH, (- (count args) arg-limit))
-      (.visitTypeInsn mw Opcodes/ANEWARRAY, qn-js-primitive)
+      (.visitTypeInsn mw Opcodes/ANEWARRAY, qn-object)
       (doseq [_ (range (- (count args) arg-limit))]
         (.visitInsn mw Opcodes/DUP)
         (.visitIntInsn mw Opcodes/BIPUSH, _)
@@ -317,19 +332,19 @@
 ; literals
 ;
 
-(defmethod asm-compile :mug.ast/null-literal [[_] ci ast mw]
+(defmethod asm-compile :mug.ast/null-literal [[_ ln] ci ast mw]
   (.visitFieldInsn mw Opcodes/GETSTATIC, qn-js-null, "NULL", (sig-obj qn-js-null)))
 
-(defmethod asm-compile :mug.ast/boolean-literal [[_ value] ci ast mw]
+(defmethod asm-compile :mug.ast/boolean-literal [[_ ln value] ci ast mw]
   (if value (.visitInsn mw Opcodes/ICONST_1) (.visitInsn mw Opcodes/ICONST_0))) 
 
-(defmethod asm-compile :mug.ast/num-literal [[_ value] ci ast mw]
+(defmethod asm-compile :mug.ast/num-literal [[_ ln value] ci ast mw]
 	(.visitLdcInsn mw (new Double (double value))))
 
-(defmethod asm-compile :mug.ast/str-literal [[_ value] ci ast mw]
+(defmethod asm-compile :mug.ast/str-literal [[_ ln value] ci ast mw]
 	(.visitLdcInsn mw value))
 
-(defmethod asm-compile :mug.ast/regexp-literal [[_ expr flags] ci ast mw]
+(defmethod asm-compile :mug.ast/regexp-literal [[_ ln expr flags] ci ast mw]
 	(.visitTypeInsn mw Opcodes/NEW qn-js-regexp)
 	(.visitInsn mw Opcodes/DUP)
   (asm-toplevel ci ast mw)
@@ -339,7 +354,7 @@
 	(.visitMethodInsn mw Opcodes/INVOKESTATIC, qn-js-utils, "isPatternGlobal", (sig-call (sig-obj qn-string) sig-boolean))
 	(.visitMethodInsn mw Opcodes/INVOKESPECIAL, qn-js-regexp, "<init>", (sig-call (sig-obj qn-js-object) (sig-obj qn-pattern) sig-boolean sig-void)))
 
-(defmethod asm-compile :mug.ast/array-literal [[_ exprs] ci ast mw]
+(defmethod asm-compile :mug.ast/array-literal [[_ ln exprs] ci ast mw]
 	(.visitTypeInsn mw Opcodes/NEW qn-js-array)
 	(.visitInsn mw Opcodes/DUP)
   (asm-toplevel ci ast mw)
@@ -356,7 +371,7 @@
     (.visitInsn mw Opcodes/AASTORE))
   (.visitMethodInsn mw Opcodes/INVOKEVIRTUAL, qn-js-array, "load", (sig-call (sig-array (sig-obj qn-object)) sig-void)))
 
-(defmethod asm-compile :mug.ast/obj-literal [[_ props] ci ast mw]
+(defmethod asm-compile :mug.ast/obj-literal [[_ ln props] ci ast mw]
 	(.visitTypeInsn mw Opcodes/NEW qn-js-object)
 	(.visitInsn mw Opcodes/DUP)
   ; object prototype
@@ -375,7 +390,7 @@
       (map #(identity [%1 %2]) (ast-contexts ast) (ast-context-hierarchy ast))
       [closure parents])))
 
-(defmethod asm-compile :mug.ast/func-literal [[_ closure] ci ast mw]
+(defmethod asm-compile :mug.ast/func-literal [[_ ln closure] ci ast mw]
   (let [pci (child-context-index closure ci ast)
         qn (qn-js-context pci)]
     ; create context instance
@@ -403,34 +418,34 @@
 ;  (asm-compile right ci ast mw)
 ;  (.visitMethodInsn mw Opcodes/INVOKESTATIC, qn-js-utils, "add", (sig-call (sig-obj qn-js-primitive) (sig-obj qn-js-primitive) (sig-obj qn-js-primitive))))
 
-(defmethod asm-compile :mug.ast/add-op-expr [[_ left right] ci ast mw]
+(defmethod asm-compile :mug.ast/add-op-expr [[_ ln left right] ci ast mw]
   ;[TODO] optimize based on type
   (asm-compile-autobox left ci ast mw)
   (asm-compile-autobox right ci ast mw)
   (.visitMethodInsn mw Opcodes/INVOKESTATIC, qn-js-utils, "add", (sig-call (sig-obj qn-object) (sig-obj qn-object) (sig-obj qn-object))))
 
-(defmethod asm-compile :mug.ast/sub-op-expr [[_ left right] ci ast mw]
+(defmethod asm-compile :mug.ast/sub-op-expr [[_ ln left right] ci ast mw]
   (asm-compile left ci ast mw)
   (asm-as-number (compile-type left) ci ast mw)
   (asm-compile right ci ast mw)
   (asm-as-number (compile-type right) ci ast mw)
   (.visitInsn mw Opcodes/DSUB))
 
-(defmethod asm-compile :mug.ast/div-op-expr [[_ left right] ci ast mw]
+(defmethod asm-compile :mug.ast/div-op-expr [[_ ln left right] ci ast mw]
   (asm-compile left ci ast mw)
   (asm-as-number (compile-type left) ci ast mw)
   (asm-compile right ci ast mw)
   (asm-as-number (compile-type right) ci ast mw)
   (.visitInsn mw Opcodes/DDIV))
 
-(defmethod asm-compile :mug.ast/mul-op-expr [[_ left right] ci ast mw]
+(defmethod asm-compile :mug.ast/mul-op-expr [[_ ln left right] ci ast mw]
   (asm-compile left ci ast mw)
   (asm-as-number (compile-type left) ci ast mw)
   (asm-compile right ci ast mw)
   (asm-as-number (compile-type right) ci ast mw)
   (.visitInsn mw Opcodes/DMUL))
 
-(defmethod asm-compile :mug.ast/lsh-op-expr [[_ left right] ci ast mw]
+(defmethod asm-compile :mug.ast/lsh-op-expr [[_ ln left right] ci ast mw]
   (asm-compile left ci ast mw)
   (asm-as-number (compile-type left) ci ast mw)
   (.visitInsn mw Opcodes/D2I)
@@ -440,17 +455,17 @@
   (.visitInsn mw Opcodes/ISHL)
   (.visitInsn mw Opcodes/I2D))
 
-(defmethod asm-compile :mug.ast/eq-op-expr [[_ left right] ci ast mw]
+(defmethod asm-compile :mug.ast/eq-op-expr [[_ ln left right] ci ast mw]
   (asm-compile-autobox left ci ast mw)
   (asm-compile-autobox right ci ast mw)
   (.visitMethodInsn mw Opcodes/INVOKESTATIC, qn-js-utils, "testEquality", (sig-call (sig-obj qn-object) (sig-obj qn-object) sig-boolean)))
 
-(defmethod asm-compile :mug.ast/neq-op-expr [[_ left right] ci ast mw]
+(defmethod asm-compile :mug.ast/neq-op-expr [[_ ln left right] ci ast mw]
   (asm-compile-autobox left ci ast mw)
   (asm-compile-autobox right ci ast mw)
   (.visitMethodInsn mw Opcodes/INVOKESTATIC, qn-js-utils, "testInequality", (sig-call (sig-obj qn-object) (sig-obj qn-object) sig-boolean)))
 
-(defmethod asm-compile :mug.ast/not-op-expr [[_ expr] ci ast mw]
+(defmethod asm-compile :mug.ast/not-op-expr [[_ ln expr] ci ast mw]
   (let [false-case (new Label) true-case (new Label)]
     (asm-compile expr ci ast mw)
     (asm-as-boolean (compile-type expr) ci ast mw)
@@ -462,34 +477,34 @@
 		  (.visitInsn Opcodes/ICONST_0)
 		  (.visitLabel true-case))))
 
-(defmethod asm-compile :mug.ast/eqs-op-expr [[_ left right] ci ast mw]
+(defmethod asm-compile :mug.ast/eqs-op-expr [[_ ln left right] ci ast mw]
   (asm-compile-autobox left ci ast mw)
   (asm-compile-autobox right ci ast mw)
   (.visitMethodInsn mw Opcodes/INVOKESTATIC, qn-js-utils, "testStrictEquality", (sig-call (sig-obj qn-object) (sig-obj qn-object) sig-boolean)))
 
-(defmethod asm-compile :mug.ast/neqs-op-expr [[_ left right] ci ast mw]
+(defmethod asm-compile :mug.ast/neqs-op-expr [[_ ln left right] ci ast mw]
   (asm-compile-autobox left ci ast mw)
   (asm-compile-autobox right ci ast mw)
   (.visitMethodInsn mw Opcodes/INVOKESTATIC, qn-js-utils, "testStrictInequality", (sig-call (sig-obj qn-object) (sig-obj qn-object) sig-boolean)))
   
-(defmethod asm-compile :mug.ast/lt-op-expr [[_ left right] ci ast mw]
+(defmethod asm-compile :mug.ast/lt-op-expr [[_ ln left right] ci ast mw]
   (asm-compare-op Opcodes/IFLT left right ci ast mw))
 
-(defmethod asm-compile :mug.ast/lte-op-expr [[_ left right] ci ast mw]
+(defmethod asm-compile :mug.ast/lte-op-expr [[_ ln left right] ci ast mw]
   (asm-compare-op Opcodes/IFLE left right ci ast mw))
 
-(defmethod asm-compile :mug.ast/gt-op-expr [[_ left right] ci ast mw]
+(defmethod asm-compile :mug.ast/gt-op-expr [[_ ln left right] ci ast mw]
   (asm-compare-op Opcodes/IFGT left right ci ast mw))
 
-(defmethod asm-compile :mug.ast/gte-op-expr [[_ left right] ci ast mw]
+(defmethod asm-compile :mug.ast/gte-op-expr [[_ ln left right] ci ast mw]
   (asm-compare-op Opcodes/IFGE left right ci ast mw))
 
-(defmethod asm-compile :mug.ast/neg-op-expr [[_ expr] ci ast mw]
+(defmethod asm-compile :mug.ast/neg-op-expr [[_ ln expr] ci ast mw]
   (asm-compile expr ci ast mw)
   (asm-as-number (compile-type expr) ci ast mw)
   (.visitInsn mw Opcodes/DNEG))
 
-(defmethod asm-compile :mug.ast/or-op-expr [[_ left right] ci ast mw]
+(defmethod asm-compile :mug.ast/or-op-expr [[_ ln left right] ci ast mw]
   (asm-compile left ci ast mw)
   (.visitInsn mw Opcodes/DUP)
   (asm-as-boolean (compile-type left) ci ast mw)
@@ -503,19 +518,19 @@
 ; expressions
 ;
 
-(defmethod asm-compile :mug.ast/scope-ref-expr [[_ value] ci ast mw]
+(defmethod asm-compile :mug.ast/scope-ref-expr [[_ ln value] ci ast mw]
   (if-let [reg (ref-reg ((ast-contexts ast) ci) value)]
     (.visitVarInsn mw Opcodes/ALOAD reg) 
     (let [qn-parent (asm-search-scopes value ci ast mw)]
       (.visitMethodInsn mw Opcodes/INVOKEVIRTUAL, qn-parent, (str "get_" value), (sig-call (sig-obj qn-object))))))
 
-(defmethod asm-compile :mug.ast/static-ref-expr [[_ base value] ci ast mw]
+(defmethod asm-compile :mug.ast/static-ref-expr [[_ ln base value] ci ast mw]
   (asm-compile-js-object base ci ast mw)
 	(doto mw
     (.visitLdcInsn value)
 		(.visitMethodInsn Opcodes/INVOKEVIRTUAL, qn-js-object, "get", (sig-call (sig-obj qn-string) (sig-obj qn-object)))))
 
-(defmethod asm-compile :mug.ast/dyn-ref-expr [[_ base index] ci ast mw]
+(defmethod asm-compile :mug.ast/dyn-ref-expr [[_ ln base index] ci ast mw]
   (asm-compile-js-object base ci ast mw)
   (case (compile-type index)
     ;TODO not valid, only if number is integer
@@ -527,7 +542,7 @@
 		  (asm-compile-autobox index ci ast mw)
 			(.visitMethodInsn mw Opcodes/INVOKEVIRTUAL, qn-js-object, "get", (sig-call (sig-obj qn-object) (sig-obj qn-object))))))
 
-(defmethod asm-compile :mug.ast/static-method-call-expr [[_ base value args] ci ast mw]
+(defmethod asm-compile :mug.ast/static-method-call-expr [[_ ln base value args] ci ast mw]
   ; get argument and method
   (asm-compile-js-object base ci ast mw)
 	(doto mw
@@ -539,14 +554,14 @@
   (asm-invoke-args args ci ast mw)
 	(.visitMethodInsn mw Opcodes/INVOKEVIRTUAL, qn-js-object, "invoke", sig-invoke))
 
-(defmethod asm-compile :mug.ast/call-expr [[_ expr args] ci ast mw]
+(defmethod asm-compile :mug.ast/call-expr [[_ ln expr args] ci ast mw]
   (asm-compile expr ci ast mw)
 	(.visitTypeInsn mw, Opcodes/CHECKCAST, qn-js-object)
 	(.visitInsn mw Opcodes/ACONST_NULL) ; "this"
   (asm-invoke-args args ci ast mw)
 	(.visitMethodInsn mw Opcodes/INVOKEVIRTUAL, qn-js-object, "invoke", sig-invoke))
 
-(defmethod asm-compile :mug.ast/new-expr [[_ constructor args] ci ast mw]
+(defmethod asm-compile :mug.ast/new-expr [[_ ln constructor args] ci ast mw]
   (asm-compile constructor ci ast mw)
 	(.visitTypeInsn mw, Opcodes/CHECKCAST, qn-js-function)
   (asm-invoke-args args ci ast mw)
@@ -562,23 +577,23 @@
 ; anyway, fix this,
 ; and adjust (compile-type) accordingly
 
-(defmethod asm-compile :mug.ast/scope-assign-expr [[_ value expr] ci ast mw]
+(defmethod asm-compile :mug.ast/scope-assign-expr [[_ ln value expr] ci ast mw]
   (asm-compile-autobox expr ci ast mw)
   (.visitInsn mw Opcodes/DUP)
   (if-let [reg (ref-reg ((ast-contexts ast) ci) value)]
     (.visitVarInsn mw Opcodes/ASTORE reg) 
 	  (let [qn-parent (asm-search-scopes value ci ast mw)]
 	    (.visitInsn mw Opcodes/SWAP)
-		  (.visitMethodInsn mw Opcodes/INVOKEVIRTUAL, qn-parent, (str "set_" value), (sig-call (sig-obj qn-js-primitive) sig-void)))))
+		  (.visitMethodInsn mw Opcodes/INVOKEVIRTUAL, qn-parent, (str "set_" value), (sig-call (sig-obj qn-object) sig-void)))))
 
-(defmethod asm-compile :mug.ast/static-assign-expr [[_ base value expr] ci ast mw]
+(defmethod asm-compile :mug.ast/static-assign-expr [[_ ln base value expr] ci ast mw]
   (asm-compile-js-object base ci ast mw)
   (.visitLdcInsn mw value)
 	(asm-compile-autobox expr ci ast mw)
   (.visitInsn mw Opcodes/DUP_X2)
 	(.visitMethodInsn mw Opcodes/INVOKEVIRTUAL, qn-js-object, "set", (sig-call (sig-obj qn-string) (sig-obj qn-object) sig-void)))
 
-(defmethod asm-compile :mug.ast/dyn-assign-expr [[_ base index expr] ci ast mw]
+(defmethod asm-compile :mug.ast/dyn-assign-expr [[_ ln base index expr] ci ast mw]
 ;  (.visitInsn mw Opcodes/DUP)
   (asm-compile-js-object base ci ast mw)
 ;  (.visitInsn mw Opcodes/SWAP)
@@ -596,14 +611,14 @@
 		  (.visitInsn mw Opcodes/DUP_X2)
       (.visitMethodInsn mw Opcodes/INVOKEVIRTUAL, qn-js-object, "set", (sig-call (sig-obj qn-object) (sig-obj qn-object) sig-void)))))
 
-(defmethod asm-compile :mug.ast/typeof-expr [[_ expr] ci ast mw]
+(defmethod asm-compile :mug.ast/typeof-expr [[_ ln expr] ci ast mw]
   (asm-compile expr ci ast mw)
   (.visitMethodInsn mw Opcodes/INVOKESTATIC, qn-js-utils, "typeof", (sig-call (sig-obj qn-js-primitive) (sig-obj qn-js-string))))
     
-(defmethod asm-compile :mug.ast/this-expr [[_] ci ast mw]
+(defmethod asm-compile :mug.ast/this-expr [[_ ln] ci ast mw]
   (.visitVarInsn mw Opcodes/ALOAD, 1))
 
-(defmethod asm-compile :mug.ast/if-expr [[_ expr then-expr else-expr] ci ast mw]
+(defmethod asm-compile :mug.ast/if-expr [[_ ln expr then-expr else-expr] ci ast mw]
   (asm-compile expr ci ast mw)
   (asm-as-boolean (compile-type expr) ci ast mw)
   (let [false-case (new Label) true-case (new Label)]
@@ -614,7 +629,7 @@
     (asm-compile else-expr ci ast mw)
     (.visitLabel mw true-case)))
 
-(defmethod asm-compile :mug.ast/seq-expr [[_ pre expr] ci ast mw]
+(defmethod asm-compile :mug.ast/seq-expr [[_ ln pre expr] ci ast mw]
   (asm-compile pre ci ast mw)
   (.visitInsn mw Opcodes/POP)
   (asm-compile expr ci ast mw))
@@ -623,23 +638,23 @@
 ; statements
 ;
 
-(defmethod asm-compile :mug.ast/block-stat [[_ stats] ci ast mw]
+(defmethod asm-compile :mug.ast/block-stat [[_ ln stats] ci ast mw]
   (doseq [stat stats]
     (asm-compile stat ci ast mw)))
 
-(defmethod asm-compile :mug.ast/expr-stat [[_ expr] ci ast mw]
+(defmethod asm-compile :mug.ast/expr-stat [[_ ln expr] ci ast mw]
 	(asm-compile expr ci ast mw)
   (case (compile-type expr)
     :number (.visitInsn mw Opcodes/POP2)
 	  (.visitInsn mw Opcodes/POP)))
 
-(defmethod asm-compile :mug.ast/ret-stat [[_ expr] ci ast mw]
+(defmethod asm-compile :mug.ast/ret-stat [[_ ln expr] ci ast mw]
   (if (nil? expr)
     (.visitInsn mw Opcodes/ACONST_NULL)
-    (asm-compile expr ci ast mw))
+    (asm-compile-autobox expr ci ast mw))
   (.visitInsn mw Opcodes/ARETURN))
 
-(defmethod asm-compile :mug.ast/while-stat [[_ expr stat] ci ast mw]
+(defmethod asm-compile :mug.ast/while-stat [[_ ln expr stat] ci ast mw]
   (let [true-case (new Label) false-case (new Label)]
     (push-label nil true-case false-case)
     
@@ -654,7 +669,7 @@
     
     (pop-label nil)))
 
-(defmethod asm-compile :mug.ast/do-while-stat [[_ expr stat] ci ast mw]
+(defmethod asm-compile :mug.ast/do-while-stat [[_ ln expr stat] ci ast mw]
   (let [true-case (new Label) false-case (new Label)]
     (push-label nil true-case false-case)
     
@@ -667,7 +682,7 @@
     
     (pop-label nil)))
 
-(defmethod asm-compile :mug.ast/for-stat [[_ init expr step stat] ci ast mw]
+(defmethod asm-compile :mug.ast/for-stat [[_ ln init expr step stat] ci ast mw]
   (when init
     (asm-compile init ci ast mw)
     (when (isa? (first init) :mug.ast/expr)
@@ -695,7 +710,7 @@
     
     (pop-label nil)))
 
-(defmethod asm-compile :mug.ast/if-stat [[_ expr then-stat else-stat] ci ast mw]
+(defmethod asm-compile :mug.ast/if-stat [[_ ln expr then-stat else-stat] ci ast mw]
   (asm-compile expr ci ast mw)
   (asm-as-boolean (compile-type expr) ci ast mw)
   (let [false-case (new Label) true-case (new Label)]
@@ -707,30 +722,30 @@
       (asm-compile else-stat ci ast mw))
     (.visitLabel mw true-case)))
 
-(defmethod asm-compile :mug.ast/break-stat [[_ label] ci ast mw]
+(defmethod asm-compile :mug.ast/break-stat [[_ ln label] ci ast mw]
   (if (> (count (get-label nil)) 0)
     (.visitJumpInsn mw, Opcodes/GOTO, ((get-label nil) :break))
     (throw (new Exception "Cannot break outside of loop"))))
 
-(defmethod asm-compile :mug.ast/continue-stat [[_ label] ci ast mw]
+(defmethod asm-compile :mug.ast/continue-stat [[_ ln label] ci ast mw]
   (if (> (count (get-label nil)) 0)
     (.visitJumpInsn mw, Opcodes/GOTO, ((get-label nil) :continue))
     (throw (new Exception "Cannot continue outside of loop"))))
 
-(defmethod asm-compile :mug.ast/var-stat [[_ vars] ci ast mw]
+(defmethod asm-compile :mug.ast/var-stat [[_ ln vars] ci ast mw]
   (doseq [[value expr] (filter #(not (nil? (second %))) vars)]
 	  (asm-compile-autobox expr ci ast mw)
 	  (if-let [reg (ref-reg ((ast-contexts ast) ci) value)]
 	    (.visitVarInsn mw Opcodes/ASTORE reg) 
 		  (let [qn-parent (asm-search-scopes value ci ast mw)]
 		    (.visitInsn mw Opcodes/SWAP)
-	      (.visitMethodInsn mw Opcodes/INVOKEVIRTUAL, qn-parent, (str "set_" value), (sig-call (sig-obj qn-js-primitive) sig-void))))))
+	      (.visitMethodInsn mw Opcodes/INVOKEVIRTUAL, qn-parent, (str "set_" value), (sig-call (sig-obj qn-object) sig-void))))))
 
-(defmethod asm-compile :mug.ast/defn-stat [[_ closure] ci ast mw]
-  (let [[_ name args stats] closure]
-    (asm-compile (expr-stat (scope-assign-expr name (func-literal closure))) ci ast mw)))
+(defmethod asm-compile :mug.ast/defn-stat [[_ ln closure] ci ast mw]
+  (let [[_ ln name args stats] closure]
+    (asm-compile (expr-stat ln (scope-assign-expr ln name (func-literal ln closure))) ci ast mw)))
 
-(defmethod asm-compile :mug.ast/for-in-stat [[_ isvar value expr stat] ci ast mw]
+(defmethod asm-compile :mug.ast/for-in-stat [[_ ln isvar value expr stat] ci ast mw]
 	(let [check-label (new Label) stat-label (new Label)]
     (push-label nil stat-label check-label)
    

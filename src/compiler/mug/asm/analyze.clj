@@ -19,98 +19,98 @@
 
 ; contexts
 
-(defmethod ast-walker :mug.ast/script-context [[_ stats] walker]
+(defmethod ast-walker :mug.ast/script-context [[_ ln stats] walker]
   (apply concat (map #(walker % walker) stats)))
-(defmethod ast-walker :mug.ast/closure-context [[_ name args stats] walker]
+(defmethod ast-walker :mug.ast/closure-context [[_ ln name args stats] walker]
   (apply concat (map #(walker % walker) stats)))
 
 ; literals
 
-(defmethod ast-walker :mug.ast/null-literal [[_] walker]
+(defmethod ast-walker :mug.ast/null-literal [[_ ln] walker]
   [])
-(defmethod ast-walker :mug.ast/boolean-literal [[_ value] walker]
+(defmethod ast-walker :mug.ast/boolean-literal [[_ ln value] walker]
   [])
-(defmethod ast-walker :mug.ast/num-literal [[_ value] walker]
+(defmethod ast-walker :mug.ast/num-literal [[_ ln value] walker]
   [])
-(defmethod ast-walker :mug.ast/str-literal [[_ value] walker]
+(defmethod ast-walker :mug.ast/str-literal [[_ ln value] walker]
   [])
-(defmethod ast-walker :mug.ast/regexp-literal [[_ expr flags] walker]
+(defmethod ast-walker :mug.ast/regexp-literal [[_ ln expr flags] walker]
   [])
-(defmethod ast-walker :mug.ast/array-literal [[_ exprs] walker]
+(defmethod ast-walker :mug.ast/array-literal [[_ ln exprs] walker]
   (apply concat (map #(walker % walker) exprs)))
-(defmethod ast-walker :mug.ast/obj-literal [[_ props] walker]
+(defmethod ast-walker :mug.ast/obj-literal [[_ ln props] walker]
   (apply concat (map #(walker % walker) (vals props))))
-(defmethod ast-walker :mug.ast/func-literal [[_ closure] walker]
+(defmethod ast-walker :mug.ast/func-literal [[_ ln closure] walker]
   (walker closure walker))
   
 ; operations
 
-(defmethod ast-walker :mug.ast/unary-op-expr [[_ expr] walker]
+(defmethod ast-walker :mug.ast/unary-op-expr [[_ ln expr] walker]
   (walker expr walker))
-(defmethod ast-walker :mug.ast/binary-op-expr [[_ left right] walker]
+(defmethod ast-walker :mug.ast/binary-op-expr [[_ ln left right] walker]
   (concat (walker left walker) (walker right walker)))
 
 ; expressions
 
-(defmethod ast-walker :mug.ast/scope-ref-expr [[_ value] walker]
+(defmethod ast-walker :mug.ast/scope-ref-expr [[_ ln value] walker]
   [])
-(defmethod ast-walker :mug.ast/static-ref-expr [[_ base value] walker]
+(defmethod ast-walker :mug.ast/static-ref-expr [[_ ln base value] walker]
   (walker base walker))
-(defmethod ast-walker :mug.ast/dyn-ref-expr [[_ base index] walker]
+(defmethod ast-walker :mug.ast/dyn-ref-expr [[_ ln base index] walker]
   (concat (walker base walker) (walker index walker)))
-(defmethod ast-walker :mug.ast/static-method-call-expr [[_ base value args] walker]
+(defmethod ast-walker :mug.ast/static-method-call-expr [[_ ln base value args] walker]
   (concat (walker base walker) (apply concat (map #(walker % walker) args))))
-(defmethod ast-walker :mug.ast/call-expr [[_ expr args] walker]
+(defmethod ast-walker :mug.ast/call-expr [[_ ln expr args] walker]
   (concat (walker expr walker) (apply concat (map #(walker % walker) args))))
-(defmethod ast-walker :mug.ast/new-expr [[_ constructor args] walker]
+(defmethod ast-walker :mug.ast/new-expr [[_ ln constructor args] walker]
   (concat (walker constructor walker) (apply concat (map #(walker % walker) args))))
-(defmethod ast-walker :mug.ast/scope-assign-expr [[_ value expr] walker]
+(defmethod ast-walker :mug.ast/scope-assign-expr [[_ ln value expr] walker]
   (walker expr walker))
-(defmethod ast-walker :mug.ast/static-assign-expr [[_ base value expr] walker]
+(defmethod ast-walker :mug.ast/static-assign-expr [[_ ln base value expr] walker]
   (concat (walker base walker) (walker expr walker)))
-(defmethod ast-walker :mug.ast/dyn-assign-expr [[_ base index expr] walker]
+(defmethod ast-walker :mug.ast/dyn-assign-expr [[_ ln base index expr] walker]
   (concat (walker base walker) (walker index walker) (walker expr walker)))
-(defmethod ast-walker :mug.ast/typeof-expr [[_ expr] walker]
+(defmethod ast-walker :mug.ast/typeof-expr [[_ ln expr] walker]
   (walker expr walker))
-(defmethod ast-walker :mug.ast/this-expr [[_] walker]
+(defmethod ast-walker :mug.ast/this-expr [[_ ln] walker]
   [])
-(defmethod ast-walker :mug.ast/if-expr [[_ expr then-expr else-expr] walker]
+(defmethod ast-walker :mug.ast/if-expr [[_ ln expr then-expr else-expr] walker]
   (concat (walker expr walker) (walker then-expr walker) (walker else-expr walker)))
-(defmethod ast-walker :mug.ast/seq-expr [[_ pre expr] walker]
+(defmethod ast-walker :mug.ast/seq-expr [[_ ln pre expr] walker]
   (concat (walker pre walker) (walker expr walker)))
 
 ; statements
 
-(defmethod ast-walker :mug.ast/block-stat [[_ stats] walker]
+(defmethod ast-walker :mug.ast/block-stat [[_ ln stats] walker]
   (apply concat (map #(walker % walker) stats)))
-(defmethod ast-walker :mug.ast/expr-stat [[_ expr] walker]
+(defmethod ast-walker :mug.ast/expr-stat [[_ ln expr] walker]
   (walker expr walker))
-(defmethod ast-walker :mug.ast/ret-stat [[_ expr] walker]
+(defmethod ast-walker :mug.ast/ret-stat [[_ ln expr] walker]
   (walker expr walker))
-(defmethod ast-walker :mug.ast/while-stat [[_ expr stat] walker]
+(defmethod ast-walker :mug.ast/while-stat [[_ ln expr stat] walker]
   (concat (walker expr walker) (walker stat walker)))
-(defmethod ast-walker :mug.ast/do-while-stat [[_ expr stat] walker]
+(defmethod ast-walker :mug.ast/do-while-stat [[_ ln expr stat] walker]
   (concat (walker expr walker) (walker stat walker)))
-(defmethod ast-walker :mug.ast/for-stat [[_ init expr step stat] walker]
+(defmethod ast-walker :mug.ast/for-stat [[_ ln init expr step stat] walker]
   (concat
     (if init (walker init walker) [])
     (if expr (walker expr walker) [])
     (if step (walker step walker) [])
     (walker stat walker)))
-(defmethod ast-walker :mug.ast/if-stat [[_ expr then-stat else-stat] walker]
+(defmethod ast-walker :mug.ast/if-stat [[_ ln expr then-stat else-stat] walker]
   (concat
     (walker expr walker)
     (walker then-stat walker)
     (if else-stat (walker else-stat walker) [])))
-(defmethod ast-walker :mug.ast/break-stat [[_ label] walker]
+(defmethod ast-walker :mug.ast/break-stat [[_ ln label] walker]
   [])
-(defmethod ast-walker :mug.ast/continue-stat [[_ label] walker]
+(defmethod ast-walker :mug.ast/continue-stat [[_ ln label] walker]
   [])
-(defmethod ast-walker :mug.ast/for-in-stat [[_ isvar value expr stat] walker]
+(defmethod ast-walker :mug.ast/for-in-stat [[_ ln isvar value expr stat] walker]
   (concat (walker expr walker) (walker stat walker)))
-(defmethod ast-walker :mug.ast/var-stat [[_ vars] walker]
+(defmethod ast-walker :mug.ast/var-stat [[_ ln vars] walker]
   (apply concat (map (fn [[k v]] (if (nil? v) [] (walker v walker))) vars))) 
-(defmethod ast-walker :mug.ast/defn-stat [[_ closure] walker]
+(defmethod ast-walker :mug.ast/defn-stat [[_ ln closure] walker]
   (walker closure walker))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -123,7 +123,7 @@
 (defmulti ast-strings-walker (fn [node & _] (first node)))
 (defmethod ast-strings-walker :default [node & _]
   (ast-walker node ast-strings-walker))
-(defmethod ast-strings-walker :mug.ast/str-literal [[_ value] & _]
+(defmethod ast-strings-walker :mug.ast/str-literal [[_ ln value] & _]
   [value])
 
 (def ast-strings
@@ -135,7 +135,7 @@
 (defmulti ast-numbers-walker (fn [node & _] (first node)))
 (defmethod ast-numbers-walker :default [node & _]
   (ast-walker node ast-numbers-walker))
-(defmethod ast-numbers-walker :mug.ast/num-literal [[_ value] & _]
+(defmethod ast-numbers-walker :mug.ast/num-literal [[_ ln value] & _]
   [value])
 
 (def ast-numbers
@@ -147,7 +147,7 @@
 (defmulti ast-regexps-walker (fn [node & _] (first node)))
 (defmethod ast-regexps-walker :default [node & _]
   (ast-walker node ast-regexps-walker))
-(defmethod ast-regexps-walker :mug.ast/regexp-literal [[_ expr flags] & _]
+(defmethod ast-regexps-walker :mug.ast/regexp-literal [[_ ln expr flags] & _]
   [[expr flags]])
 
 (def ast-regexps
@@ -160,10 +160,10 @@
 (defmethod ast-contexts-walker :default [node]
   (ast-walker node (fn [node & _] (ast-contexts-walker node))))
 (defmethod ast-contexts-walker :mug.ast/script-context [node]
-  (let [[_ stats] node]
+  (let [[_ ln stats] node]
     (concat [node] (apply concat (map #(ast-contexts-walker %) stats))))) 
 (defmethod ast-contexts-walker :mug.ast/closure-context [node]
-  (let [[_ name args stats] node]
+  (let [[_ ln name args stats] node]
     (concat [node] (apply concat (map #(ast-contexts-walker %) stats)))))
 
 (def ast-contexts
@@ -176,10 +176,10 @@
 (defmethod ast-context-parents-walker :default [node]
   (ast-walker node (fn [node & _] (ast-context-parents-walker node))))
 (defmethod ast-context-parents-walker :mug.ast/script-context [node]
-  (let [[_ stats] node]
+  (let [[_ ln stats] node]
     [(concat [] (apply concat (map #(ast-context-parents-walker %) stats)))]))
 (defmethod ast-context-parents-walker :mug.ast/closure-context [node]
-  (let [[_ name args stats] node]
+  (let [[_ ln name args stats] node]
     [(concat [] (apply concat (map #(ast-context-parents-walker %) stats)))]))
 
 (defn tree-hierarchy [[& items] idx prn]
@@ -202,17 +202,17 @@
 (defmethod ast-context-vars-walker :default [node]
   (ast-walker node (fn [node & _] (ast-context-vars-walker node))))
 ; root nodes
-(defmethod ast-context-vars-walker :mug.ast/closure-context [[_ name args stats]]
+(defmethod ast-context-vars-walker :mug.ast/closure-context [[_ ln name args stats]]
   (concat (if (nil? name) [] [name]) args (apply concat (map #(ast-context-vars-walker %) stats))))
 ; definitions
-(defmethod ast-context-vars-walker :mug.ast/var-stat [[_ vars]]
+(defmethod ast-context-vars-walker :mug.ast/var-stat [[_ ln vars]]
   (map first vars))
-(defmethod ast-context-vars-walker :mug.ast/for-in-stat [[_ isvar value expr stat]]
+(defmethod ast-context-vars-walker :mug.ast/for-in-stat [[_ ln isvar value expr stat]]
   (if isvar [value] []))
 ; skip nested contexts
-(defmethod ast-context-vars-walker :mug.ast/defn-stat [[_ [_ name args stats]]]
+(defmethod ast-context-vars-walker :mug.ast/defn-stat [[_ ln [_ ln name args stats]]]
   [name])
-(defmethod ast-context-vars-walker :mug.ast/func-literal [[_ [_ name args stats]]]
+(defmethod ast-context-vars-walker :mug.ast/func-literal [[_ ln [_ ln name args stats]]]
   (if (nil? name) [] [name]))
 
 (def ast-context-vars
@@ -226,17 +226,17 @@
   (ast-walker node (fn [node & _] (ast-context-globals-walker node vars))))
 ; contexts
 (defmethod ast-context-globals-walker :mug.ast/script-context [node vars]
-  (let [[_ stats] node
+  (let [[_ ln stats] node
         vars (into vars (ast-context-vars node))]
     (apply concat (map #(ast-context-globals-walker % vars) stats))))
 (defmethod ast-context-globals-walker :mug.ast/closure-context [node vars]
-  (let [[_ name args stats] node
+  (let [[_ ln name args stats] node
         vars (into vars (concat args [name] (ast-context-vars node)))]
     (apply concat (map #(ast-context-globals-walker % vars) stats))))
 ; scope references
-(defmethod ast-context-globals-walker :mug.ast/scope-ref-expr [[_ value] vars]
+(defmethod ast-context-globals-walker :mug.ast/scope-ref-expr [[_ ln value] vars]
   (if (contains? vars value) [] [value]))
-(defmethod ast-context-globals-walker :mug.ast/scope-assign-expr [[_ value expr] vars]
+(defmethod ast-context-globals-walker :mug.ast/scope-assign-expr [[_ ln value expr] vars]
   (if (contains? vars value) [] [value]))
 
 (def ast-undeclared-vars
@@ -252,9 +252,9 @@
   [node])
 
 (defmulti ast-descendent-contexts (fn [node] (first node)))
-(defmethod ast-descendent-contexts :mug.ast/script-context [[_ stats]]
+(defmethod ast-descendent-contexts :mug.ast/script-context [[_ ln stats]]
   (apply concat (map ast-descendent-contexts-walker stats)))
-(defmethod ast-descendent-contexts :mug.ast/closure-context [[_ name args stats]]
+(defmethod ast-descendent-contexts :mug.ast/closure-context [[_ ln name args stats]]
   (apply concat (map ast-descendent-contexts-walker stats)))
 
 (def ast-enclosed-vars
@@ -287,14 +287,14 @@
 (defmulti ref-reg (fn [context value] (first context)))
 (defmethod ref-reg :mug.ast/script-context [context value]
   (when *local-variable-opt*
-	  (let [[_ stats] context
+	  (let [[_ ln stats] context
 	        vars (ast-context-vars context)]
 		  (when (not (contains? (ast-enclosed-vars context vars) value))
 		    (when-let [pos (index-of (vec vars) value)]
 		      (+ ref-offset-reg pos))))))
 (defmethod ref-reg :mug.ast/closure-context [context value]
   (when *local-variable-opt*
-	  (let [[_ name args stats] context
+	  (let [[_ ln name args stats] context
 	        vars (ast-context-vars context)]
 		  (when (not (contains? (ast-enclosed-vars context vars) value))
 	      (do

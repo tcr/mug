@@ -24,29 +24,36 @@
                          <mihai.bazon@gmail.com>
                        http://mihai.bazon.net/blog
 
-  Distributed under the same terms as the original code (ZLIB license):
+  Distributed under the BSD license:
 
     Copyright 2010 (c) Mihai Bazon <mihai.bazon@gmail.com>
     Based on parse-js (http://marijn.haverbeke.nl/parse-js/).
 
-    This software is provided 'as-is', without any express or implied
-    warranty. In no event will the authors be held liable for any
-    damages arising from the use of this software.
+    Redistribution and use in source and binary forms, with or without
+    modification, are permitted provided that the following conditions
+    are met:
 
-    Permission is granted to anyone to use this software for any
-    purpose, including commercial applications, and to alter it and
-    redistribute it freely, subject to the following restrictions:
+        * Redistributions of source code must retain the above
+          copyright notice, this list of conditions and the following
+          disclaimer.
 
-    1. The origin of this software must not be misrepresented; you must
-       not claim that you wrote the original software. If you use this
-       software in a product, an acknowledgment in the product
-       documentation would be appreciated but is not required.
+        * Redistributions in binary form must reproduce the above
+          copyright notice, this list of conditions and the following
+          disclaimer in the documentation and/or other materials
+          provided with the distribution.
 
-    2. Altered source versions must be plainly marked as such, and must
-       not be misrepresented as being the original software.
-
-    3. This notice may not be removed or altered from any source
-       distribution.
+    THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDER “AS IS” AND ANY
+    EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+    IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+    PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER BE
+    LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY,
+    OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+    PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+    PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+    THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR
+    TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF
+    THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+    SUCH DAMAGE.
 
  ***********************************************************************/
 
@@ -77,8 +84,7 @@ var KEYWORDS = array_to_hash([
         "var",
         "void",
         "while",
-        "with",
-        "NaN"
+        "with"
 ]);
 
 var RESERVED_WORDS = array_to_hash([
@@ -119,22 +125,22 @@ var KEYWORDS_BEFORE_EXPRESSION = array_to_hash([
         "new",
         "delete",
         "throw",
-        "else"
+        "else",
+        "case"
 ]);
 
 var KEYWORDS_ATOM = array_to_hash([
         "false",
         "null",
         "true",
-        "undefined",
-        "NaN"
+        "undefined"
 ]);
 
 var OPERATOR_CHARS = array_to_hash(characters("+-*&%=<>!?|~^"));
 
 var RE_HEX_NUMBER = /^0x[0-9a-f]+$/i;
 var RE_OCT_NUMBER = /^0[0-7]+$/;
-var RE_DEC_NUMBER = /^\d*\.?\d*(?:e[-+]?\d*(?:\d\.?|\.?\d)\d*)?$/i;
+var RE_DEC_NUMBER = /^\d*\.?\d*(?:e[+-]?\d*(?:\d\.?|\.?\d)\d*)?$/i;
 
 var OPERATORS = array_to_hash([
         "in",
@@ -180,6 +186,7 @@ var OPERATORS = array_to_hash([
         "%=",
         "|=",
         "^=",
+        "&=",
         "&&",
         "||"
 ]);
@@ -337,15 +344,11 @@ function tokenizer($TEXT, skip_comments) {
                                 if (has_e) return false;
                                 return has_e = after_e = true;
                         }
-//<BEGIN ADD>
-                        if (ch == "+") {
-                                return after_e;
-                        }
-//<END ADD>
                         if (ch == "-") {
                                 if (after_e || (i == 0 && !prefix)) return true;
                                 return false;
                         }
+                        if (ch == "+") return after_e;
                         after_e = false;
                         return is_alphanumeric_char(ch) || ch == ".";
                 });
@@ -465,9 +468,10 @@ function tokenizer($TEXT, skip_comments) {
 
         var handle_slash = skip_comments ? function() {
                 next();
+                var regex_allowed = S.regex_allowed;
                 switch (peek()) {
-                    case "/": read_line_comment(); return next_token();
-                    case "*": read_multiline_comment(); return next_token();
+                    case "/": read_line_comment(); S.regex_allowed = regex_allowed; return next_token();
+                    case "*": read_multiline_comment(); S.regex_allowed = regex_allowed; return next_token();
                 }
                 return S.regex_allowed ? read_regexp() : read_operator("/");
         } : function() {
@@ -555,7 +559,7 @@ var ASSIGNMENT = (function(a, ret, i){
         }
         return ret;
 })(
-        ["+=", "-=", "/=", "*=", "%=", ">>=", "<<=", ">>>=", "~=", "%=", "|=", "^="],
+        ["+=", "-=", "/=", "*=", "%=", ">>=", "<<=", ">>>=", "~=", "%=", "|=", "^=", "&="],
         { "=": true },
         0
 );
@@ -714,7 +718,7 @@ function parse($TEXT, strict_mode, embed_tokens) {
                     case "punc":
                         switch (S.token.value) {
                             case "{":
-                                return as("block", block_());
+                                return as("block", S.prev.line, block_());
                             case "[":
                             case "(":
                                 return simple_statement();
@@ -740,7 +744,7 @@ function parse($TEXT, strict_mode, embed_tokens) {
                             case "do":
                                 return (function(body){
                                         expect_token("keyword", "while");
-                                        return as("do", prog1(parenthesised, semicolon), body);
+                                        return as("do", S.prev.line, prog1(parenthesised, semicolon), body);
                                 })(in_loop(statement));
 
                             case "for":
@@ -755,7 +759,7 @@ function parse($TEXT, strict_mode, embed_tokens) {
                             case "return":
                                 if (S.in_function == 0)
                                         croak("'return' outside of function");
-                                return as("return",
+                                return as("return", S.prev.line,
                                           is("punc", ";")
                                           ? (next(), null)
                                           : can_insert_semicolon()
@@ -763,10 +767,10 @@ function parse($TEXT, strict_mode, embed_tokens) {
                                           : prog1(expression, semicolon));
 
                             case "switch":
-                                return as("switch", parenthesised(), switch_block_());
+                                return as("switch", S.prev.line, parenthesised(), switch_block_());
 
                             case "throw":
-                                return as("throw", prog1(expression, semicolon));
+                                return as("throw", S.prev.line, prog1(expression, semicolon));
 
                             case "try":
                                 return try_();
@@ -778,10 +782,10 @@ function parse($TEXT, strict_mode, embed_tokens) {
                                 return prog1(const_, semicolon);
 
                             case "while":
-                                return as("while", parenthesised(), in_loop(statement));
+                                return as("while", S.prev.line, parenthesised(), in_loop(statement));
 
                             case "with":
-                                return as("with", parenthesised(), statement());
+                                return as("with", S.prev.line, parenthesised(), statement());
 
                             default:
                                 unexpected();
@@ -795,24 +799,24 @@ function parse($TEXT, strict_mode, embed_tokens) {
                 if (strict_mode && !HOP(STATEMENTS_WITH_LABELS, stat[0]))
                         unexpected(start);
                 S.labels.pop();
-                return as("label", label, stat);
+                return as("label", S.prev.line, label, stat);
         };
 
         function simple_statement() {
-                return as("stat", prog1(expression, semicolon));
+                return as("stat", S.prev.line, prog1(expression, semicolon));
         };
 
         function break_cont(type) {
-                if (S.in_loop == 0)
-                        croak(type + " not inside a loop or switch");
                 var name = is("name") ? S.token.value : null;
                 if (name != null) {
                         next();
                         if (!member(name, S.labels))
                                 croak("Label " + name + " without matching loop or statement");
                 }
+                else if (S.in_loop == 0)
+                        croak(type + " not inside a loop or switch");
                 semicolon();
-                return as(type, name);
+                return as(type, S.prev.line, name);
         };
 
         function for_() {
@@ -826,7 +830,7 @@ function parse($TEXT, strict_mode, embed_tokens) {
                         next(); next();
                         var obj = expression();
                         expect(")");
-                        return as("for-in", has_var, name, obj, in_loop(statement));
+                        return as("for-in", S.prev.line, has_var, name, obj, in_loop(statement));
                 } else {
                         // classic for
                         var init = is("punc", ";") ? null : has_var ? var_() : expression();
@@ -835,7 +839,7 @@ function parse($TEXT, strict_mode, embed_tokens) {
                         expect(";");
                         var step = is("punc", ")") ? null : expression();
                         expect(")");
-                        return as("for", init, test, step, in_loop(statement));
+                        return as("for", S.prev.line, init, test, step, in_loop(statement));
                 }
         };
 
@@ -844,7 +848,7 @@ function parse($TEXT, strict_mode, embed_tokens) {
                 if (in_statement && !name)
                         unexpected();
                 expect("(");
-                return as(in_statement ? "defun" : "function",
+                return as(in_statement ? "defun" : "function", S.prev.line,
                           name,
                           // arguments
                           (function(first, a){
@@ -860,8 +864,11 @@ function parse($TEXT, strict_mode, embed_tokens) {
                           // body
                           (function(){
                                   ++S.in_function;
+                                  var loop = S.in_loop;
+                                  S.in_loop = 0;
                                   var a = block_();
                                   --S.in_function;
+                                  S.in_loop = loop;
                                   return a;
                           })());
         };
@@ -872,7 +879,7 @@ function parse($TEXT, strict_mode, embed_tokens) {
                         next();
                         belse = statement();
                 }
-                return as("if", cond, body, belse);
+                return as("if", S.prev.line, cond, body, belse);
         };
 
         function block_() {
@@ -930,7 +937,7 @@ function parse($TEXT, strict_mode, embed_tokens) {
                 }
                 if (!bcatch && !bfinally)
                         croak("Missing catch/finally blocks");
-                return as("try", body, bcatch, bfinally);
+                return as("try", S.prev.line, body, bcatch, bfinally);
         };
 
         function vardefs() {
@@ -954,11 +961,11 @@ function parse($TEXT, strict_mode, embed_tokens) {
         };
 
         function var_() {
-                return as("var", vardefs());
+                return as("var", S.prev.line, vardefs());
         };
 
         function const_() {
-                return as("const", vardefs());
+                return as("const", S.prev.line, vardefs());
         };
 
         function new_() {
@@ -969,7 +976,7 @@ function parse($TEXT, strict_mode, embed_tokens) {
                 } else {
                         args = [];
                 }
-                return subscripts(as("new", newexp, args), true);
+                return subscripts(as("new", S.prev.line, newexp, args), true);
         };
 
         function expr_atom(allow_calls) {
@@ -1002,8 +1009,8 @@ function parse($TEXT, strict_mode, embed_tokens) {
                 }
                 if (HOP(ATOMIC_START_TOKEN, S.token.type)) {
                         var atom = S.token.type == "regexp"
-                                ? as("regexp", S.token.value[0], S.token.value[1])
-                                : as(S.token.type, S.token.value);
+                                ? as("regexp", S.prev.line, S.token.value[0], S.token.value[1])
+                                : as(S.token.type, S.prev.line, S.token.value);
                         return subscripts(prog1(atom, next), allow_calls);
                 }
                 unexpected();
@@ -1022,7 +1029,7 @@ function parse($TEXT, strict_mode, embed_tokens) {
         };
 
         function array_() {
-                return as("array", expr_list("]", !strict_mode));
+                return as("array", S.prev.line, expr_list("]", !strict_mode));
         };
 
         function object_() {
@@ -1032,13 +1039,17 @@ function parse($TEXT, strict_mode, embed_tokens) {
                         if (!strict_mode && is("punc", "}"))
                                 // allow trailing comma
                                 break;
+                        var type = S.token.type;
                         var name = as_property_name();
-                        expect(":");
-                        var value = expression(false);
-                        a.push([ name, value ]);
+                        if (type == "name" && (name == "get" || name == "set") && !is("punc", ":")) {
+                                a.push([ as_name(), function_(false), name ]);
+                        } else {
+                                expect(":");
+                                a.push([ name, expression(false) ]);
+                        }
                 }
                 next();
-                return as("object", a);
+                return as("object", S.prev.line, a);
         };
 
         function as_property_name() {
@@ -1065,15 +1076,15 @@ function parse($TEXT, strict_mode, embed_tokens) {
         function subscripts(expr, allow_calls) {
                 if (is("punc", ".")) {
                         next();
-                        return subscripts(as("dot", expr, as_name()), allow_calls);
+                        return subscripts(as("dot", S.prev.line, expr, as_name()), allow_calls);
                 }
                 if (is("punc", "[")) {
                         next();
-                        return subscripts(as("sub", expr, prog1(expression, curry(expect, "]"))), allow_calls);
+                        return subscripts(as("sub", S.prev.line, expr, prog1(expression, curry(expect, "]"))), allow_calls);
                 }
                 if (allow_calls && is("punc", "(")) {
                         next();
-                        return subscripts(as("call", expr, expr_list(")")), true);
+                        return subscripts(as("call", S.prev.line, expr, expr_list(")")), true);
                 }
                 if (allow_calls && is("operator") && HOP(UNARY_POSTFIX, S.token.value)) {
                         return prog1(curry(make_unary, "unary-postfix", S.token.value, expr),
@@ -1085,7 +1096,7 @@ function parse($TEXT, strict_mode, embed_tokens) {
         function make_unary(tag, op, expr) {
                 if ((op == "++" || op == "--") && !is_assignable(expr))
                         croak("Invalid use of " + op + " operator");
-                return as(tag, op, expr);
+                return as(tag, S.prev.line, op, expr);
         };
 
         function expr_op(left, min_prec) {
@@ -1094,7 +1105,7 @@ function parse($TEXT, strict_mode, embed_tokens) {
                 if (prec != null && prec > min_prec) {
                         next();
                         var right = expr_op(expr_atom(true), prec);
-                        return expr_op(as("binary", op, left, right), min_prec);
+                        return expr_op(as("binary", S.prev.line, op, left, right), min_prec);
                 }
                 return left;
         };
@@ -1109,14 +1120,19 @@ function parse($TEXT, strict_mode, embed_tokens) {
                         next();
                         var yes = expression(false);
                         expect(":");
-                        return as("conditional", expr, yes, expression(false));
+                        return as("conditional", S.prev.line, expr, yes, expression(false));
                 }
                 return expr;
         };
 
         function is_assignable(expr) {
-                expr = expr[0];
-                return expr == "name" || expr == "dot" || expr == "sub";
+                switch (expr[0]) {
+                    case "dot":
+                    case "sub":
+                        return true;
+                    case "name":
+                        return expr[1] != "this";
+                }
         };
 
         function maybe_assign() {
@@ -1124,7 +1140,7 @@ function parse($TEXT, strict_mode, embed_tokens) {
                 if (is("operator") && HOP(ASSIGNMENT, val)) {
                         if (is_assignable(left)) {
                                 next();
-                                return as("assign", ASSIGNMENT[val], left, maybe_assign());
+                                return as("assign", S.prev.line, ASSIGNMENT[val], left, maybe_assign());
                         }
                         croak("Invalid assignment");
                 }
@@ -1137,7 +1153,7 @@ function parse($TEXT, strict_mode, embed_tokens) {
                 var expr = maybe_assign();
                 if (commas && is("punc", ",")) {
                         next();
-                        return as("seq", expr, expression());
+                        return as("seq", S.prev.line, expr, expression());
                 }
                 return expr;
         };
@@ -1151,7 +1167,7 @@ function parse($TEXT, strict_mode, embed_tokens) {
                 }
         };
 
-        return as("toplevel", (function(a){
+        return as("toplevel", 0, (function(a){
                 while (!is("eof"))
                         a.push(statement());
                 return a;
@@ -1199,3 +1215,19 @@ function member(name, array) {
 function HOP(obj, prop) {
         return Object.prototype.hasOwnProperty.call(obj, prop);
 };
+
+/* -----[ Exports ]----- */
+
+exports.tokenizer = tokenizer;
+exports.parse = parse;
+exports.slice = slice;
+exports.curry = curry;
+exports.member = member;
+exports.array_to_hash = array_to_hash;
+exports.PRECEDENCE = PRECEDENCE;
+exports.KEYWORDS_ATOM = KEYWORDS_ATOM;
+exports.RESERVED_WORDS = RESERVED_WORDS;
+exports.KEYWORDS = KEYWORDS;
+exports.ATOMIC_START_TOKEN = ATOMIC_START_TOKEN;
+exports.OPERATORS = OPERATORS;
+exports.is_alphanumeric_char = is_alphanumeric_char;

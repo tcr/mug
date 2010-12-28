@@ -87,7 +87,7 @@ public class JSUtils {
 		return Double.NaN;
 	}
 
-	static public String asString(Object a) {
+	static public String asString(Object a) {		
 		if (a instanceof JSObject)
 			a = ((JSObject) a).valueOf();
 		
@@ -109,16 +109,22 @@ public class JSUtils {
 		return a.toString();
 	}
 	
-	static public JSObject asJSObject(Object a) {
+	static public JSObject asJSObject(JSTopLevel top, Object a) {
 		// js types
 		if (a instanceof JSObject)
 			return (JSObject) a;
 		if (a == null)
 			return null;
+		if (a instanceof String)
+			return new JSString(top.getStringPrototype(), (String) a);
+		if (a instanceof Double)
+			return new JSNumber(top.getNumberPrototype(), (Double) a);
+		if (a instanceof Boolean)
+			return new JSBoolean(top.getBooleanPrototype(), (Boolean) a);
 		
 		// java types
-		
-		return null;
+		System.out.println("DEBUG: Converting " + a + " to Java object...");
+		return new mug.modules.java.JSJavaObject(top.getObjectPrototype(), a);
 	}
 	
 	static public String typeof(Object a) {
