@@ -34,9 +34,11 @@ Why?
 ----
 
 * Faster than Rhino, sacrificing ECMAScript conformity for speed.
-* Minimal overhead, compared to a full interpreter. Standard library is < 75kb.
+* Minimal overhead, compared to a full interpreter. Standard library `mug-js.jar` is < 75kb.
 * Mug's goal is that compiled code be as close to compiled Java as possible. 
 * It's a neat party trick.
+
+The Mug compiler is written in Clojure. Compiled JavaScript has no Clojure dependencies, however, and only requires the Java `mug-js.jar` archive.
 
 Development
 -----------
@@ -46,52 +48,37 @@ Mug is an Eclipse project developed using the Counterclockwise extension.
 If you're interesting in helping out:
 
 * Submit bug reports/feature requests!
-* Looking for suggestions of possible applications, to refine the API.
-* For coders, I'd love help with writing: JavaScript testcases (obscure language features, edge cases), CommonJS modules (see source for mug.modules.fs), or any items on the TODO list.
+* Help refine the API (see Issues)
+* Write JavaScript testcases (obscure language features, edge cases)
+* Write CommonJS modules
+* Any items on the TODO list
 
-Roadmap
--------
-
-To-dos, in some particular order.
+TODO
+----
 
 *ECMAScript Implementation*
 
-* Implement unsupported constructs: `try/catch/throw`, `switch/case/default`, labels, `with`, `void`, `delete`
+* Implement unsupported constructs: `try/catch/throw`, `switch/case/default`, labels, `void`, `delete`
 * Complete the standard library
 * Complete operator cases for some combinations of types
-* Normalize DontDelete, DontEnum, ReadOnly
-* Replace RegExp implementation (java.util.regex) 
+* Normalize DontDelete, DontEnum, ReadOnly patterns
+* Replace RegExp implementation (no java.util.regex)
 
-*Mug API*
+*Compiler*
 
-* Compilation should be programmatic (string, file, stream, etc.)
-* Allow compilation/test cycle from source
-
-*Java Interop*
-
-* Java compilation into modules
-* Better Java interfacing
-
-*Debug/Logging*
-
-* Compile line numbers/filenames into bytecode for debugging
-
-*ASM*
-
+* Compilation/testing should be programmatic (string, file, stream, etc.)
+* Straight Java compilation into modules
 * Switch to `GeneratorAdapter` in ASM library (can use Clojure's built-in)
-
-*Optimizations*
-
-* Static type analysis and compilation
-* Byte-code optimization of utilities
+* Byte-code inlining of JS utilities and conversions
+* Overall polishing of everything
 
 License
 -------
 
-Mug is copyright 2010 Tim Cameron Ryan.  
+Mug is copyright 2010-2011 Tim Cameron Ryan.  
 Released under the BSD license.
 
 **Credits:**
 `parse-js` CL library originally by Marijn Haverbeke,  
-ported to JavaScript in 2010 by Mihai Bazon.
-Both released under the zlib license.
+ported to JavaScript in 2010 by Mihai Bazon,
+released under the BSD license.
