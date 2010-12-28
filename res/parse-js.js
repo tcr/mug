@@ -606,7 +606,7 @@ function parse($TEXT, strict_mode, embed_tokens) {
 
         var S = {
                 input: tokenizer($TEXT, true),
-                token: null,
+                token: {line: 0},
                 prev: null,
                 peeked: null,
                 in_function: 0,

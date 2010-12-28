@@ -7,14 +7,19 @@
             <fileset dir="classes"/>
             <zipfileset excludes="META-INF/*.SF" src="asm-3.3.jar"/>
             <zipfileset excludes="META-INF/*.SF" src="rhino-js.jar"/>
+            <fileset dir="bin/" includes="mug/asm/"/>
+        	<fileset dir="bin/" includes="mug/js/*"/>
+        	<fileset dir="bin/" includes="mug/modules/*"/>
+        	<fileset dir="bin/" includes="mug/*"/>
+        	<fileset dir="res/" includes="**"/>
         </jar>
     </target>
 	
     <target name="mug_js_jar">
         <jar destfile="lib/mug-js.jar">
-            <fileset dir="bin/" includes="mug/modules/*"/>
-            <fileset dir="bin/" includes="mug/js/*"/>
-        	<fileset dir="bin/" includes="mug/*"/>
+            <fileset dir="bin/" includes="mug/modules/*.class"/>
+            <fileset dir="bin/" includes="mug/js/*.class"/>
+        	<fileset dir="bin/" includes="mug/*.class"/>
         </jar>
     </target>
 
