@@ -2,7 +2,6 @@ c[_] JavaScript Compiler for the JVM
 ====================================
 
 Mug statically compiles JavaScript into Java .class files.
-It's currently in version crazy-alpha.
 
 Compiling with mug.jar in your classpath:
 
@@ -33,9 +32,9 @@ To interface with java in Mug, use the `java` module.
 Why?
 ----
 
-* Faster than Rhino, sacrificing ECMAScript conformity for speed.
-* Minimal overhead, compared to a full interpreter. Standard library `mug-js.jar` is < 75kb.
-* Mug's goal is that compiled code be as close to compiled Java as possible. 
+* Faster than Rhino, sacrificing a full interpreter for the speed of static compilation.
+* Minimal overhead. Standard library `mug-js.jar` is < 75kb.
+* Mug's goal is that compiled code be as similar to Java as possible, and easily debuggable.
 * It's a neat party trick.
 
 The Mug compiler is written in Clojure. However, compiled JavaScript has no Clojure dependencies and only requires the Java `mug-js.jar` archive.
@@ -43,7 +42,7 @@ The Mug compiler is written in Clojure. However, compiled JavaScript has no Cloj
 Development
 -----------
 
-Mug is an Eclipse project developed using the Counterclockwise extension.
+Mug is developed as an Eclipse project using the Counterclockwise extension.
 
 If you're interesting in helping out:
 
@@ -60,16 +59,16 @@ TODO
 
 * Implement unsupported constructs: `try/catch/throw`, `switch/case/default`, labels, `void`, `delete`
 * Complete the standard library
-* Complete operator cases for some combinations of types
+* Complete operator support for some combinations of types
 * Normalize DontDelete, DontEnum, ReadOnly patterns
 * Replace RegExp implementation (no java.util.regex)
 
 *Compiler*
 
 * Compilation/testing should be programmatic (string, file, stream, etc.)
-* Straight Java compilation into modules
+* Static Java compilation into modules
 * Switch to `GeneratorAdapter` in ASM library (can use Clojure's built-in)
-* Byte-code inlining of JS utilities and conversions
+* Bytecode inlining of JS utilities and conversions
 * Overall polishing of everything
 
 License
