@@ -3,23 +3,37 @@ c[_] JavaScript Compiler for the JVM
 
 Mug statically compiles JavaScript into Java .class files.
 
-Compiling with mug.jar in your classpath:
+Getting Started
+---------------
 
-	java -cp mug.jar mug.Compiler test.js [module2.js module3.js ...]
+    $ git clone git://github.com/timcameronryan/Mug.git mug
+    $ cd mug/test
+    $ java -cp ../lib/mug.jar mug.Compiler hello-world.js # compile
+    $ java -cp ../lib/mug-js.jar:out mug.modules.hello_world # run
+    Hello world!
+
+Using Mug
+---------
+
+Compile modules with mug.jar:
+
+	java -cp mug.jar mug.Compiler module.js [module2.js module3.js ...]
 	
-Resulting class files are in the newly created out/ directory.
-Include this and mug-js.jar to run a module:
+Resulting class files are in the newly created out/ directory in the namespace mug.modules.[module name]
+Include these and mug-js.jar to run your module:
 
-    java -cp mug-js.jar:out mug.modules.test
+    java -cp mug-js.jar:out mug.modules.[module name]
 
-You can also load a module programmatically in Java. It returns
+You can also load a compiled module programmatically in Java. It returns
 the "exports" object:
 
     import mug.Modules;
     ...
-    JSObject fs = Modules.getModule("fs").load();
+    JSObject fs = Modules.getModule("fs").load(); // loads module "mug.modules.fs"
+    String id = JSUtils.asString(fs.get("id"));
+    JSFunction open = (JSFunction) fs.get("open");
 
-To interface with java in Mug, use the `java` module.
+To interface JavaScript with Java in Mug, require the `java` module.
 
     var java = require("java")
     var JFrame = java.import("javax.swing.JFrame")
@@ -32,7 +46,7 @@ To interface with java in Mug, use the `java` module.
 Why?
 ----
 
-* Faster than Rhino, sacrificing a full interpreter for the speed of static compilation.
+* Faster than Rhino, favoring static compilation rather than a runtime interpreter.
 * Minimal overhead. Standard library `mug-js.jar` is < 75kb.
 * Mug's goal is that compiled code be as similar to Java as possible, and easily debuggable.
 * It's a neat party trick.
