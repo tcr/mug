@@ -44,10 +44,11 @@ public class JSEnvironment {
 	} };
 	
 	{
-		objectPrototype.set("valueOf", new JSFunction (functionPrototype) {
+		objectPrototype.set("toString", new JSFunction (functionPrototype) {
 			@Override
 			public Object invoke(Object ths, int argc, Object l0, Object l1, Object l2, Object l3, Object l4, Object l5, Object l6, Object l7, Object[] rest) throws Exception
 			{
+				//[TODO] object classes etc.
 				return "[object Object]";
 			}
 		});
@@ -109,7 +110,7 @@ public class JSEnvironment {
 			}
 		});
 		
-		set("join", new JSFunction(functionPrototype) {
+		final JSFunction _join = new JSFunction(functionPrototype) {
 			@Override
 			public Object invoke(Object ths, int argc, Object l0, Object l1, Object l2, Object l3, Object l4, Object l5, Object l6, Object l7, Object[] rest) throws Exception
 			{
@@ -124,7 +125,8 @@ public class JSEnvironment {
 				}
 				return sb.toString();
 			}
-		});
+		};
+		set("join", _join);
 		
 		set("slice", new JSFunction(functionPrototype) {
 			@Override
@@ -140,6 +142,14 @@ public class JSEnvironment {
 				for (int i = start; i < end; i++)
 					out.push(thsObj.get(String.valueOf(i)));
 				return out;
+			}
+		});
+		
+		set("toString", new JSFunction(functionPrototype) {
+			@Override
+			public Object invoke(Object ths, int argc, Object l0, Object l1, Object l2, Object l3, Object l4, Object l5, Object l6, Object l7, Object[] rest) throws Exception
+			{
+				return _join.invoke(ths, ",");
 			}
 		});
 		

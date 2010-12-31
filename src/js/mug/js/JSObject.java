@@ -32,9 +32,18 @@ public class JSObject {
 			try {
 				return ((JSObject) valueOf).invoke(this);
 			} catch (Exception e) {
-				return null;
 			}
-		return null;
+		return this;
+	}
+	
+	public String toString() {
+		Object toString = get("toString");
+		if (toString instanceof JSObject)
+			try {
+				return JSUtils.asString(((JSObject) toString).invoke(this));
+			} catch (Exception e) {
+			}
+		return "[object Object]";
 	}
 	
 	/*

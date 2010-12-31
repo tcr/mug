@@ -96,6 +96,10 @@ public class JSUtils {
 		}
 		if (a == null)
 			return "undefined";
+		if (a instanceof JSNull)
+			return "null";
+		if (a instanceof JSObject)
+			return ((JSObject) a).toString();
 		
 		// java types
 		
