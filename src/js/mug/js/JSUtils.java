@@ -1,5 +1,6 @@
 package mug.js;
 
+import java.lang.reflect.Array;
 import java.util.regex.Pattern;
 
 public class JSUtils {
@@ -9,14 +10,6 @@ public class JSUtils {
 	
 	static public boolean isNull(Object value) {
 		return value == null || value == JSNull.NULL;
-	}
-	
-	static public Object[] toJavaArray(JSObject arr) {
-		int len = (int) JSUtils.asNumber(arr.get("length"));
-		Object[] out = new Object[len];
-		for (int j = 0; j < len; j++)
-			out[j] = arr.get(String.valueOf(j));
-		return out;
 	}
 	
 	static public Object[] arguments(int argc, Object l0, Object l1, Object l2, Object l3, Object l4, Object l5, Object l6, Object l7, Object[] rest) {
@@ -109,7 +102,32 @@ public class JSUtils {
 		return a.toString();
 	}
 	
-	static public JSObject asJSObject(JSTopLevel top, Object a) {
+	static public JSObject toArgumentsObject(JSEnvironment top, Object[] arr) {
+		JSObject arguments = new JSObject(top.getObjectPrototype());
+		for (int i = 0; i < arr.length; i++)
+			arguments.set(String.valueOf(i), arr[i]);
+		arguments.set("length", arr.length);
+		return arguments;
+	}
+	
+	static public JSArray fromJavaArray(JSEnvironment top, Object arr) {
+		if (!arr.getClass().isArray())
+			return new JSArray(top.getArrayPrototype(), 0);
+		JSArray newArr = new JSArray(top.getArrayPrototype(), Array.getLength(arr));
+		for (int i = 0; i < Array.getLength(arr); i++)
+			newArr.push(Array.get(arr, i));
+		return newArr;
+	}
+	
+	static public Object[] toJavaArray(JSObject arr) {
+		int len = (int) JSUtils.asNumber(arr.get("length"));
+		Object[] out = new Object[len];
+		for (int j = 0; j < len; j++)
+			out[j] = arr.get(String.valueOf(j));
+		return out;
+	}
+	
+	static public JSObject asJSObject(JSEnvironment top, Object a) {
 		// js types
 		if (a instanceof JSObject)
 			return (JSObject) a;
@@ -122,7 +140,23 @@ public class JSUtils {
 		if (a instanceof Boolean)
 			return new JSBoolean(top.getBooleanPrototype(), (Boolean) a);
 		
-		// java types
+		// java primitives
+		if (a instanceof Byte)
+			return new JSNumber(top.getNumberPrototype(), (Byte) a);
+		if (a instanceof Short)
+			return new JSNumber(top.getNumberPrototype(), (Short) a);
+		if (a instanceof Integer)
+			return new JSNumber(top.getNumberPrototype(), (Integer) a);
+		if (a instanceof Long)
+			return new JSNumber(top.getNumberPrototype(), (Long) a);
+		if (a instanceof Float)
+			return new JSNumber(top.getNumberPrototype(), (Float) a);
+		if (a instanceof Character)
+			return new JSString(top.getStringPrototype(), ((Character) a).toString());
+		// java array
+		if (a.getClass().isArray())
+			return fromJavaArray(top, a);
+		// java objects
 		System.out.println("DEBUG: Converting " + a + " to Java object...");
 		return new mug.modules.java.JSJavaObject(top.getObjectPrototype(), a);
 	}

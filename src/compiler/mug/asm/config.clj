@@ -45,7 +45,7 @@
 (def qn-js-atoms (str pkg-mug "JSAtoms"))
 (defn qn-js-constants [] (str @pkg-compiled "constants"))
 
-(def qn-js-toplevel (str pkg-mug "JSTopLevel"))
+(def qn-js-toplevel (str pkg-mug "JSEnvironment"))
 
 (defn qn-js-script [] (chop @pkg-compiled))
 (defn qn-js-scriptscope [] (str @pkg-compiled "scope$script"))

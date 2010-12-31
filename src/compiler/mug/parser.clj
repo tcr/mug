@@ -17,8 +17,8 @@
 ;
 
 (defmulti gen-ast-code (fn [node & args] (first node)))
-(defmethod gen-ast-code :default [node & args]
-  (println (str "###Error: No AST generator found for type " (first node))))
+(defmethod gen-ast-code :default [[type ln & _] & args]
+  (println (str "###Error: No AST generator found for type " type "(line " ln ")")))
 
 (defmethod gen-ast-code "atom" [[_ ln value] input]
   (case value
@@ -50,7 +50,7 @@
       "name" (scope-assign-expr ln ((vec place) 2) (gen-ast-code val input))
       "dot" (static-assign-expr ln (gen-ast-code ((vec place) 2) input) ((vec place) 3) (gen-ast-code val input))
       "sub" (dyn-assign-expr ln (gen-ast-code ((vec place) 2) input) (gen-ast-code ((vec place) 3) input) (gen-ast-code val input))
-      (println (str "###ERROR: Unrecognized assignment: " (first place))))))
+      (println (str "###ERROR: Unrecognized assignment: " (first place) "(line " ln ")")))))
 (defmethod gen-ast-code "binary" [[_ ln op lhs rhs] input]
   (({"+" add-op-expr
 	  "-" sub-op-expr
@@ -71,7 +71,7 @@
   (case op
     "++" (gen-ast-code (list "binary" ln "-" (list "assign" ln "+" place (list "num" ln 1)) (list "num" ln 1)) input)
     "--" (gen-ast-code (list "binary" ln "+" (list "assign" ln "-" place (list "num" ln 1)) (list "num" ln 1)) input)
-    (println (str "###ERROR: Bad unary postfix: " op))))
+    (println (str "###ERROR: Bad unary postfix: " op) "(line " ln ")")))
 (defmethod gen-ast-code "unary-prefix" [[_ ln op place] input]
   (case op
     "+" (num-op-expr ln (gen-ast-code place input))
@@ -80,14 +80,15 @@
     "--" (gen-ast-code (list "assign" ln "-" place (list "num" ln 1)) input)
     "!" (not-op-expr ln (gen-ast-code place input))
     "typeof" (typeof-expr ln (gen-ast-code place input))
-    (println (str "###ERROR: Bad unary prefix: " op))))
+    (println (str "###ERROR: Bad unary prefix: " op "(line " ln ")"))))
 (defmethod gen-ast-code "call" [[_ ln func args] input]
   (case (first func)
+    "function" (call-expr ln (gen-ast-code func input) (map #(gen-ast-code %1 input) args))
     "name" (call-expr ln (gen-ast-code func input) (map #(gen-ast-code %1 input) args))
     "dot"
       (let [[_ ln base value] func]
         (static-method-call-expr ln (gen-ast-code base input) value (map #(gen-ast-code %1 input) args)))
-    (println (str "###ERROR: Unrecognized call format: " (first func)))))
+    (println (str "###ERROR: Unrecognized call format: " (first func) "(line " ln ")"))))
 (defmethod gen-ast-code "dot" [[_ ln obj attr] input]
   (static-ref-expr ln (gen-ast-code obj input) attr))
 (defmethod gen-ast-code "sub" [[_ ln obj attr] input]

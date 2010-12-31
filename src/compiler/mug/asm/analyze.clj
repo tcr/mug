@@ -171,6 +171,7 @@
     (vec (ast-contexts-walker node)))))
 
 ; context hierarchy
+; this is a list of indexes 
 
 (defmulti ast-context-parents-walker (fn [node] (first node)))
 (defmethod ast-context-parents-walker :default [node]
@@ -196,7 +197,13 @@
   (memoize (fn [node]
     (vec (tree-hierarchy (first (ast-context-parents-walker node)) 0 [])))))
 
-; vars
+; various variable scope walkers:
+; - all declared vars in a context
+; - all undeclared vars in a context and its subcontexts
+; - all subcontexts (used to find all undeclared vars in a subcontext declared by a parent context)
+
+; vars (those declared by a context in var statements, but not its subcontexts)
+; this includes the "arguments" variable
 
 (defmulti ast-context-vars-walker (fn [node] (first node)))
 (defmethod ast-context-vars-walker :default [node]
@@ -209,6 +216,9 @@
   (map first vars))
 (defmethod ast-context-vars-walker :mug.ast/for-in-stat [[_ ln isvar value expr stat]]
   (if isvar [value] []))
+; identifiers (only arguments variable)
+(defmethod ast-context-vars-walker :mug.ast/scope-ref-expr [[_ ln value]]
+  (if (= value "arguments") ["arguments"] []))
 ; skip nested contexts
 (defmethod ast-context-vars-walker :mug.ast/defn-stat [[_ ln [_ ln name args stats]]]
   [name])
@@ -219,7 +229,10 @@
   (memoize (fn [node]
     (set (ast-context-vars-walker node)))))
 
-; undeclared variables
+(defn ast-uses-arguments [context]
+  (contains? (ast-context-vars context) "arguments"))
+
+; undeclared variables (those variables without var statements)
 
 (defmulti ast-context-globals-walker (fn [node vars] (first node)))
 (defmethod ast-context-globals-walker :default [node vars]
@@ -237,13 +250,15 @@
 (defmethod ast-context-globals-walker :mug.ast/scope-ref-expr [[_ ln value] vars]
   (if (contains? vars value) [] [value]))
 (defmethod ast-context-globals-walker :mug.ast/scope-assign-expr [[_ ln value expr] vars]
-  (if (contains? vars value) [] [value]))
+  (concat (if (contains? vars value) [] [value]) (ast-context-globals-walker expr vars)))
 
 (def ast-undeclared-vars
   (memoize (fn [node]
     (set (ast-context-globals-walker node #{})))))
 
 ; enclosed variables
+; pass in as second argument all variables declared in context; returns
+; all variables which are referenced by a child scope
 
 (defmulti ast-descendent-contexts-walker (fn [node] (first node)))
 (defmethod ast-descendent-contexts-walker :default [node]

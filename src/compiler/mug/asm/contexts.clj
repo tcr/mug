@@ -95,6 +95,21 @@
 			(.visitMethodInsn Opcodes/INVOKESPECIAL, qn-scope, "<init>", (sig-call sig-void))
 			(.visitVarInsn Opcodes/ASTORE, scope-reg))
 		
+    ; initialize arguments object
+    (when (ast-uses-arguments context) (do
+      (asm-toplevel ci ast mw)
+      (.visitVarInsn mw Opcodes/ILOAD 2)
+      (doseq [i (range 3 (+ 1 offset-reg arg-limit))]
+        (.visitVarInsn mw Opcodes/ALOAD i))
+      (.visitMethodInsn mw Opcodes/INVOKESTATIC, qn-js-utils, "arguments", (sig-call sig-integer (sig-obj qn-object) (sig-obj qn-object) (sig-obj qn-object) (sig-obj qn-object) (sig-obj qn-object) (sig-obj qn-object) (sig-obj qn-object) (sig-obj qn-object) (sig-array (sig-obj qn-object)) (sig-array (sig-obj qn-object))))
+      (.visitMethodInsn mw Opcodes/INVOKESTATIC, qn-js-utils, "toArgumentsObject", (sig-call (sig-obj qn-js-toplevel) (sig-array (sig-obj qn-object)) (sig-obj qn-js-object)))
+      (if (nil? (ref-reg context "arguments"))
+	      (doto mw
+					(.visitVarInsn Opcodes/ALOAD, scope-reg)
+          (.visitInsn Opcodes/SWAP)
+					(.visitMethodInsn Opcodes/INVOKEVIRTUAL, qn-scope, (str "set_" "arguments"), (sig-call (sig-obj qn-object) sig-void)))
+        (doto mw
+          (.visitVarInsn Opcodes/ASTORE (ref-reg context "arguments"))))))
 		; initialize arguments
 		(doseq [[i arg] (index args)]
       (when (nil? (ref-reg context arg))

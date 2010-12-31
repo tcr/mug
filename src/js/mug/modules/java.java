@@ -13,11 +13,11 @@ import mug.js.JSModule;
 import mug.js.JSNumber;
 import mug.js.JSObject;
 import mug.js.JSString;
-import mug.js.JSTopLevel;
+import mug.js.JSEnvironment;
 import mug.js.JSUtils;
 
 public class java extends JSModule {
-	final JSTopLevel top = new JSTopLevel();
+	final JSEnvironment top = new JSEnvironment();
 	
 	JSFunction _import = new JSFunction (top.getFunctionPrototype()) {
 		@Override
@@ -66,10 +66,10 @@ public class java extends JSModule {
 	 */
 	
 	static public class JSJavaClass extends JSFunction {
-		JSTopLevel top;
+		JSEnvironment top;
 		public Class javaClass;
 		
-		public JSJavaClass(JSTopLevel top, Class javaClass) {
+		public JSJavaClass(JSEnvironment top, Class javaClass) {
 			super(top.getFunctionPrototype());
 			this.top = top;
 			this.javaClass = javaClass;

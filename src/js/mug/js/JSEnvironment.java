@@ -9,7 +9,7 @@ import java.util.regex.Pattern;
 
 import mug.Modules;
 
-public class JSTopLevel {
+public class JSEnvironment {
 	/*
 	 * prototypes
 	 */
@@ -24,8 +24,21 @@ public class JSTopLevel {
 			@Override
 			public Object invoke(Object ths, int argc, Object l0, Object l1, Object l2, Object l3, Object l4, Object l5, Object l6, Object l7, Object[] rest) throws Exception
 			{
-				JSObject thsObj = JSUtils.asJSObject(JSTopLevel.this, ths);
-				return thsObj.invoke(l0, JSUtils.toJavaArray(JSUtils.asJSObject(JSTopLevel.this, l1)));
+				JSObject thsObj = JSUtils.asJSObject(JSEnvironment.this, ths);
+				return thsObj.invoke(l0, JSUtils.toJavaArray(JSUtils.asJSObject(JSEnvironment.this, l1)));
+			}
+		});
+		
+		set("call", new JSFunction (functionPrototype) {
+			@Override
+			public Object invoke(Object ths, int argc, Object l0, Object l1, Object l2, Object l3, Object l4, Object l5, Object l6, Object l7, Object[] rest) throws Exception
+			{
+				JSObject thsObj = JSUtils.asJSObject(JSEnvironment.this, ths);
+				Object[] arguments = JSUtils.arguments(argc, l0, l1, l2, l3, l4, l5, l6, l7, rest);
+				Object[] passedArgs = new Object[arguments.length];
+				if (arguments.length > 1)
+					System.arraycopy(arguments, 1, passedArgs, 0, arguments.length - 1);
+				return thsObj.invoke(l0, passedArgs);
 			}
 		});
 	} };
@@ -46,13 +59,13 @@ public class JSTopLevel {
 			public Object invoke(Object ths, int argc, Object l0, Object l1, Object l2, Object l3, Object l4, Object l5, Object l6, Object l7, Object[] rest) throws Exception
 			{
 				// concatenate arrays to new array
-				JSObject thsObj = JSUtils.asJSObject(JSTopLevel.this, ths);
+				JSObject thsObj = JSUtils.asJSObject(JSEnvironment.this, ths);
 				JSArray out = new JSArray(arrayPrototype, 0);
 				Object[] arguments = JSUtils.arguments(argc, l0, l1, l2, l3, l4, l5, l6, l7, rest);
 				for (int j = 0, max = (int) JSUtils.asNumber(thsObj.get("length")); j < max; j++)
 					out.push(thsObj.get(String.valueOf(j)));
 				for (Object arg : arguments) {
-					JSObject arr = JSUtils.asJSObject(JSTopLevel.this, arg);
+					JSObject arr = JSUtils.asJSObject(JSEnvironment.this, arg);
 					for (int j = 0, max = (int) JSUtils.asNumber(arr.get("length")); j < max; j++)
 						out.push(arr.get(String.valueOf(j)));
 				}
@@ -86,8 +99,8 @@ public class JSTopLevel {
 			@Override
 			public Object invoke(Object ths, int argc, Object l0, Object l1, Object l2, Object l3, Object l4, Object l5, Object l6, Object l7, Object[] rest) throws Exception
 			{
-				JSObject thsObj = JSUtils.asJSObject(JSTopLevel.this, ths);
-				JSObject func = JSUtils.asJSObject(JSTopLevel.this, l0);
+				JSObject thsObj = JSUtils.asJSObject(JSEnvironment.this, ths);
+				JSObject func = JSUtils.asJSObject(JSEnvironment.this, l0);
 				JSArray out = new JSArray(arrayPrototype, 0);
 				int len = (int) JSUtils.asNumber(thsObj.get("length"));
 				for (int i = 0; i < len; i++)
@@ -100,7 +113,7 @@ public class JSTopLevel {
 			@Override
 			public Object invoke(Object ths, int argc, Object l0, Object l1, Object l2, Object l3, Object l4, Object l5, Object l6, Object l7, Object[] rest) throws Exception
 			{
-				JSObject thsObj = JSUtils.asJSObject(JSTopLevel.this, ths);
+				JSObject thsObj = JSUtils.asJSObject(JSEnvironment.this, ths);
 				StringBuffer sb = new StringBuffer();
 				String delim = (l0 == null || l0.equals(JSNull.NULL)) ? "" : JSUtils.asString(l0); 
 				int len = (int) JSUtils.asNumber(thsObj.get("length"));
@@ -117,7 +130,7 @@ public class JSTopLevel {
 			@Override
 			public Object invoke(Object ths, int argc, Object l0, Object l1, Object l2, Object l3, Object l4, Object l5, Object l6, Object l7, Object[] rest) throws Exception
 			{
-				JSObject thsObj = JSUtils.asJSObject(JSTopLevel.this, ths);
+				JSObject thsObj = JSUtils.asJSObject(JSEnvironment.this, ths);
 				int len = (int) JSUtils.asNumber(thsObj.get("length"));
 				int start = (int) JSUtils.asNumber(l0);
 				int end = l1 == null ? len : (int) JSUtils.asNumber(l1);
@@ -480,6 +493,10 @@ public class JSTopLevel {
 			for (int i = 0; i < arguments.length; i++)
 				arr.push(arguments[i]);
 			return arr;
+		}
+		
+		{
+			_prototype = getArrayPrototype(); 
 		}
 	};
 	

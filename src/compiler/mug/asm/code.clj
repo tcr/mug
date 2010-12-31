@@ -3,7 +3,7 @@
     mug.ast
     [mug.asm config analyze util])
   (:import
-    [mug.js JSArray JSBoolean JSFunction JSModule JSNull JSNumber JSObject JSRegExp JSString JSTopLevel JSUtils]))
+    [mug.js JSArray JSBoolean JSFunction JSModule JSNull JSNumber JSObject JSRegExp JSString JSEnvironment JSUtils]))
 
 (import (org.objectweb.asm ClassWriter Opcodes Label))
 
@@ -129,7 +129,6 @@
 	    (.visitLabel mw, label)
 	    (.visitLineNumber mw, ln, label)
       (update-state "line-number" ln))))
-  
 
 (defmulti asm-compile
   (fn [node ci ast mw]

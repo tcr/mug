@@ -63,8 +63,8 @@
     (delete-file-recursively f))
  
   (doseq [path args]
-    (let [qn (second (re-find #"^(.*)\.js$" path))
-          file (new File path)]
+    (let [file (new File path)
+          qn (second (re-find #"^(.*)\.js$" (.getName file)))]
       ; check file exists
 	    (when (not (.exists file))
 	      (throw (new Exception (str "File not found \"" path "\"."))))
