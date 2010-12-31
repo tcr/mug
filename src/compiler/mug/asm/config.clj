@@ -34,7 +34,6 @@
 (def qn-js-boolean (str pkg-mug "JSBoolean"))
 (def qn-js-string (str pkg-mug "JSString"))
 (def qn-js-number (str pkg-mug "JSNumber"))
-(def qn-js-primitive (str pkg-mug "JSPrimitive"))
 (def qn-js-utils (str pkg-mug "JSUtils"))
 (def qn-js-function (str pkg-mug "JSFunction"))
 (def qn-js-object (str pkg-mug "JSObject"))

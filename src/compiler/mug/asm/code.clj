@@ -499,18 +499,18 @@
   (asm-compare-op Opcodes/IFGE left right ci ast mw))
 
 (defmethod asm-compile :mug.ast/neg-op-expr [[_ ln expr] ci ast mw]
-  (asm-compile expr ci ast mw)
-  (asm-as-number (compile-type expr) ci ast mw)
+  (asm-compile-autobox expr ci ast mw) ;(asm-compile expr ci ast mw)
+  (asm-as-number Object ci ast mw) ;(asm-as-number (compile-type expr) ci ast mw)
   (.visitInsn mw Opcodes/DNEG))
 
 (defmethod asm-compile :mug.ast/or-op-expr [[_ ln left right] ci ast mw]
-  (asm-compile left ci ast mw)
+  (asm-compile-autobox left ci ast mw) ;(asm-compile left ci ast mw)
   (.visitInsn mw Opcodes/DUP)
-  (asm-as-boolean (compile-type left) ci ast mw)
+  (asm-as-boolean Object ci ast mw) ;(asm-as-boolean (compile-type left) ci ast mw)
   (let [true-case (new Label)]
     (.visitJumpInsn mw, Opcodes/IFNE, true-case)
     (.visitInsn mw Opcodes/POP)
-    (asm-compile right ci ast mw)
+    (asm-compile-autobox right ci ast mw)
     (.visitLabel mw true-case)))
 
 ;
@@ -612,7 +612,7 @@
 
 (defmethod asm-compile :mug.ast/typeof-expr [[_ ln expr] ci ast mw]
   (asm-compile expr ci ast mw)
-  (.visitMethodInsn mw Opcodes/INVOKESTATIC, qn-js-utils, "typeof", (sig-call (sig-obj qn-js-primitive) (sig-obj qn-js-string))))
+  (.visitMethodInsn mw Opcodes/INVOKESTATIC, qn-js-utils, "typeof", (sig-call (sig-obj qn-object) (sig-obj qn-string))))
     
 (defmethod asm-compile :mug.ast/this-expr [[_ ln] ci ast mw]
   (.visitVarInsn mw Opcodes/ALOAD, 1))
@@ -756,11 +756,6 @@
       ; load from array
       (.visitInsn mw, Opcodes/DUP2)
 			(.visitInsn mw, Opcodes/AALOAD)
-      ; create string obj
-;			(.visitTypeInsn mw Opcodes/NEW qn-js-string)
-;			(.visitInsn mw Opcodes/DUP2)
-;      (.visitInsn mw Opcodes/SWAP)
-;			(.visitMethodInsn mw Opcodes/INVOKESPECIAL, qn-js-string, "<init>", (sig-call (sig-obj qn-string) sig-void))
       ; store in scope
 		  (if-let [reg (ref-reg ((ast-contexts ast) ci) value)]
 		    (.visitVarInsn mw Opcodes/ASTORE reg) 
@@ -770,7 +765,6 @@
 	
 			(asm-compile stat ci ast mw)
    
-      (.visitInsn mw Opcodes/POP)
 			(.visitInsn mw, Opcodes/ICONST_1)
 			(.visitInsn mw, Opcodes/IADD)
 		(.visitLabel mw, check-label)

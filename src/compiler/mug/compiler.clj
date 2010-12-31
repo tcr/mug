@@ -73,4 +73,5 @@
       ; parse
       (let [ast (parse-js-ast (slurp path))]
         ; compile
+        ;(pprint ast)
         (compile-js ast qn out-dir)))))

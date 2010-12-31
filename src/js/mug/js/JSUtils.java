@@ -175,10 +175,12 @@ public class JSUtils {
 			return "string";
 		if (a instanceof JSFunction)
 			return "function";
-		if (a instanceof JSObject)
+		if (a instanceof JSNull)
 			return "null";
 		if (a == null)
 			return "undefined";
+		if (a instanceof JSObject)
+			return "object";
 
 		// java types
 		
