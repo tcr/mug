@@ -1,15 +1,14 @@
 c[_] JavaScript Compiler for the JVM
 ====================================
 
-Mug statically compiles JavaScript into Java .class files.
+Mug statically compiles JavaScript into JVM .class files.
 
-Getting Started
----------------
+### Getting Started
 
     $ git clone git://github.com/timcameronryan/Mug.git mug
     $ cd mug/test
     $ java -cp ../lib/mug.jar mug.Compiler hello-world.js # compile
-    $ java -cp ../lib/mug-js.jar:out mug.modules.hello_world # run
+    $ java -cp ../lib/mug-js.jar:bin mug.modules.hello_world # run
     Hello world!
 
 Using Mug
@@ -18,11 +17,16 @@ Using Mug
 Compile modules with mug.jar:
 
 	java -cp mug.jar mug.Compiler module.js [module2.js module3.js ...]
+
+    Options
+      --output, -o <arg>  Output directory               [default bin/]
+      --print, -p         Print AST directory to stdout                
+      --jar, -j <arg>     Output contents as jar file   
 	
-Resulting class files are in the newly created out/ directory in the namespace mug.modules.[module name]
+Resulting class files are in the namespace mug.modules.[module name]
 Include these and mug-js.jar to run your module:
 
-    java -cp mug-js.jar:out mug.modules.[module name]
+    java -cp mug-js.jar:bin mug.modules.[module name]
 
 You can also load a compiled module programmatically in Java. It returns
 the "exports" object:
@@ -30,8 +34,8 @@ the "exports" object:
     import mug.Modules;
     ...
     JSObject fs = Modules.getModule("fs").load(); // loads module "mug.modules.fs"
-    String id = JSUtils.asString(fs.get("id"));
-    JSFunction open = (JSFunction) fs.get("open");
+    String id = JSUtils.asString(fs.get("id")); // JSUtils has functions to coerce types
+    ((JSFunction) fs.get("open")).invoke(null, "somefile.txt"); // use invoke() to call functions
 
 To interface JavaScript with Java in Mug, require the `java` module.
 

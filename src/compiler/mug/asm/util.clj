@@ -3,7 +3,8 @@
     mug.ast
     [clojure.set :only (difference)])
   (:import
-    [java.io FileOutputStream File]))
+    [java.io FileOutputStream File BufferedOutputStream]
+    [java.util.jar JarEntry JarOutputStream Manifest]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;
@@ -26,6 +27,17 @@
 	(let [fos (new FileOutputStream path)]
 		(.write fos bytes)
 		(.close fos)))
+
+; writes bytes to an open jaroutputstream
+(defn write-file-jar [stream path bytes]
+  (let [jentry (JarEntry. path)]
+    (.putNextEntry stream jentry)
+    (.write stream bytes)))
+
+; opens a file stream to a jar file
+; will have to close manually
+(defn open-jar [name]
+  (-> name File. FileOutputStream. BufferedOutputStream. (JarOutputStream. (Manifest.))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;

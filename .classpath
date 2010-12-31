@@ -9,7 +9,6 @@
 	<classpathentry kind="lib" path="classes"/>
 	<classpathentry kind="lib" path="asm-3.3.jar"/>
 	<classpathentry kind="lib" path="rhino-js.jar"/>
-	<classpathentry kind="lib" path="test/out"/>
-	<classpathentry kind="lib" path="sandbox/out"/>
+	<classpathentry kind="lib" path="sandbox/bin"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

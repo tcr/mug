@@ -16,7 +16,8 @@
     [mug.asm code contexts constants scopes util analyze config]
     [clojure.contrib.io :only (delete-file-recursively)]
     [clojure.contrib.string :only (replace-str)]
-    clojure.pprint)
+    clojure.pprint
+    clojure.contrib.command-line)
   (:import
     [java.io FileOutputStream File]))
 
@@ -25,10 +26,7 @@
 ; compiler
 ;
 
-(defn compile-js [ast qn out-dir]
-  ;(print (str "AST:" ast))
-  ;(json/pprint-json ast)
-  
+(defn compile-js [ast qn writer]  
   ; update atom
   (swap! pkg-compiled #(identity %2)
     (str "mug/modules/" (replace-str "." "/" (replace-str "-" "_" qn)) "$"))
@@ -36,42 +34,63 @@
   ; contexts
   (println "  Contexts...")
 	(doseq [[qn bytes] (compile-context-classes ast qn)]
-		(write-file-mkdirs (str out-dir qn ".class") bytes)
+		(writer (str qn ".class") bytes)
     (println (str "    Wrote out " qn)))
 	
   ; constants
   (println "  Constants...")
-	(write-file-mkdirs (str out-dir (qn-js-constants) ".class") (asm-compile-constants-class ast))
+	(writer (str (qn-js-constants) ".class") (asm-compile-constants-class ast))
 
   ; scopes
   (println "  Scopes...")
 	(doseq [[qn bytes] (asm-compile-scope-classes ast)]
-		(write-file-mkdirs (str out-dir qn ".class") bytes))
- 
-  (println "Done. Output is in \"out/\" directory.\n"))
+		(writer (str qn ".class") bytes)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;
-; main
+; command line
 ;
 
 (defn -main [& args]
-  (def out-dir "./out/")
-  
- 	; clean output directory
-	(doseq [f (.listFiles (new File out-dir))]
-    (delete-file-recursively f))
- 
-  (doseq [path args]
-    (let [file (new File path)
-          qn (second (re-find #"^(.*)\.js$" (.getName file)))]
-      ; check file exists
-	    (when (not (.exists file))
-	      (throw (new Exception (str "File not found \"" path "\"."))))
-      (println (str "Compiling \"" path "\""))
+  (with-command-line args
+    "Mug JavaScript Compiler for JVM"
+    [[output o "Output directory" "bin/"]
+     [print? p? "Print AST directory to stdout"]
+     [jar j "Output contents as jar file" nil]
+     paths]
+   
+    ; filter files list for nonexisting files, directories
+    (let [paths (apply concat (map (fn [path]
+            (let [file (new File path)]
+				      ; check file exists
+					    (when (not (.exists file))
+					      (throw (new Exception (str "File not found \"" path "\"."))))
+              ; folders or files
+              (if (.isDirectory file)
+                (filter #(not (nil? (re-find #"^(.*)\.js$" %))) (map #(.getPath %) (file-seq file)))
+                [path]))) paths))
+          output (.getPath (doto (File. output) .mkdirs))]
+    
+	    ; iterate files
+	    (doseq [path paths]
+		    (let [file (new File path)
+		          qn (second (re-find #"^(.*)\.js$" (.getName file)))]		     
+		      ; parse
+		      (println (str "Parsing \"" path "\"...\n"))
+		      (let [ast (parse-js-ast (slurp path))]
+				    (if print?
+	            ; print
+				      (pprint ast)
+	            ; compile
+	            (if (nil? jar)
+	              (do
+	                ;[TODO] delete all files in this qualified namespace
+	                (compile-js ast qn
+                    (fn [path bytes] (write-file-mkdirs (str output "/" path) bytes))))
+	              (do
+	                (let [stream (open-jar (str output "/" jar))
+	                      writer (fn [path bytes] (write-file-jar stream path bytes))]
+	                  (compile-js ast qn writer)
+	                  (.close stream))))))))
      
-      ; parse
-      (let [ast (parse-js-ast (slurp path))]
-        ; compile
-        ;(pprint ast)
-        (compile-js ast qn out-dir)))))
+      (println (str "Done. Output is in \"" output "/\" directory.\n")))))
