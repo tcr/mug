@@ -5,7 +5,8 @@
 ; AST definition
 ;
 
-(ns mug.ast)
+(ns mug.ast
+  (:gen-class))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;
@@ -13,10 +14,11 @@
 ;
 
 (defmacro defast [type parent types]
-  (do
-		(derive type parent)
-	  (eval (list 'defn (symbol (name type)) (vec (concat ['ln] types))
-	    (concat (list 'list type 'ln) types)))))
+  (let [fnsym (symbol (name type))
+        args (vec (concat ['ln] types))]
+    `(do
+       (derive ~type ~parent)
+       (defn ~fnsym ~args (list ~type ~@args)))))
 				
 ; contexts
 

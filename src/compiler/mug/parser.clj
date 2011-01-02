@@ -7,6 +7,7 @@
 ;
 
 (ns mug.parser
+  (:gen-class)
   (:use clojure.set mug.ast)
   (:require [clojure.contrib.json :as json])
   (:import [org.mozilla.javascript Context Scriptable ScriptableObject]))

@@ -1,4 +1,5 @@
 (ns mug.asm.code
+  (:gen-class)
   (:use
     mug.ast
     [mug.asm config analyze util])
@@ -338,7 +339,10 @@
   (if value (.visitInsn mw Opcodes/ICONST_1) (.visitInsn mw Opcodes/ICONST_0))) 
 
 (defmethod asm-compile :mug.ast/num-literal [[_ ln value] ci ast mw]
-	(.visitLdcInsn mw (new Double (double value))))
+  ; take advantage of AST representation of ints to see if we should decode
+  ; long numbers like 0x88FFFF00 into (negative) ints or raw doubles
+	(.visitLdcInsn mw (new Double (double
+    (if (= (type value) java.lang.Long) (.intValue value) (double value))))))
 
 (defmethod asm-compile :mug.ast/str-literal [[_ ln value] ci ast mw]
 	(.visitLdcInsn mw value))

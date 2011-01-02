@@ -1,4 +1,5 @@
 (ns mug.asm.scopes
+  (:gen-class)
   (:use 
     mug.ast
     [mug.asm util config analyze]))

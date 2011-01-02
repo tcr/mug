@@ -1,4 +1,5 @@
 (ns mug.asm.util
+  (:gen-class)
   (:use
     mug.ast
     [clojure.set :only (difference)])

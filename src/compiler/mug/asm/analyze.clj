@@ -1,4 +1,5 @@
 (ns mug.asm.analyze
+  (:gen-class)
   (:use
     mug.ast
     [mug.asm config util]))

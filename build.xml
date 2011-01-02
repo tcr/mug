@@ -1,5 +1,52 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<project default="package_all" name="Mug Jar">
+<project default="build" name="Mug Jar">
+    <property name="clojure_home" value="." />
+    <property name="clojure_jar_file" value="clojure.jar" />
+    <property name="contrib_jar_file" value="clojure-contrib.jar" />
+    <property name="clojure_jar" value="${clojure_home}/${clojure_jar_file}" />
+    <property name="contrib_jar" value="${clojure_home}/${contrib_jar_file}" />
+    <property name="src_dir" value="src/compiler" />
+    <property name="dst_lib" value="lib" />
+    <property name="app_file" value="mug/compiler.clj" />
+    <property name="app" value="mug.compiler" />
+    <property name="app_jar" value="mug.jar" />
+    <property name="vendor" value="Tim Cameron Ryan" />
+    <property name="title" value="Mug" />
+    <property name="version" value="0.1" />
+    
+   <target name="verifyCompileProperties" depends="verifyRunProperties">
+        <fail unless="clojure_jar">You need to have a variable 'clojure_jar' in your build.properties file set to the full path to the clojure.jar file.</fail>
+        <fail unless="contrib_jar">You need to have a variable 'contrib_jar' in your build.properties file set to the full path to the clojure-contrib.jar file.</fail>
+        <fail unless="app_file">You need to have a variable 'app_dir' in your build.properties file set to the relative path to your main file (e.g.: com/company/app/main.clj).</fail>
+        <fail unless="vendor">You need to have a variable 'vendor' in your build.properties file set to the name of the application's Author.</fail>
+        <fail unless="title">You need to have a variable 'title' in your build.properties file set to the name of the application.</fail>
+        <fail unless="version">You need to have a variable 'version' in your build.properties file set to the version of the application.</fail>
+        <fail message="You must have your application's main file at the location specified by the variable 'app_file' (${app_file}).">
+            <condition>
+                <not>
+                    <available file="${src_dir}/${app_file}" />
+                </not>
+            </condition>
+        </fail>
+    </target>
+    
+    <target name="verifyRunProperties">
+        <fail unless="app">
+            You need to have a variable 'app' in your build.properties file set to a Clojure namespace (e.g.: com.company.app.main).
+            For further explanation, see the simplest :gen-class example on the compilation page of the Clojure website.
+        </fail>
+        <fail unless="app_jar">You need to have a variable 'app_jar' in your build.properties file set to the name of the resulting jar file.</fail>
+    </target>
+    
+    <target name="mug_js_jar">
+        <jar destfile="lib/mug-js.jar">
+            <fileset dir="bin/" includes="mug/modules/*.class"/>
+            <fileset dir="bin/" includes="mug/js/*.class"/>
+        	<fileset dir="bin/" includes="mug/*.class"/>
+        </jar>
+      </target>
+    
+    <!--
     <target name="mug_jar">
         <jar destfile="lib/mug.jar">
             <zipfileset excludes="META-INF/*.SF" src="clojure.jar"/>
@@ -11,17 +58,44 @@
         	<fileset dir="bin/" includes="mug/js/*"/>
         	<fileset dir="bin/" includes="mug/modules/*"/>
         	<fileset dir="bin/" includes="mug/*"/>
-        	<fileset dir="res/" includes="**"/>
+          <fileset dir="res/" includes="**"/>
         </jar>
-    </target>
-	
-    <target name="mug_js_jar">
-        <jar destfile="lib/mug-js.jar">
-            <fileset dir="bin/" includes="mug/modules/*.class"/>
-            <fileset dir="bin/" includes="mug/js/*.class"/>
-        	<fileset dir="bin/" includes="mug/*.class"/>
+      </target>
+    -->
+      
+    <target name="compile_mug_jar" depends="verifyCompileProperties">
+        <mkdir dir="${src_dir}/classes" />
+        <java classname="clojure.lang.Compile" fork="true" failonerror="true">
+            <classpath>
+                <pathelement location="${src_dir}" />
+                <pathelement location="${src_dir}/classes" />
+                <pathelement location="${clojure_jar}" />
+                <pathelement location="${contrib_jar}" />
+                <pathelement location="asm-3.3.jar" />
+                <pathelement location="rhino-js.jar" />
+                <pathelement location="lib/mug-js.jar" />
+            </classpath>
+            <sysproperty key="clojure.compile.path" value="${src_dir}/classes" />
+            <arg value="${app}" />
+        </java>
+        <delete file="${dst_lib}/${app_jar}" />
+        <jar destfile="${dst_lib}/${app_jar}" basedir="${src_dir}/classes" index="true">
+          <fileset dir="res"> <include name="*"/> </fileset>
+          <zipfileset src="asm-3.3.jar" excludes="META-INF/*.SF" />
+          <zipfileset src="clojure.jar" excludes="META-INF/*.SF" />
+          <zipfileset src="clojure-contrib.jar" excludes="META-INF/*.SF" />
+          <zipfileset src="rhino-js.jar" excludes="META-INF/*.SF" />
+          <zipfileset src="lib/mug-js.jar" excludes="META-INF/*.SF" />
+            <manifest>
+                <attribute name="Implementation-Vendor" value="${vendor}" />
+                <attribute name="Implementation-Title" value="${title}" />
+                <attribute name="Implementation-Version" value="${version}" />
+                <attribute name="Main-Class" value="${app}" />
+                <attribute name="Class-Path" value="." />
+            </manifest>
         </jar>
+        <delete dir="${src_dir}/classes" />
     </target>
 
-    <target name="package_all" depends="mug_jar, mug_js_jar" />
+    <target name="build" depends="mug_js_jar, compile_mug_jar" />
 </project>

@@ -1,4 +1,5 @@
 (ns mug.asm.constants
+  (:gen-class)
   (:use
     [mug.asm util analyze config]
     mug.ast))
@@ -28,7 +29,9 @@
 			(doto mv
 				(.visitTypeInsn Opcodes/NEW "java/lang/Double")
 				(.visitInsn Opcodes/DUP)
-				(.visitLdcInsn (new Double (double v)))
+			  ; take advantage of AST representation of ints to see if we should decode
+			  ; long numbers like 0x88FFFF00 into (negative) ints or raw doubles
+				(.visitLdcInsn (new Double (double (if (= (type v) java.lang.Long) (.intValue v) (double v)))))
 				(.visitMethodInsn Opcodes/INVOKESPECIAL, "java/lang/Double", "<init>", (sig-call sig-double sig-void))
 				(.visitFieldInsn Opcodes/PUTSTATIC, (qn-js-constants), (ident-num i), (sig-obj "java/lang/Double"))))
   

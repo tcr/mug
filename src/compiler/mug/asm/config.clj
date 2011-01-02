@@ -1,4 +1,5 @@
 (ns mug.asm.config
+  (:gen-class)
   (:use
     clojure.contrib.str-utils))
 

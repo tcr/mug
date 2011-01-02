@@ -55,7 +55,7 @@ Why?
 * Mug's goal is that compiled code be as similar to Java as possible, and easily debuggable.
 * It's a neat party trick.
 
-The Mug compiler is written in Clojure. However, compiled JavaScript has no Clojure dependencies and only requires the Java `mug-js.jar` archive.
+The Mug compiler `mug.jar` is written in Clojure. However, compiled JavaScript has no Clojure dependencies and only requires the Java `mug-js.jar` archive.
 
 Development
 -----------
