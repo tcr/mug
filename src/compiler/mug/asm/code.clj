@@ -725,6 +725,36 @@
       (asm-compile else-stat ci ast mw))
     (.visitLabel mw true-case)))
 
+(defmethod asm-compile :mug.ast/switch-stat [[_ ln expr cases] ci ast mw]
+  (let [end-case (new Label)
+        labels (vec (map (fn [x] (new Label)) cases))]
+    (push-label nil nil end-case)
+    
+    (asm-compile-autobox expr ci ast mw)
+    ; cases
+    (doseq [[i [expr stats]] (index cases)]
+      (when (not (nil? expr))
+        (.visitInsn mw Opcodes/DUP)
+        (asm-compile-autobox expr ci ast mw)
+        (.visitMethodInsn mw Opcodes/INVOKESTATIC, qn-js-utils, "testEquality", (sig-call (sig-obj qn-object) (sig-obj qn-object) sig-boolean))
+        (.visitJumpInsn mw, Opcodes/IFNE, (labels i))))
+    ; default
+    (doseq [[i [expr stats]] (index cases)]
+      (when (nil? expr)
+        (.visitJumpInsn mw, Opcodes/GOTO, (labels i))))
+    (.visitJumpInsn mw, Opcodes/GOTO, end-case)
+    
+    ; clauses
+    (doseq [[i [expr stats]] (index cases)]
+      (.visitLabel mw (labels i))
+      (doseq [stat stats]
+        (asm-compile stat ci ast mw)))
+    
+    (.visitLabel mw end-case)
+    (.visitInsn mw Opcodes/POP) ; original switch expression
+    
+    (pop-label nil)))
+
 (defmethod asm-compile :mug.ast/break-stat [[_ ln label] ci ast mw]
   (if (> (count (get-label nil)) 0)
     (.visitJumpInsn mw, Opcodes/GOTO, ((get-label nil) :break))

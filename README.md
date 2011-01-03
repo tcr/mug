@@ -75,7 +75,7 @@ TODO
 
 *ECMAScript Implementation*
 
-* Implement unsupported constructs: `try/catch/throw`, `switch/case/default`, labels, `void`, `delete`
+* Implement unsupported constructs: `try/catch/throw`, named labels, `void/delete`
 * Complete the standard library
 * Complete operator support for some combinations of types
 * Normalize DontDelete, DontEnum, ReadOnly patterns

@@ -103,6 +103,12 @@
     (walker expr walker)
     (walker then-stat walker)
     (if else-stat (walker else-stat walker) [])))
+(defmethod ast-walker :mug.ast/switch-stat [[_ ln expr cases] walker]
+  (concat
+    (walker expr walker)
+    (apply concat (map (fn [[expr stats]]
+      (concat (if (nil? expr) [] (walker expr walker))
+        (apply concat (map #(walker % walker) stats)))) cases))))
 (defmethod ast-walker :mug.ast/break-stat [[_ ln label] walker]
   [])
 (defmethod ast-walker :mug.ast/continue-stat [[_ ln label] walker]

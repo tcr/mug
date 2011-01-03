@@ -100,6 +100,7 @@
 (defast ::do-while-stat ::stat [expr stat])
 (defast ::for-stat ::stat [init expr step stat])
 (defast ::for-in-stat ::stat [isvar value expr stat])
+(defast ::switch-stat ::stat [expr cases])
 (defast ::var-stat ::stat [vars]) 
 (defast ::defn-stat ::stat [closure])
 (defast ::break-stat ::stat [label])

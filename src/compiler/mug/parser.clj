@@ -151,9 +151,12 @@
     (if body (gen-ast-code body input) [])))
 (defmethod gen-ast-code "for-in" [[_ ln var name obj body] input]
   (for-in-stat ln var name (gen-ast-code obj input) (gen-ast-code body input)))
-;(defmethod gen-ast-code "switch" [[_ ln val body] input] )
-;(defmethod gen-ast-code "case" [[_ ln expr] input] )
-;(defmethod gen-ast-code "default" [[_ ln] input] )
+(defmethod gen-ast-code "switch" [[_ ln val body] input]
+  (switch-stat ln 
+    (gen-ast-code val input)
+	  (map (fn [[case stats]]
+	    [(if (nil? case) nil (gen-ast-code case input))
+	     (vec (map #(gen-ast-code % input) stats))]) body)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;
