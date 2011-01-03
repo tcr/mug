@@ -19,7 +19,8 @@
 
 (def script-default-vars
   #{"exports" "require" "print" "Math" "Array" "parseInt"
-    "parseFloat" "Number" "Object" "String" "Boolean"})
+    "parseFloat" "Number" "Object" "String" "Boolean"
+    "isNaN" "Error"})
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;

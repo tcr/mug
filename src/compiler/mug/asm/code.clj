@@ -63,6 +63,8 @@
   :number)
 (defmethod compile-type :mug.ast/mul-op-expr [[_ ln left right]]
   :number)
+(defmethod compile-type :mug.ast/mod-op-expr [[_ ln left right]]
+  :number)
 (defmethod compile-type :mug.ast/lsh-op-expr [[_ ln left right]]
   :number)
 (defmethod compile-type :mug.ast/eq-op-expr [[_ ln left right]]
@@ -86,6 +88,8 @@
 (defmethod compile-type :mug.ast/neg-op-expr [[_ ln expr]]
   :number)
 (defmethod compile-type :mug.ast/or-op-expr [[_ ln left right]]
+  Object)
+(defmethod compile-type :mug.ast/and-op-expr [[_ ln left right]]
   Object)
 
 ;
@@ -216,7 +220,7 @@
 (defn asm-compile-autobox [expr ci ast mw]
   (if (isa? (first expr) :mug.ast/num-literal)
     (let [[_ ln value] expr]
-      (println "Num literal optimization.")
+      ;(println "Num literal optimization.")
       (.visitFieldInsn mw Opcodes/GETSTATIC, (qn-js-constants) (ident-num (index-of (ast-numbers ast) value)) (sig-obj "java/lang/Double")))
   (let [type (compile-type expr)]
 	  (case type
@@ -448,6 +452,13 @@
   (asm-as-number (compile-type right) ci ast mw)
   (.visitInsn mw Opcodes/DMUL))
 
+(defmethod asm-compile :mug.ast/mod-op-expr [[_ ln left right] ci ast mw]
+  (asm-compile left ci ast mw)
+  (asm-as-number (compile-type left) ci ast mw)
+  (asm-compile right ci ast mw)
+  (asm-as-number (compile-type right) ci ast mw)
+  (.visitInsn mw Opcodes/DREM))
+
 (defmethod asm-compile :mug.ast/lsh-op-expr [[_ ln left right] ci ast mw]
   (asm-compile left ci ast mw)
   (asm-as-number (compile-type left) ci ast mw)
@@ -509,13 +520,23 @@
 
 (defmethod asm-compile :mug.ast/or-op-expr [[_ ln left right] ci ast mw]
   (asm-compile-autobox left ci ast mw) ;(asm-compile left ci ast mw)
-  (.visitInsn mw Opcodes/DUP)
+  (.visitInsn mw Opcodes/DUP) ;TODO without this DUP, we could post-facto autobox
   (asm-as-boolean Object ci ast mw) ;(asm-as-boolean (compile-type left) ci ast mw)
   (let [true-case (new Label)]
     (.visitJumpInsn mw, Opcodes/IFNE, true-case)
     (.visitInsn mw Opcodes/POP)
     (asm-compile-autobox right ci ast mw)
     (.visitLabel mw true-case)))
+
+(defmethod asm-compile :mug.ast/and-op-expr [[_ ln left right] ci ast mw]
+  (asm-compile-autobox left ci ast mw) ;(asm-compile left ci ast mw)
+  (.visitInsn mw Opcodes/DUP) ;TODO without this DUP, we could post-facto autobox
+  (asm-as-boolean Object ci ast mw) ;(asm-as-boolean (compile-type left) ci ast mw)
+  (let [false-case (new Label)]
+    (.visitJumpInsn mw, Opcodes/IFEQ, false-case)
+    (.visitInsn mw Opcodes/POP)
+    (asm-compile-autobox right ci ast mw)
+    (.visitLabel mw false-case)))
 
 ;
 ; expressions

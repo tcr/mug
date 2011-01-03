@@ -87,7 +87,7 @@
 (defmethod ast-walker :mug.ast/expr-stat [[_ ln expr] walker]
   (walker expr walker))
 (defmethod ast-walker :mug.ast/ret-stat [[_ ln expr] walker]
-  (walker expr walker))
+  (if expr (walker expr walker) []))
 (defmethod ast-walker :mug.ast/throw-stat [[_ ln expr] walker]
   (walker expr walker))
 (defmethod ast-walker :mug.ast/while-stat [[_ ln expr stat] walker]

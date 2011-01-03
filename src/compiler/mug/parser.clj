@@ -57,6 +57,7 @@
 	  "-" sub-op-expr
 	  "*" mul-op-expr
 	  "/" div-op-expr
+    "%" mod-op-expr
 	  "<" lt-op-expr
 	  ">" gt-op-expr
 	  "<=" lte-op-expr
