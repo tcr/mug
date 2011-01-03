@@ -5,7 +5,7 @@ Mug statically compiles JavaScript into JVM .class files.
 
 ### Getting Started
 
-    $ git clone git://github.com/timcameronryan/Mug.git mug
+    $ git clone git://github.com/timcameronryan/mug.git mug
     $ cd mug/test
     $ java -cp ../lib/mug.jar mug.Compiler hello-world.js # compile
     $ java -cp ../lib/mug-js.jar:bin mug.modules.hello_world # run
