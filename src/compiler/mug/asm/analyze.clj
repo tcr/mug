@@ -88,10 +88,21 @@
   (walker expr walker))
 (defmethod ast-walker :mug.ast/ret-stat [[_ ln expr] walker]
   (walker expr walker))
+(defmethod ast-walker :mug.ast/throw-stat [[_ ln expr] walker]
+  (walker expr walker))
 (defmethod ast-walker :mug.ast/while-stat [[_ ln expr stat] walker]
   (concat (walker expr walker) (walker stat walker)))
 (defmethod ast-walker :mug.ast/do-while-stat [[_ ln expr stat] walker]
   (concat (walker expr walker) (walker stat walker)))
+(defmethod ast-walker :mug.ast/try-stat [[_ ln stats catch-block finally-stats] walker]
+  (concat
+    (apply concat (map #(walker % walker) stats))
+    (if-let [[label stats] catch-block]
+      (apply concat (map #(walker % walker) stats))
+      [])
+    (if finally-stats
+      (apply concat (map #(walker % walker) finally-stats))
+      [])))
 (defmethod ast-walker :mug.ast/for-stat [[_ ln init expr step stat] walker]
   (concat
     (if init (walker init walker) [])
@@ -222,7 +233,14 @@
 (defmethod ast-context-vars-walker :mug.ast/var-stat [[_ ln vars]]
   (map first vars))
 (defmethod ast-context-vars-walker :mug.ast/for-in-stat [[_ ln isvar value expr stat]]
-  (if isvar [value] []))
+  (concat
+    (if isvar [value] [])
+    (ast-context-vars-walker stat)))
+(defmethod ast-context-vars-walker :mug.ast/try-stat [node]
+  (let [[_ ln stats catch-block finally-stats] node]
+	  (concat
+      (if-let [[label _] catch-block] [label] [])
+	    (ast-walker node (fn [node & _] (ast-context-vars-walker node))))))
 ; identifiers (only arguments variable)
 (defmethod ast-context-vars-walker :mug.ast/scope-ref-expr [[_ ln value]]
   (if (= value "arguments") ["arguments"] []))

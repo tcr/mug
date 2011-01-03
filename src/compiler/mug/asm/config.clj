@@ -41,6 +41,7 @@
 (def qn-js-array (str pkg-mug "JSArray"))
 (def qn-js-regexp (str pkg-mug "JSRegExp"))
 (def qn-js-module (str pkg-mug "JSModule"))
+(def qn-js-exception (str pkg-mug "JSException"))
 
 (def qn-js-atoms (str pkg-mug "JSAtoms"))
 (defn qn-js-constants [] (str @pkg-compiled "constants"))

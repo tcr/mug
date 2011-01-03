@@ -131,10 +131,15 @@
 (defmethod gen-ast-code "return" [[_ ln value] input]
   (ret-stat ln (if value (gen-ast-code value input) nil)))
 ;(defmethod gen-ast-code "debugger" [[_ ln] input])
-
-;(defmethod gen-ast-code "try" [[_ ln body catch finally] input] )
-;(defmethod gen-ast-code "throw" [[_ ln expr] input] )
-
+(defmethod gen-ast-code "try" [[_ ln body catch finally] input]
+  (try-stat ln
+    (map #(gen-ast-code % input) body)
+    (when-let [[label stats] catch]
+      [label (map #(gen-ast-code % input) stats)])
+    (when-let [stats finally]
+      (map #(gen-ast-code % input) stats))))
+(defmethod gen-ast-code "throw" [[_ ln expr] input]
+  (throw-stat ln (gen-ast-code expr input)))
 (defmethod gen-ast-code "break" [[_ ln label] input]
   (break-stat ln label))
 (defmethod gen-ast-code "continue" [[_ ln label] input]

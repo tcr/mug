@@ -755,6 +755,68 @@
     
     (pop-label nil)))
 
+(defmethod asm-compile :mug.ast/throw-stat [[_ ln expr] ci ast mw]
+  (.visitTypeInsn mw Opcodes/NEW, qn-js-exception)
+  (.visitInsn mw Opcodes/DUP)
+  (asm-compile-autobox expr ci ast mw)
+  (.visitMethodInsn mw Opcodes/INVOKESPECIAL, qn-js-exception, "<init>", (sig-call (sig-obj qn-object) sig-void))
+  (.visitInsn mw Opcodes/ATHROW))
+
+(defmethod asm-compile :mug.ast/try-stat [[_ ln stats catch-block finally-stats] ci ast mw]
+  (let [try-label (new Label)
+        catch-label (new Label)
+        finally-label (new Label)
+        double-throw-label (new Label)
+        end-label (new Label)]
+    
+    ; catch block
+    (.visitTryCatchBlock mw try-label, catch-label, catch-label, "java/lang/Exception")
+    ; finally block
+    (.visitTryCatchBlock mw try-label, finally-label, double-throw-label, nil)
+    
+    ; try
+    (.visitLabel mw try-label)
+    (doseq [stat stats]
+      (asm-compile stat ci ast mw))
+    (.visitJumpInsn mw Opcodes/GOTO finally-label)
+    
+    ; catch (may be empty)
+    (.visitLabel mw catch-label)
+    (when-let [[value stats] catch-block]
+      ; unwrap js exceptions
+      (.visitInsn mw Opcodes/DUP)
+      (.visitTypeInsn mw Opcodes/INSTANCEOF, qn-js-exception)
+      (let [cast-label (new Label)]
+        (.visitJumpInsn mw Opcodes/IFEQ cast-label)
+        (.visitTypeInsn mw Opcodes/CHECKCAST, qn-js-exception)
+        (.visitFieldInsn mw Opcodes/GETFIELD, qn-js-exception, "value", (sig-obj qn-object))
+        (.visitLabel mw cast-label))
+      ; assign variable
+		  (if-let [reg (ref-reg ((ast-contexts ast) ci) value)]
+		    (.visitVarInsn mw Opcodes/ASTORE reg) 
+			  (let [qn-parent (asm-search-scopes value ci ast mw)]
+			    (.visitInsn mw Opcodes/SWAP)
+				  (.visitMethodInsn mw Opcodes/INVOKEVIRTUAL, qn-parent, (str "set_" value), (sig-call (sig-obj qn-object) sig-void))))
+      ; body
+	    (doseq [stat stats]
+	      (asm-compile stat ci ast mw)))
+
+    ; finally (may be empty)
+    (.visitLabel mw finally-label)
+    (when finally-stats
+	    (doseq [stat finally-stats]
+	      (asm-compile stat ci ast mw)))
+    (.visitJumpInsn mw Opcodes/GOTO, end-label)
+    
+    ; throw inside catch (repeats finally body)
+    (.visitLabel mw double-throw-label)
+    (when finally-stats
+	    (doseq [stat finally-stats]
+	      (asm-compile stat ci ast mw)))
+    (.visitInsn mw Opcodes/ATHROW)
+
+    (.visitLabel mw end-label)))
+
 (defmethod asm-compile :mug.ast/break-stat [[_ ln label] ci ast mw]
   (if (> (count (get-label nil)) 0)
     (.visitJumpInsn mw, Opcodes/GOTO, ((get-label nil) :break))

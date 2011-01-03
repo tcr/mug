@@ -101,6 +101,8 @@
 (defast ::for-stat ::stat [init expr step stat])
 (defast ::for-in-stat ::stat [isvar value expr stat])
 (defast ::switch-stat ::stat [expr cases])
+(defast ::throw-stat ::stat [expr])
+(defast ::try-stat ::stat [stats catch-block finally-stats])
 (defast ::var-stat ::stat [vars]) 
 (defast ::defn-stat ::stat [closure])
 (defast ::break-stat ::stat [label])

@@ -75,10 +75,9 @@ TODO
 
 *ECMAScript Implementation*
 
-* Implement unsupported constructs: `try/catch/throw`, named labels, `void/delete`
-* Complete the standard library
-* Complete operator support for some combinations of types
-* Normalize DontDelete, DontEnum, ReadOnly patterns
+* Complete support for `delete`, named labels, operators
+* Complete ECMAScript standard library
+* Normalize DontDelete, DontEnum, ReadOnly object patterns
 * Replace RegExp implementation (no java.util.regex)
 
 *Compiler*

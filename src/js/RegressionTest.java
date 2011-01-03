@@ -1,4 +1,5 @@
 import mug.Modules;
+import mug.js.JSException;
 import mug.js.JSObject;
 import mug.js.JSBoolean;
 
