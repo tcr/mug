@@ -9,7 +9,7 @@ public class JSUtils {
 	 */
 	
 	static public boolean isNull(Object value) {
-		return value == null || value == JSNull.NULL;
+		return value == null || value instanceof JSNull;
 	}
 	
 	static public Object[] arguments(int argc, Object l0, Object l1, Object l2, Object l3, Object l4, Object l5, Object l6, Object l7, Object[] rest) {
@@ -49,6 +49,10 @@ public class JSUtils {
 			return ((String) a).length() > 0;
 		if (a == null)
 			return false;
+		if (a instanceof JSNull)
+			return false;
+		if (a instanceof JSObject)
+			return true;
 		
 		// java types
 		if (a instanceof Number)
@@ -198,43 +202,23 @@ public class JSUtils {
 		return new Double(asNumber(a) + asNumber(b));
 	}
 	
-	//[TODO] these shouldn't be so strict
-	
+	//[TODO] implement this fully	
 	static public boolean testEquality(Object a, Object b) {
-		if (a == null && b == null)
+		if (a == null && b == null) // undefined == undefined
 			return true;
-		if (a == null || b == null)
+		if ((a == null || b == null) && (a instanceof JSNull || b instanceof JSNull)) // undefined or null
+			return true;
+		if ((a == null && b instanceof JSNull) || (a == null && b instanceof JSNull)) // anything == undefined
+			return true;
+		if (a == null || b == null) // anything equals null
 			return false;
 		return a.equals(b);
 	}
-	
-	static public boolean testInequality(Object a, Object b) {
-		if (a == null && b == null)
-			return false;
-		if (a == null || b == null)
-			return true;
-		return !a.equals(b);
-	}
-	
-	/*	
+
+	//[TODO] implement this
 	static public boolean testStrictEquality(Object a, Object b) {
-		if (a == null && b == null)
-			return JSAtoms.TRUE;
-		if (a instanceof JSNumber && b instanceof JSNumber)
-			return ((JSNumber) a).value == ((JSNumber) b).value ? JSAtoms.TRUE : JSAtoms.FALSE;
-		//
-		return JSAtoms.FALSE;
+		return testEquality(a, b);
 	}
-	
-	static public boolean testStrictInequality(JSPrimitive a, JSPrimitive b) {
-		if (a == null && b == null)
-			return JSAtoms.FALSE;
-		if (a instanceof JSNumber && b instanceof JSNumber)
-			return ((JSNumber) a).value == ((JSNumber) b).value ? JSAtoms.FALSE : JSAtoms.TRUE;
-		//
-		return JSAtoms.FALSE;
-	}
-	*/
 	
 	// patterns
 	

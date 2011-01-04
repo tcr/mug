@@ -68,9 +68,14 @@
   
     ;[TODO] THIS object
 	
-    ; compile body
+    ; compile functions
 		(doseq [stat stats]
-			(asm-compile stat ci ast mw))
+      (when (isa? (first stat) :mug.ast/defn-stat)
+			  (asm-compile stat ci ast mw)))
+    ; compile code
+		(doseq [stat stats]
+      (when (not (isa? (first stat) :mug.ast/defn-stat))
+			  (asm-compile stat ci ast mw)))
   
     ; wait for timeouts
     (asm-toplevel ci ast mw)
@@ -133,9 +138,14 @@
           (.visitVarInsn Opcodes/ALOAD, 0)
           (.visitVarInsn Opcodes/ASTORE (ref-reg context name)))))
 		
-		; compile body
+    ; compile functions
 		(doseq [stat stats]
-			(asm-compile stat ci ast mw))
+      (when (isa? (first stat) :mug.ast/defn-stat)
+			  (asm-compile stat ci ast mw)))
+    ; compile code
+		(doseq [stat stats]
+      (when (not (isa? (first stat) :mug.ast/defn-stat))
+			  (asm-compile stat ci ast mw)))
 		
 		; catch-all return
 		(doto mw
@@ -165,13 +175,13 @@
 ; class
 ;
 
-(defmulti compile-context-class (fn [ci ast qn] (first ((ast-contexts ast) ci))))
+(defmulti compile-context-class (fn [ci ast qn path] (first ((ast-contexts ast) ci))))
 
-(defmethod compile-context-class :mug.ast/script-context [ci ast qn]
+(defmethod compile-context-class :mug.ast/script-context [ci ast qn path]
   (let [qn (qn-js-context ci)
 				cw (new ClassWriter ClassWriter/COMPUTE_MAXS)]
     (.visit cw, Opcodes/V1_6, (+ Opcodes/ACC_SUPER Opcodes/ACC_PUBLIC), qn, nil, qn-js-module, nil)
-    (.visitSource cw, (str qn ".js"), nil)
+    (.visitSource cw, path, nil)
     (update-state "line-number" -1)
     
 		(compile-context-init ci ast cw)
@@ -194,11 +204,11 @@
 		(.visitEnd cw)
   	[qn (.toByteArray cw)]))
 
-(defmethod compile-context-class :mug.ast/closure-context [ci ast qn]
+(defmethod compile-context-class :mug.ast/closure-context [ci ast qn path]
   (let [qn (qn-js-context ci)
 				cw (new ClassWriter ClassWriter/COMPUTE_MAXS)]
     (.visit cw, Opcodes/V1_6, (+ Opcodes/ACC_SUPER Opcodes/ACC_PUBLIC), qn, nil, qn-js-function, nil)
-    (.visitSource cw, (str qn ".js"), nil)
+    (.visitSource cw, path, nil)
     (update-state "line-number" -1)
     
 		(compile-context-init ci ast cw)
@@ -212,7 +222,7 @@
 ; context compilation
 ;
 
-(defn compile-context-classes [ast qn]
+(defn compile-context-classes [ast qn path]
 	(into {} (map-indexed
-    (fn [ci context] (compile-context-class ci ast qn))
+    (fn [ci context] (compile-context-class ci ast qn path))
     (ast-contexts ast))))

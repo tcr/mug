@@ -82,10 +82,17 @@ public class JSObject {
 	}
 	
 	public String[] getKeys() {
+		if (hash == null)
+			return new String[0];
 		Set<String> set = hash.keySet();
 		String[] out = new String[set.size()];
 		set.toArray(out);
 		return out;
+	}
+
+	
+	public boolean hasOwnProperty(String prop) {
+		return hash != null && hash.containsKey(prop);
 	}
 	
 	/*

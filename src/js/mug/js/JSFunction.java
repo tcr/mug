@@ -6,6 +6,7 @@ public abstract class JSFunction extends JSObject {
 	public JSFunction(JSObject proto) {
 		super(proto);
 		set("prototype", new JSObject(proto.getProto())); // Function.prototype.__proto__ == Object.prototype
+		actual_prototype.set("constructor", this);
 	}
 	
 	/*

@@ -26,14 +26,14 @@
 ; compiler
 ;
 
-(defn compile-js [ast qn writer]  
+(defn compile-js [ast qn path writer]  
   ; update atom
   (swap! pkg-compiled #(identity %2)
     (str "mug/modules/" (replace-str "." "/" (replace-str "-" "_" qn)) "$"))
 
   ; contexts
   (println "  Contexts...")
-	(doseq [[qn bytes] (compile-context-classes ast qn)]
+	(doseq [[qn bytes] (compile-context-classes ast qn path)]
 		(writer (str qn ".class") bytes)
     (println (str "    Wrote out " qn)))
 	
@@ -85,12 +85,12 @@
 	            (if (nil? jar)
 	              (do
 	                ;[TODO] delete all files in this qualified namespace
-	                (compile-js ast qn
+	                (compile-js ast qn path
                     (fn [path bytes] (write-file-mkdirs (str output "/" path) bytes))))
 	              (do
 	                (let [stream (open-jar (str output "/" jar))
 	                      writer (fn [path bytes] (write-file-jar stream path bytes))]
-	                  (compile-js ast qn writer)
+	                  (compile-js ast qn path writer)
 	                  (.close stream))))))))
      
       (println (str "Done. Output is in \"" output "/\" directory.\n")))))

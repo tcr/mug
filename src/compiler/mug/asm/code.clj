@@ -28,6 +28,8 @@
 ;
 
 (defmulti compile-type (fn [node] (first node)))
+(defmethod compile-type :default [[type & _]]
+  (throw (new Exception (str "Missing compile type analysis for " type))))
 
 ;
 ; literals
@@ -90,6 +92,8 @@
 (defmethod compile-type :mug.ast/or-op-expr [[_ ln left right]]
   Object)
 (defmethod compile-type :mug.ast/and-op-expr [[_ ln left right]]
+  Object)
+(defmethod compile-type :mug.ast/if-expr [[_ ln left right]]
   Object)
 
 ;
@@ -158,6 +162,20 @@
     (pop (get-state (list :label label)))))
 (defn get-label [label]
   (last (or (get-state (list :label label)) [])))
+
+; pop and dup
+
+(defn asm-compile-pop [node mw]
+  (case (compile-type node)
+    :number (.visitInsn mw Opcodes/POP2)
+    (.visitInsn mw Opcodes/POP)))
+
+; integer code optimization
+
+(defn asm-compile-load-int [i mw]
+  (if (and (>= i -128) (<= i 127))
+    (.visitIntInsn mw Opcodes/BIPUSH, i)
+    (.visitLdcInsn mw (new Integer i))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;
@@ -301,12 +319,12 @@
   ; extra args
   (if (> (count args) arg-limit)
     (do
-      (.visitIntInsn mw Opcodes/BIPUSH, (- (count args) arg-limit))
+      (asm-compile-load-int (- (count args) arg-limit) mw)
       (.visitTypeInsn mw Opcodes/ANEWARRAY, qn-object)
-      (doseq [_ (range (- (count args) arg-limit))]
+      (doseq [i (range (- (count args) arg-limit))]
         (.visitInsn mw Opcodes/DUP)
-        (.visitIntInsn mw Opcodes/BIPUSH, _)
-        (asm-compile-autobox ((vec args) (+ arg-limit _)) ci ast mw)
+        (asm-compile-load-int i mw)
+        (asm-compile-autobox ((vec args) (+ arg-limit i)) ci ast mw)
         (.visitInsn mw Opcodes/AASTORE)))
     (.visitInsn mw Opcodes/ACONST_NULL)))
 
@@ -369,11 +387,11 @@
   (.visitLdcInsn mw (count exprs))
 	(.visitMethodInsn mw Opcodes/INVOKESPECIAL, qn-js-array, "<init>", (sig-call (sig-obj qn-js-object) sig-integer sig-void))
 	(.visitInsn mw Opcodes/DUP)
-  (.visitIntInsn mw Opcodes/BIPUSH, (count exprs))
+  (asm-compile-load-int (count exprs) mw)
   (.visitTypeInsn mw Opcodes/ANEWARRAY, qn-object)
   (doseq [[i expr] (index exprs)]
     (.visitInsn mw Opcodes/DUP)
-    (.visitIntInsn mw Opcodes/BIPUSH, i)
+    (asm-compile-load-int i mw)
     (asm-compile-autobox expr ci ast mw)
     (.visitInsn mw Opcodes/AASTORE))
   (.visitMethodInsn mw Opcodes/INVOKEVIRTUAL, qn-js-array, "load", (sig-call (sig-array (sig-obj qn-object)) sig-void)))
@@ -477,7 +495,15 @@
 (defmethod asm-compile :mug.ast/neq-op-expr [[_ ln left right] ci ast mw]
   (asm-compile-autobox left ci ast mw)
   (asm-compile-autobox right ci ast mw)
-  (.visitMethodInsn mw Opcodes/INVOKESTATIC, qn-js-utils, "testInequality", (sig-call (sig-obj qn-object) (sig-obj qn-object) sig-boolean)))
+  (.visitMethodInsn mw Opcodes/INVOKESTATIC, qn-js-utils, "testEquality", (sig-call (sig-obj qn-object) (sig-obj qn-object) sig-boolean))
+  (let [false-case (new Label) true-case (new Label)]
+    (doto mw
+      (.visitJumpInsn Opcodes/IFNE, false-case)
+      (.visitInsn Opcodes/ICONST_1)
+      (.visitJumpInsn Opcodes/GOTO, true-case)
+		  (.visitLabel false-case)
+		  (.visitInsn Opcodes/ICONST_0)
+		  (.visitLabel true-case))))
 
 (defmethod asm-compile :mug.ast/not-op-expr [[_ ln expr] ci ast mw]
   (let [false-case (new Label) true-case (new Label)]
@@ -499,7 +525,15 @@
 (defmethod asm-compile :mug.ast/neqs-op-expr [[_ ln left right] ci ast mw]
   (asm-compile-autobox left ci ast mw)
   (asm-compile-autobox right ci ast mw)
-  (.visitMethodInsn mw Opcodes/INVOKESTATIC, qn-js-utils, "testStrictInequality", (sig-call (sig-obj qn-object) (sig-obj qn-object) sig-boolean)))
+  (.visitMethodInsn mw Opcodes/INVOKESTATIC, qn-js-utils, "testStrictEquality", (sig-call (sig-obj qn-object) (sig-obj qn-object) sig-boolean))
+  (let [false-case (new Label) true-case (new Label)]
+    (doto mw
+      (.visitJumpInsn Opcodes/IFNE, false-case)
+      (.visitInsn Opcodes/ICONST_1)
+      (.visitJumpInsn Opcodes/GOTO, true-case)
+		  (.visitLabel false-case)
+		  (.visitInsn Opcodes/ICONST_0)
+		  (.visitLabel true-case))))
   
 (defmethod asm-compile :mug.ast/lt-op-expr [[_ ln left right] ci ast mw]
   (asm-compare-op Opcodes/IFLT left right ci ast mw))
@@ -647,15 +681,15 @@
   (asm-as-boolean (compile-type expr) ci ast mw)
   (let [false-case (new Label) true-case (new Label)]
     (.visitJumpInsn mw, Opcodes/IFEQ, false-case)
-    (asm-compile then-expr ci ast mw)
+    (asm-compile-autobox then-expr ci ast mw)
     (.visitJumpInsn mw, Opcodes/GOTO, true-case)
     (.visitLabel mw false-case)
-    (asm-compile else-expr ci ast mw)
+    (asm-compile-autobox else-expr ci ast mw)
     (.visitLabel mw true-case)))
 
 (defmethod asm-compile :mug.ast/seq-expr [[_ ln pre expr] ci ast mw]
   (asm-compile pre ci ast mw)
-  (.visitInsn mw Opcodes/POP)
+  (asm-compile-pop pre mw)
   (asm-compile expr ci ast mw))
 
 ;
@@ -668,9 +702,7 @@
 
 (defmethod asm-compile :mug.ast/expr-stat [[_ ln expr] ci ast mw]
 	(asm-compile expr ci ast mw)
-  (case (compile-type expr)
-    :number (.visitInsn mw Opcodes/POP2)
-	  (.visitInsn mw Opcodes/POP)))
+  (asm-compile-pop expr mw))
 
 (defmethod asm-compile :mug.ast/ret-stat [[_ ln expr] ci ast mw]
   (if (nil? expr)
@@ -710,9 +742,8 @@
   (when init
     (asm-compile init ci ast mw)
     (when (isa? (first init) :mug.ast/expr)
-      (case (compile-type init)
-        :number (.visitInsn mw Opcodes/POP2)
-        (.visitInsn mw Opcodes/POP))))
+      (asm-compile-pop init mw)))
+
   (let [start-label (new Label) continue-label (new Label) break-label (new Label)]
     (push-label nil continue-label break-label)
     
@@ -726,9 +757,7 @@
     (.visitLabel mw continue-label)
     (when step
       (asm-compile step ci ast mw)
-      (case (compile-type step)
-        :number (.visitInsn mw Opcodes/POP2)
-        (.visitInsn mw Opcodes/POP)))
+      (asm-compile-pop step mw))
     (.visitJumpInsn mw, Opcodes/GOTO, start-label)
     (.visitLabel mw break-label)
     

@@ -56,6 +56,15 @@ public class JSEnvironment {
 				return "[object Object]";
 			}
 		});
+
+		objectPrototype.set("hasOwnProperty", new JSFunction (functionPrototype) {
+			@Override
+			public Object invoke(Object ths, int argc, Object l0, Object l1, Object l2, Object l3, Object l4, Object l5, Object l6, Object l7, Object[] rest) throws Exception
+			{
+				JSObject obj = JSUtils.asJSObject(JSEnvironment.this, l0);
+				return obj.hasOwnProperty(JSUtils.asString(l1));
+			}
+		});
 	}
 	
 	final JSObject arrayPrototype = new JSObject(objectPrototype) { {
@@ -114,6 +123,20 @@ public class JSEnvironment {
 			}
 		});
 		
+		final JSFunction _indexOf = new JSFunction(functionPrototype) {
+			@Override
+			public Object invoke(Object ths, int argc, Object l0, Object l1, Object l2, Object l3, Object l4, Object l5, Object l6, Object l7, Object[] rest) throws Exception
+			{
+				JSObject thsObj = JSUtils.asJSObject(JSEnvironment.this, ths);
+				int len = (int) JSUtils.asNumber(thsObj.get("length"));
+				for (int i = 0; i < len; i++)
+					if (JSUtils.testEquality(thsObj.get(i), l0))
+						return i;
+				return -1;
+			}
+		};
+		set("indexOf", _indexOf);
+		
 		final JSFunction _join = new JSFunction(functionPrototype) {
 			@Override
 			public Object invoke(Object ths, int argc, Object l0, Object l1, Object l2, Object l3, Object l4, Object l5, Object l6, Object l7, Object[] rest) throws Exception
@@ -125,7 +148,7 @@ public class JSEnvironment {
 				for (int i = 0; i < len; i++) {
 					if (i > 0)
 						sb.append(delim);
-					sb.append(JSUtils.asString(thsObj.get(String.valueOf(i))));
+					sb.append(JSUtils.asString(thsObj.get(i)));
 				}
 				return sb.toString();
 			}
@@ -420,8 +443,7 @@ public class JSEnvironment {
 	
 	final JSFunction printFunction = new JSFunction(functionPrototype) {
 		@Override
-		public Object invoke(Object ths, int argc, Object l0, Object l1, Object l2, Object l3, Object l4, Object l5, Object l6, Object l7, Object[] rest)
-				throws Exception {
+		public Object invoke(Object ths, int argc, Object l0, Object l1, Object l2, Object l3, Object l4, Object l5, Object l6, Object l7, Object[] rest) throws Exception {
 			Object[] arguments = JSUtils.arguments(argc, l0, l1, l2, l3, l4, l5, l6, l7, rest);
 			for (int i = 0; i < arguments.length; i++) {
 				if (i > 0)
@@ -430,6 +452,13 @@ public class JSEnvironment {
 			}
 			System.out.println("");
 			return null;
+		}
+	};
+	
+	final JSFunction isNaNFunction = new JSFunction(functionPrototype) {
+		@Override
+		public Object invoke(Object ths, int argc, Object l0, Object l1, Object l2, Object l3, Object l4, Object l5, Object l6, Object l7, Object[] rest) throws Exception {
+			return Double.isNaN(JSUtils.asNumber(l0));
 		}
 	};
 	
@@ -466,6 +495,22 @@ public class JSEnvironment {
 			}
 		});
 		
+		set("min", new JSFunction(functionPrototype) {
+			@Override
+			public Object invoke(Object ths, int argc, Object l0, Object l1, Object l2, Object l3, Object l4, Object l5, Object l6, Object l7, Object[] rest) throws Exception
+			{
+				return Math.min(JSUtils.asNumber(l0), JSUtils.asNumber(l1));
+			}
+		});
+		
+		set("ceil", new JSFunction(functionPrototype) {
+			@Override
+			public Object invoke(Object ths, int argc, Object l0, Object l1, Object l2, Object l3, Object l4, Object l5, Object l6, Object l7, Object[] rest) throws Exception
+			{
+				return Math.ceil(JSUtils.asNumber(l0));
+			}
+		});
+		
 		set("floor", new JSFunction(functionPrototype) {
 			@Override
 			public Object invoke(Object ths, int argc, Object l0, Object l1, Object l2, Object l3, Object l4, Object l5, Object l6, Object l7, Object[] rest) throws Exception
@@ -473,7 +518,27 @@ public class JSEnvironment {
 				return Math.floor(JSUtils.asNumber(l0));
 			}
 		});
+		
+		set("round", new JSFunction(functionPrototype) {
+			@Override
+			public Object invoke(Object ths, int argc, Object l0, Object l1, Object l2, Object l3, Object l4, Object l5, Object l6, Object l7, Object[] rest) throws Exception
+			{
+				return Math.round(JSUtils.asNumber(l0));
+			}
+		});
 	} };
+	
+	final JSFunction objectConstructor = new JSFunction(functionPrototype) {
+		@Override
+		public Object invoke(Object ths, int argc, Object l0, Object l1, Object l2, Object l3, Object l4, Object l5, Object l6, Object l7, Object[] rest)
+				throws Exception {
+			return JSUtils.asJSObject(JSEnvironment.this, l0);
+		}
+		
+		{
+			_prototype = objectPrototype;
+		}
+	};
 	
 	final JSFunction numberConstructor = new JSFunction(functionPrototype) {
 		@Override
@@ -608,9 +673,17 @@ public class JSEnvironment {
 	public Object get_print() { return _print; }
 	public void set_print(Object value) { _print = value; }
 	
+	Object _isNaN = isNaNFunction;
+	public Object get_isNaN() { return _isNaN; }
+	public void set_isNaN(Object value) { _isNaN = value; }
+	
 	Object _Math = mathObject;
 	public Object get_Math() { return _Math; }
 	public void set_Math(Object value) { _Math = value; }
+
+	Object _Object = objectConstructor;
+	public Object get_Object() { return _Object; }
+	public void set_Object(Object value) { _Object = value; }
 
 	Object _Array = arrayConstructor;
 	public Object get_Array() { return _Array; }
@@ -697,7 +770,7 @@ public class JSEnvironment {
 			ids.get(id).enabled = false;
 	}
 	
-	public void waitForTimers() {
+	public void waitForTimers() throws Exception {
 		// wait for us to run out of timeouts and intervals
 		while (timeoutTimes.size() > 0) {
 			Long time = timeoutTimes.get(0);
@@ -711,16 +784,13 @@ public class JSEnvironment {
 			
 			// run callback
 			ArrayList<JSCallback> callbacks = timeouts.get(time);
-			for (JSCallback callback : callbacks)
-				try {
-					if (callback.enabled)
-						callback.fn.invoke(null, callback.args);
-				} catch (Exception e) {
-				} finally {
-					ids.remove(callback.id);
-					if (callback.repeating)
-						setInterval(callback.fn, callback.args, callback.delay);
-				}
+			for (JSCallback callback : callbacks) {
+				if (callback.enabled)
+					callback.fn.invoke(null, callback.args);
+				ids.remove(callback.id);
+				if (callback.repeating)
+					setInterval(callback.fn, callback.args, callback.delay);
+			}
 			callbacks.remove(0);
 		}
 	}
