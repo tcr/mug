@@ -3,6 +3,8 @@ package mug.js;
 import java.util.HashMap;
 import java.util.Set;
 
+import org.json.simple.JSONObject;
+
 /**
  * Object base (without accessors).
  */

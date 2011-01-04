@@ -39,10 +39,11 @@
     </target>
     
     <target name="mug_js_jar">
-        <jar destfile="lib/mug-js.jar">
+        <jar destfile="lib/mug-js.jar" level="9">
             <fileset dir="bin/" includes="mug/modules/*.class"/>
             <fileset dir="bin/" includes="mug/js/*.class"/>
         	<fileset dir="bin/" includes="mug/*.class"/>
+            <zipfileset src="json_simple-1.1.jar" excludes="META-INF/*.SF" />
         </jar>
       </target>
     
@@ -64,22 +65,22 @@
     -->
       
     <target name="compile_mug_jar" depends="verifyCompileProperties">
-        <mkdir dir="${src_dir}/classes" />
+        <mkdir dir="classes" />
         <java classname="clojure.lang.Compile" fork="true" failonerror="true">
             <classpath>
                 <pathelement location="${src_dir}" />
-                <pathelement location="${src_dir}/classes" />
+                <pathelement location="classes" />
                 <pathelement location="${clojure_jar}" />
                 <pathelement location="${contrib_jar}" />
                 <pathelement location="asm-3.3.jar" />
                 <pathelement location="rhino-js.jar" />
                 <pathelement location="lib/mug-js.jar" />
             </classpath>
-            <sysproperty key="clojure.compile.path" value="${src_dir}/classes" />
+            <sysproperty key="clojure.compile.path" value="classes" />
             <arg value="${app}" />
         </java>
         <delete file="${dst_lib}/${app_jar}" />
-        <jar destfile="${dst_lib}/${app_jar}" basedir="${src_dir}/classes" index="true">
+        <jar destfile="${dst_lib}/${app_jar}" basedir="classes" index="true">
           <fileset dir="res"> <include name="*"/> </fileset>
           <zipfileset src="asm-3.3.jar" excludes="META-INF/*.SF" />
           <zipfileset src="clojure.jar" excludes="META-INF/*.SF" />
@@ -94,7 +95,6 @@
                 <attribute name="Class-Path" value="." />
             </manifest>
         </jar>
-        <delete dir="${src_dir}/classes" />
     </target>
 
     <target name="build" depends="mug_js_jar, compile_mug_jar" />

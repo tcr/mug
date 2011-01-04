@@ -18,9 +18,11 @@
 (def arg-limit 8)
 
 (def script-default-vars
-  #{"exports" "require" "print" "Math" "Array" "parseInt"
-    "parseFloat" "Number" "Object" "String" "Boolean"
-    "isNaN" "Error" "setTimeout" "setInterval" "clearTimeout" "clearInterval"})
+  #{"exports" "require" "print" "parseInt" "parseFloat" "isNaN" "isFinite"
+    "Math" "JSON"
+    "Object" "Array" "Number" "String" "Boolean" "Date"
+    "Error" "SyntaxError"
+    "setTimeout" "setInterval" "clearTimeout" "clearInterval"})
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;

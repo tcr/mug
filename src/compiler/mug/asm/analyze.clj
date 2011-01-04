@@ -33,6 +33,8 @@
   [])
 (defmethod ast-walker :mug.ast/num-literal [[_ ln value] walker]
   [])
+(defmethod ast-walker :mug.ast/undef-literal [[_ ln value] walker]
+  [])
 (defmethod ast-walker :mug.ast/str-literal [[_ ln value] walker]
   [])
 (defmethod ast-walker :mug.ast/regexp-literal [[_ ln expr flags] walker]

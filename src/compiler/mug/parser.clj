@@ -37,6 +37,7 @@
     "false" (boolean-literal ln false)
     "this" (this-expr ln)
     "null" (null-literal ln)
+    "undefined" (undef-literal ln)
     (scope-ref-expr ln value)))
 (defmethod gen-ast-code "array" [[_ ln elems] input]
   (array-literal ln (map #(gen-ast-code % input) elems)))

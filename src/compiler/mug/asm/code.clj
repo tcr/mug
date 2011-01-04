@@ -41,6 +41,8 @@
 	:boolean)
 (defmethod compile-type :mug.ast/num-literal [[_ ln value]]
 	:number)
+(defmethod compile-type :mug.ast/undef-literal [[_ ln value]]
+	Object)
 (defmethod compile-type :mug.ast/str-literal [[_ ln value]]
 	String)
 (defmethod compile-type :mug.ast/regexp-literal [[_ ln expr flags]]
@@ -359,6 +361,9 @@
 
 (defmethod asm-compile :mug.ast/boolean-literal [[_ ln value] ci ast mw]
   (if value (.visitInsn mw Opcodes/ICONST_1) (.visitInsn mw Opcodes/ICONST_0))) 
+
+(defmethod asm-compile :mug.ast/undef-literal [[_ ln] ci ast mw]
+  (.visitInsn mw Opcodes/ACONST_NULL)) 
 
 (defmethod asm-compile :mug.ast/num-literal [[_ ln value] ci ast mw]
   ; take advantage of AST representation of ints to see if we should decode

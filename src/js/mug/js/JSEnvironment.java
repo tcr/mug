@@ -3,8 +3,10 @@ package mug.js;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Calendar;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.UUID;
 import java.util.regex.MatchResult;
@@ -427,6 +429,115 @@ public class JSEnvironment {
 		});
 	} };
 	
+	final JSObject datePrototype = new JSObject(objectPrototype) { {
+		set("valueOf", new JSFunction(functionPrototype) {
+			@Override
+			public Object invoke(Object ths, int argc, Object l0, Object l1, Object l2, Object l3, Object l4, Object l5, Object l6, Object l7, Object[] rest) throws Exception
+			{
+				return ths instanceof JSDate ? ((JSDate) ths).value.getTimeInMillis() : 0;
+			}
+		});
+		
+		set("getDate", new JSFunction(functionPrototype) {
+			@Override
+			public Object invoke(Object ths, int argc, Object l0, Object l1, Object l2, Object l3, Object l4, Object l5, Object l6, Object l7, Object[] rest) throws Exception
+			{
+				Calendar cal = ths instanceof JSDate ? ((JSDate) ths).value : Calendar.getInstance();
+				return cal.get(Calendar.DATE);
+			}
+		});
+		
+		set("getDay", new JSFunction(functionPrototype) {
+			@Override
+			public Object invoke(Object ths, int argc, Object l0, Object l1, Object l2, Object l3, Object l4, Object l5, Object l6, Object l7, Object[] rest) throws Exception
+			{
+				Calendar cal = ths instanceof JSDate ? ((JSDate) ths).value : Calendar.getInstance();
+				return cal.get(Calendar.DAY_OF_WEEK);
+			}
+		});
+		
+		set("getFullYear", new JSFunction(functionPrototype) {
+			@Override
+			public Object invoke(Object ths, int argc, Object l0, Object l1, Object l2, Object l3, Object l4, Object l5, Object l6, Object l7, Object[] rest) throws Exception
+			{
+				Calendar cal = ths instanceof JSDate ? ((JSDate) ths).value : Calendar.getInstance();
+				return cal.get(Calendar.YEAR);
+			}
+		});
+		
+		set("getHours", new JSFunction(functionPrototype) {
+			@Override
+			public Object invoke(Object ths, int argc, Object l0, Object l1, Object l2, Object l3, Object l4, Object l5, Object l6, Object l7, Object[] rest) throws Exception
+			{
+				Calendar cal = ths instanceof JSDate ? ((JSDate) ths).value : Calendar.getInstance();
+				return cal.get(Calendar.HOUR_OF_DAY);
+			}
+		});
+		
+		set("getMilliseconds", new JSFunction(functionPrototype) {
+			@Override
+			public Object invoke(Object ths, int argc, Object l0, Object l1, Object l2, Object l3, Object l4, Object l5, Object l6, Object l7, Object[] rest) throws Exception
+			{
+				Calendar cal = ths instanceof JSDate ? ((JSDate) ths).value : Calendar.getInstance();
+				return cal.get(Calendar.MILLISECOND);
+			}
+		});
+		
+		set("getMinutes", new JSFunction(functionPrototype) {
+			@Override
+			public Object invoke(Object ths, int argc, Object l0, Object l1, Object l2, Object l3, Object l4, Object l5, Object l6, Object l7, Object[] rest) throws Exception
+			{
+				Calendar cal = ths instanceof JSDate ? ((JSDate) ths).value : Calendar.getInstance();
+				return cal.get(Calendar.MINUTE);
+			}
+		});
+		
+		set("getMonth", new JSFunction(functionPrototype) {
+			@Override
+			public Object invoke(Object ths, int argc, Object l0, Object l1, Object l2, Object l3, Object l4, Object l5, Object l6, Object l7, Object[] rest) throws Exception
+			{
+				Calendar cal = ths instanceof JSDate ? ((JSDate) ths).value : Calendar.getInstance();
+				return cal.get(Calendar.MONTH);
+			}
+		});
+		
+		set("getSeconds", new JSFunction(functionPrototype) {
+			@Override
+			public Object invoke(Object ths, int argc, Object l0, Object l1, Object l2, Object l3, Object l4, Object l5, Object l6, Object l7, Object[] rest) throws Exception
+			{
+				Calendar cal = ths instanceof JSDate ? ((JSDate) ths).value : Calendar.getInstance();
+				return cal.get(Calendar.SECOND);
+			}
+		});
+		
+		set("getTime", new JSFunction(functionPrototype) {
+			@Override
+			public Object invoke(Object ths, int argc, Object l0, Object l1, Object l2, Object l3, Object l4, Object l5, Object l6, Object l7, Object[] rest) throws Exception
+			{
+				Calendar cal = ths instanceof JSDate ? ((JSDate) ths).value : Calendar.getInstance();
+				return cal.getTimeInMillis();
+			}
+		});
+		
+		set("getTimezoneOffset", new JSFunction(functionPrototype) {
+			@Override
+			public Object invoke(Object ths, int argc, Object l0, Object l1, Object l2, Object l3, Object l4, Object l5, Object l6, Object l7, Object[] rest) throws Exception
+			{
+				Calendar cal = ths instanceof JSDate ? ((JSDate) ths).value : Calendar.getInstance();
+				return cal.get(Calendar.DST_OFFSET)/60;
+			}
+		});
+		
+		set("getDay", new JSFunction(functionPrototype) {
+			@Override
+			public Object invoke(Object ths, int argc, Object l0, Object l1, Object l2, Object l3, Object l4, Object l5, Object l6, Object l7, Object[] rest) throws Exception
+			{
+				Calendar cal = ths instanceof JSDate ? ((JSDate) ths).value : Calendar.getInstance();
+				return cal.get(Calendar.DAY_OF_WEEK);
+			}
+		});
+	} };
+	
 	/*
 	 * objects/constructors
 	 */	
@@ -462,7 +573,22 @@ public class JSEnvironment {
 		}
 	};
 	
+	final JSFunction isFiniteFunction = new JSFunction(functionPrototype) {
+		@Override
+		public Object invoke(Object ths, int argc, Object l0, Object l1, Object l2, Object l3, Object l4, Object l5, Object l6, Object l7, Object[] rest) throws Exception {
+			return !Double.isInfinite(JSUtils.asNumber(l0));
+		}
+	};
+	
 	final JSObject mathObject = new JSObject(objectPrototype) { {
+		set("random", new JSFunction(functionPrototype) {
+			@Override
+			public Object invoke(Object ths, int argc, Object l0, Object l1, Object l2, Object l3, Object l4, Object l5, Object l6, Object l7, Object[] rest) throws Exception
+			{
+				return Math.random();
+			}
+		});
+		
 		set("abs", new JSFunction(functionPrototype) {
 			@Override
 			public Object invoke(Object ths, int argc, Object l0, Object l1, Object l2, Object l3, Object l4, Object l5, Object l6, Object l7, Object[] rest) throws Exception
@@ -528,6 +654,24 @@ public class JSEnvironment {
 		});
 	} };
 	
+	final JSObject jsonObject = new JSObject(objectPrototype) { {
+		set("stringify", new JSFunction(functionPrototype) {
+			@Override
+			public Object invoke(Object ths, int argc, Object l0, Object l1, Object l2, Object l3, Object l4, Object l5, Object l6, Object l7, Object[] rest) throws Exception
+			{
+				return JSON.stringify(l0);
+			}
+		});
+		
+		set("parse", new JSFunction(functionPrototype) {
+			@Override
+			public Object invoke(Object ths, int argc, Object l0, Object l1, Object l2, Object l3, Object l4, Object l5, Object l6, Object l7, Object[] rest) throws Exception
+			{
+				return JSON.parse(JSEnvironment.this, JSUtils.asString(l0));
+			}
+		});
+	} };
+	
 	final JSFunction objectConstructor = new JSFunction(functionPrototype) {
 		@Override
 		public Object invoke(Object ths, int argc, Object l0, Object l1, Object l2, Object l3, Object l4, Object l5, Object l6, Object l7, Object[] rest)
@@ -576,6 +720,24 @@ public class JSEnvironment {
 		
 		{
 			_prototype = getArrayPrototype(); 
+		}
+	};
+	
+	final JSFunction dateConstructor = new JSFunction(functionPrototype) {
+		@Override
+		public Object invoke(Object ths, int argc, Object l0, Object l1, Object l2, Object l3, Object l4, Object l5, Object l6, Object l7, Object[] rest) throws Exception {
+			long time = 0;
+			if (argc == 1) {
+				//[TODO]
+			}
+			
+			Calendar cal = Calendar.getInstance();
+			cal.setTime(new Date(time));
+			return new JSDate(getDatePrototype(), cal);
+		}
+		
+		{
+			_prototype = getDatePrototype(); 
 		}
 	};
 	
@@ -657,6 +819,10 @@ public class JSEnvironment {
 		return regexpPrototype;
 	}
 	
+	public JSObject getDatePrototype() {
+		return datePrototype;
+	}
+	
 	/*
 	 * top-level scope accessors
 	 */
@@ -677,9 +843,17 @@ public class JSEnvironment {
 	public Object get_isNaN() { return _isNaN; }
 	public void set_isNaN(Object value) { _isNaN = value; }
 	
+	Object _isFinite = isFiniteFunction;
+	public Object get_isFinite() { return _isFinite; }
+	public void set_isFinite(Object value) { _isFinite = value; }
+	
 	Object _Math = mathObject;
 	public Object get_Math() { return _Math; }
 	public void set_Math(Object value) { _Math = value; }
+	
+	Object _JSON = jsonObject;
+	public Object get_JSON() { return _JSON; }
+	public void set_JSON(Object value) { _JSON = value; }
 
 	Object _Object = objectConstructor;
 	public Object get_Object() { return _Object; }

@@ -39,6 +39,10 @@ public class JSArray extends JSObject {
 			set(i, arr[i]);
 	}
 	
+	public Object[] toArray() {
+		return list.toArray();
+	}
+	
 	/*
 	 * accessors
 	 */
