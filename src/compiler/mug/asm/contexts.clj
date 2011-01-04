@@ -71,6 +71,10 @@
     ; compile body
 		(doseq [stat stats]
 			(asm-compile stat ci ast mw))
+  
+    ; wait for timeouts
+    (asm-toplevel ci ast mw)
+    (.visitMethodInsn mw Opcodes/INVOKEVIRTUAL, qn-js-toplevel, "waitForTimers", (sig-call sig-void))
 		
   	; return "exports" object
 		(doto mw
