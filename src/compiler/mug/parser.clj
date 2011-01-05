@@ -69,7 +69,13 @@
 	  "!==" neqs-op-expr
     "||" or-op-expr
     "&&" and-op-expr
-	  "<<" lsh-op-expr} op) ln (gen-ast-code lhs input) (gen-ast-code rhs input)))
+	  "<<" lsh-op-expr
+    ">>" rsh-op-expr
+    "&" bit-or-op-expr
+    "|" bit-or-op-expr
+    "^" bit-xor-op-expr
+    "instanceof" instanceof-op-expr
+    "in" in-op-expr} op) ln (gen-ast-code lhs input) (gen-ast-code rhs input)))
 (defmethod gen-ast-code "unary-postfix" [[_ ln op place] input]
   (case op
     "++" (gen-ast-code (list "binary" ln "-" (list "assign" ln "+" place (list "num" ln 1)) (list "num" ln 1)) input)
@@ -79,6 +85,7 @@
   (case op
     "+" (num-op-expr ln (gen-ast-code place input))
     "-" (neg-op-expr ln (gen-ast-code place input))
+    "~" (bit-not-op-expr ln (gen-ast-code place input))
     "++" (gen-ast-code (list "assign" ln "+" place (list "num" ln 1)) input)
     "--" (gen-ast-code (list "assign" ln "-" place (list "num" ln 1)) input)
     "!" (not-op-expr ln (gen-ast-code place input))
@@ -86,12 +93,10 @@
     (println (str "###ERROR: Bad unary prefix: " op "(line " ln ")"))))
 (defmethod gen-ast-code "call" [[_ ln func args] input]
   (case (first func)
-    "function" (call-expr ln (gen-ast-code func input) (map #(gen-ast-code %1 input) args))
-    "name" (call-expr ln (gen-ast-code func input) (map #(gen-ast-code %1 input) args))
     "dot"
       (let [[_ ln base value] func]
         (static-method-call-expr ln (gen-ast-code base input) value (map #(gen-ast-code %1 input) args)))
-    (println (str "###ERROR: Unrecognized call format: " (first func) "(line " ln ")"))))
+    (call-expr ln (gen-ast-code func input) (map #(gen-ast-code %1 input) args))))
 (defmethod gen-ast-code "dot" [[_ ln obj attr] input]
   (static-ref-expr ln (gen-ast-code obj input) attr))
 (defmethod gen-ast-code "sub" [[_ ln obj attr] input]

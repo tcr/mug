@@ -8,20 +8,20 @@ import java.io.InputStreamReader;
 import java.io.Reader;
 import java.nio.charset.Charset;
 
+import mug.js.JSEnvironment;
 import mug.js.JSFunction;
 import mug.js.JSModule;
 import mug.js.JSNumber;
 import mug.js.JSObject;
 import mug.js.JSString;
-import mug.js.JSTopLevel;
 import mug.js.JSUtils;
 
 public class fs extends JSModule {
-	final JSTopLevel top = new JSTopLevel();
+	final JSEnvironment env = new JSEnvironment();
 	
 	// path prototype extends string prototype
-	final JSObject pathPrototype = new JSObject(top.getStringPrototype()) { {
-		set("read", new JSFunction(top.getFunctionPrototype()) {
+	final JSObject pathPrototype = new JSObject(env.getStringPrototype()) { {
+		set("read", new JSFunction(env.getFunctionPrototype()) {
 			@Override
 			public Object invoke(Object ths, int argc, Object l0, Object l1, Object l2, Object l3, Object l4, Object l5, Object l6, Object l7, Object[] rest) throws Exception
 			{
@@ -31,7 +31,7 @@ public class fs extends JSModule {
 	} };
 	
 	// open method
-	JSFunction _open = new JSFunction (top.getFunctionPrototype()) {
+	JSFunction _open = new JSFunction (env.getFunctionPrototype()) {
 		@Override
 		public Object invoke(Object ths, int argc, Object l0, Object l1, Object l2, Object l3, Object l4, Object l5, Object l6, Object l7, Object[] rest) throws Exception
 		{
@@ -46,7 +46,7 @@ public class fs extends JSModule {
 	};
 	
 	// read method
-	JSFunction _read = new JSFunction (top.getFunctionPrototype()) {
+	JSFunction _read = new JSFunction (env.getFunctionPrototype()) {
 		@Override
 		public Object invoke(Object ths, int argc, Object l0, Object l1, Object l2, Object l3, Object l4, Object l5, Object l6, Object l7, Object[] rest) throws Exception
 		{
@@ -76,7 +76,7 @@ public class fs extends JSModule {
 	};
 	
 	// rename method
-	JSFunction _rename = new JSFunction (top.getFunctionPrototype()) {
+	JSFunction _rename = new JSFunction (env.getFunctionPrototype()) {
 		@Override
 		public Object invoke(Object ths, int argc, Object l0, Object l1, Object l2, Object l3, Object l4, Object l5, Object l6, Object l7, Object[] rest) throws Exception
 		{
@@ -106,7 +106,7 @@ public class fs extends JSModule {
 	};
 	
 	// renameSync method
-	JSFunction _renameSync = new JSFunction (top.getFunctionPrototype()) {
+	JSFunction _renameSync = new JSFunction (env.getFunctionPrototype()) {
 		@Override
 		public Object invoke(Object ths, int argc, Object l0, Object l1, Object l2, Object l3, Object l4, Object l5, Object l6, Object l7, Object[] rest) throws Exception
 		{
@@ -119,7 +119,7 @@ public class fs extends JSModule {
 	};
 	
 	// exports library
-	final JSObject exports = new JSObject(top.getObjectPrototype()) { {
+	final JSObject exports = new JSObject(env.getObjectPrototype()) { {
 		set("open", _open);
 		set("read", _read);
 	} };

@@ -52,6 +52,7 @@
 (defast ::num-op-expr ::unary-op-expr [expr])
 (defast ::neg-op-expr ::unary-op-expr [expr])
 (defast ::not-op-expr ::unary-op-expr [expr])
+(defast ::bit-not-op-expr ::unary-op-expr [expr])
 (defast ::lt-op-expr ::binary-op-expr [left right])
 (defast ::lte-op-expr ::binary-op-expr [left right])
 (defast ::gt-op-expr ::binary-op-expr [left right])
@@ -64,10 +65,16 @@
 (defast ::or-op-expr ::binary-op-expr [left right])
 (defast ::and-op-expr ::binary-op-expr [left right])
 (defast ::lsh-op-expr ::binary-op-expr [left right])
+(defast ::rsh-op-expr ::binary-op-expr [left right])
+(defast ::bit-and-op-expr ::binary-op-expr [left right])
+(defast ::bit-or-op-expr ::binary-op-expr [left right])
+(defast ::bit-xor-op-expr ::binary-op-expr [left right])
 (defast ::eq-op-expr ::binary-op-expr [left right])
 (defast ::eqs-op-expr ::binary-op-expr [left right])
 (defast ::neq-op-expr ::binary-op-expr [left right])
 (defast ::neqs-op-expr ::binary-op-expr [left right])
+(defast ::instanceof-op-expr ::binary-op-expr [left right])
+(defast ::in-op-expr ::binary-op-expr [left right])
 
 ; expressions
 

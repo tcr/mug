@@ -112,7 +112,7 @@
       (doseq [i (range 3 (+ 1 offset-reg arg-limit))]
         (.visitVarInsn mw Opcodes/ALOAD i))
       (.visitMethodInsn mw Opcodes/INVOKESTATIC, qn-js-utils, "arguments", (sig-call sig-integer (sig-obj qn-object) (sig-obj qn-object) (sig-obj qn-object) (sig-obj qn-object) (sig-obj qn-object) (sig-obj qn-object) (sig-obj qn-object) (sig-obj qn-object) (sig-array (sig-obj qn-object)) (sig-array (sig-obj qn-object))))
-      (.visitMethodInsn mw Opcodes/INVOKESTATIC, qn-js-utils, "toArgumentsObject", (sig-call (sig-obj qn-js-toplevel) (sig-array (sig-obj qn-object)) (sig-obj qn-js-object)))
+      (.visitMethodInsn mw Opcodes/INVOKESTATIC, qn-js-utils, "createArgumentsObject", (sig-call (sig-obj qn-js-toplevel) (sig-array (sig-obj qn-object)) (sig-obj qn-js-object)))
       (if (nil? (ref-reg context "arguments"))
 	      (doto mw
 					(.visitVarInsn Opcodes/ALOAD, scope-reg)

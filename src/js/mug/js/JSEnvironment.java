@@ -31,7 +31,7 @@ public class JSEnvironment {
 			public Object invoke(Object ths, int argc, Object l0, Object l1, Object l2, Object l3, Object l4, Object l5, Object l6, Object l7, Object[] rest) throws Exception
 			{
 				JSObject thsObj = JSUtils.asJSObject(JSEnvironment.this, ths);
-				return thsObj.invoke(l0, JSUtils.toJavaArray(JSUtils.asJSObject(JSEnvironment.this, l1)));
+				return thsObj.invoke(l0, JSUtils.coerceJavaArray(JSUtils.asJSObject(JSEnvironment.this, l1)));
 			}
 		});
 		
@@ -187,7 +187,7 @@ public class JSEnvironment {
 			public Object invoke(final Object ths, int argc, Object l0, Object l1, Object l2, Object l3, Object l4, Object l5, Object l6, Object l7, Object[] rest) throws Exception
 			{
 				// cast to strings
-				Object[] arr = JSUtils.toJavaArray((JSObject) ths);
+				Object[] arr = JSUtils.coerceJavaArray((JSObject) ths);
 				for (int i = 0; i < arr.length; i++)
 					arr[i] = JSUtils.asString(arr[i]);
 				// sort

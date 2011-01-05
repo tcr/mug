@@ -626,9 +626,9 @@
 
 (defmethod asm-compile :mug.ast/new-expr [[_ ln constructor args] ci ast mw]
   (asm-compile constructor ci ast mw)
-	(.visitTypeInsn mw, Opcodes/CHECKCAST, qn-js-function)
+	(.visitTypeInsn mw, Opcodes/CHECKCAST, qn-js-object)
   (asm-invoke-args args ci ast mw)
-	(.visitMethodInsn mw Opcodes/INVOKEVIRTUAL, qn-js-function, "instantiate", sig-instantiate))
+	(.visitMethodInsn mw Opcodes/INVOKEVIRTUAL, qn-js-object, "instantiate", sig-instantiate))
 
 ;TODO
 ; so the big problem with these assigns
