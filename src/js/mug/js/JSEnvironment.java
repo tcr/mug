@@ -63,8 +63,8 @@ public class JSEnvironment {
 			@Override
 			public Object invoke(Object ths, int argc, Object l0, Object l1, Object l2, Object l3, Object l4, Object l5, Object l6, Object l7, Object[] rest) throws Exception
 			{
-				JSObject obj = JSUtils.asJSObject(JSEnvironment.this, l0);
-				return obj.hasOwnProperty(JSUtils.asString(l1));
+				JSObject obj = JSUtils.asJSObject(JSEnvironment.this, ths);
+				return obj.hasOwnProperty(JSUtils.asString(l0));
 			}
 		});
 	}
@@ -232,7 +232,9 @@ public class JSEnvironment {
 			@Override
 			public Object invoke(Object ths, int argc, Object l0, Object l1, Object l2, Object l3, Object l4, Object l5, Object l6, Object l7, Object[] rest) throws Exception
 			{
-				return String.valueOf(JSUtils.asString(ths).charAt((int) JSUtils.asNumber(l0)));
+				int idx = (int) JSUtils.asNumber(l0);
+				String str = JSUtils.asString(ths);
+				return idx >= 0 && idx < str.length() ? String.valueOf(str.charAt(idx)) : "";
 			}
 		});
 		
@@ -240,7 +242,9 @@ public class JSEnvironment {
 			@Override
 			public Object invoke(Object ths, int argc, Object l0, Object l1, Object l2, Object l3, Object l4, Object l5, Object l6, Object l7, Object[] rest) throws Exception
 			{
-				return (double) JSUtils.asString(ths).charAt((int) JSUtils.asNumber(l0));
+				int idx = (int) JSUtils.asNumber(l0);
+				String str = JSUtils.asString(ths);
+				return idx >= 0 && idx < str.length() ? (double) str.charAt(idx) : Double.NaN;
 			}
 		});
 		
@@ -313,7 +317,14 @@ public class JSEnvironment {
 			public Object invoke(Object ths, int argc, Object l0, Object l1, Object l2, Object l3, Object l4, Object l5, Object l6, Object l7, Object[] rest) throws Exception
 			{
 				Pattern pattern = (l0 instanceof JSRegExp) ? ((JSRegExp) l0).getPattern() : Pattern.compile(Pattern.quote(JSUtils.asString(l0)));
-				String[] result = pattern.split(JSUtils.asString(ths));
+				String[] result = pattern.split(JSUtils.asString(ths), -1);
+				// specific hack for empty strings...
+				if (pattern.pattern().equals("\\Q\\E")) {
+					String str = JSUtils.asString(ths);
+					result = new String[str.length()];
+					for (int i = 0; i < str.length(); i++)
+						result[i] = String.valueOf(str.charAt(i));
+				}
 				JSArray out = new JSArray(arrayPrototype, 0);
 				for (int i = 0; i < result.length; i++)
 					out.push(result[i]);
@@ -552,6 +563,23 @@ public class JSEnvironment {
 	
 	final JSObject exportsObject = new JSObject(objectPrototype) { };
 	
+	final JSObject consoleObject = new JSObject(objectPrototype) { {
+		set("log", new JSFunction(functionPrototype) {
+			@Override
+			public Object invoke(Object ths, int argc, Object l0, Object l1, Object l2, Object l3, Object l4, Object l5, Object l6, Object l7, Object[] rest) throws Exception
+			{
+				Object[] arguments = JSUtils.arguments(argc, l0, l1, l2, l3, l4, l5, l6, l7, rest);
+				for (int i = 0; i < arguments.length; i++) {
+					if (i > 0)
+						System.out.print(" ");
+					System.out.print(JSON.stringify(arguments[i]));
+				}
+				System.out.println("");
+				return null;
+			}
+		});
+	} };
+	
 	final JSFunction printFunction = new JSFunction(functionPrototype) {
 		@Override
 		public Object invoke(Object ths, int argc, Object l0, Object l1, Object l2, Object l3, Object l4, Object l5, Object l6, Object l7, Object[] rest) throws Exception {
@@ -563,6 +591,20 @@ public class JSEnvironment {
 			}
 			System.out.println("");
 			return null;
+		}
+	};
+	
+	final JSFunction parseIntFunction = new JSFunction(functionPrototype) {
+		@Override
+		public Object invoke(Object ths, int argc, Object l0, Object l1, Object l2, Object l3, Object l4, Object l5, Object l6, Object l7, Object[] rest) throws Exception {
+			return (double) Integer.parseInt(JSUtils.asString(l0));
+		}
+	};
+	
+	final JSFunction parseFloatFunction = new JSFunction(functionPrototype) {
+		@Override
+		public Object invoke(Object ths, int argc, Object l0, Object l1, Object l2, Object l3, Object l4, Object l5, Object l6, Object l7, Object[] rest) throws Exception {
+			return Double.parseDouble(JSUtils.asString(l0));
 		}
 	};
 	
@@ -674,21 +716,34 @@ public class JSEnvironment {
 	
 	final JSFunction objectConstructor = new JSFunction(functionPrototype) {
 		@Override
-		public Object invoke(Object ths, int argc, Object l0, Object l1, Object l2, Object l3, Object l4, Object l5, Object l6, Object l7, Object[] rest)
-				throws Exception {
+		public Object invoke(Object ths, int argc, Object l0, Object l1, Object l2, Object l3, Object l4, Object l5, Object l6, Object l7, Object[] rest) throws Exception {
 			return JSUtils.asJSObject(JSEnvironment.this, l0);
 		}
 		
 		{
-			_prototype = objectPrototype;
+			set("prototype", getObjectPrototype());
+		}
+	};
+	
+	final JSFunction functionConstructor = new JSFunction(functionPrototype) {
+		@Override
+		public Object invoke(Object ths, int argc, Object l0, Object l1, Object l2, Object l3, Object l4, Object l5, Object l6, Object l7, Object[] rest) throws Exception {
+			throw new Exception("Function constructor not implemented.");
+		}
+		
+		{
+			set("prototype", getFunctionPrototype());
 		}
 	};
 	
 	final JSFunction numberConstructor = new JSFunction(functionPrototype) {
 		@Override
-		public Object invoke(Object ths, int argc, Object l0, Object l1, Object l2, Object l3, Object l4, Object l5, Object l6, Object l7, Object[] rest)
-				throws Exception {
+		public Object invoke(Object ths, int argc, Object l0, Object l1, Object l2, Object l3, Object l4, Object l5, Object l6, Object l7, Object[] rest) throws Exception {
 			return JSUtils.asNumber(l0);
+		}
+		
+		{
+			set("prototype", getNumberPrototype());
 		}
 	};
 	
@@ -719,7 +774,7 @@ public class JSEnvironment {
 		}
 		
 		{
-			_prototype = getArrayPrototype(); 
+			set("prototype", getArrayPrototype()); 
 		}
 	};
 	
@@ -737,7 +792,7 @@ public class JSEnvironment {
 		}
 		
 		{
-			_prototype = getDatePrototype(); 
+			set("prototype", getDatePrototype()); 
 		}
 	};
 	
@@ -839,6 +894,18 @@ public class JSEnvironment {
 	public Object get_print() { return _print; }
 	public void set_print(Object value) { _print = value; }
 	
+	Object _console = consoleObject;
+	public Object get_console() { return _console; }
+	public void set_console(Object value) { _console = value; }
+	
+	Object _parseFloat = parseFloatFunction;
+	public Object get_parseFloat() { return _parseFloat; }
+	public void set_parseFloat(Object value) { _parseFloat = value; }
+	
+	Object _parseInt = parseIntFunction;
+	public Object get_parseInt() { return _parseInt; }
+	public void set_parseInt(Object value) { _parseInt = value; }
+	
 	Object _isNaN = isNaNFunction;
 	public Object get_isNaN() { return _isNaN; }
 	public void set_isNaN(Object value) { _isNaN = value; }
@@ -858,6 +925,10 @@ public class JSEnvironment {
 	Object _Object = objectConstructor;
 	public Object get_Object() { return _Object; }
 	public void set_Object(Object value) { _Object = value; }
+
+	Object _Function = functionConstructor;
+	public Object get_Function() { return _Function; }
+	public void set_Function(Object value) { _Function = value; }
 
 	Object _Array = arrayConstructor;
 	public Object get_Array() { return _Array; }

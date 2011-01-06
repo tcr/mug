@@ -725,7 +725,7 @@ function parse($TEXT, strict_mode, embed_tokens) {
                                 return simple_statement();
                             case ";":
                                 next();
-                                return as("block");
+                                return as("block", S.prev.line);
                             default:
                                 unexpected();
                         }

@@ -91,10 +91,17 @@ public class JSObject {
 		set.toArray(out);
 		return out;
 	}
-
 	
 	public boolean hasOwnProperty(String prop) {
 		return hash != null && hash.containsKey(prop);
+	}
+	
+	/*
+	 * inheritance
+	 */
+	
+	public boolean hasInstance(Object v) {
+		return false;
 	}
 	
 	/*

@@ -95,8 +95,20 @@
   Object)
 (defmethod compile-type :mug.ast/and-op-expr [[_ ln left right]]
   Object)
+(defmethod compile-type :mug.ast/bit-and-op-expr [[_ ln left right]]
+  :number)
+(defmethod compile-type :mug.ast/bit-or-op-expr [[_ ln left right]]
+  :number)
+(defmethod compile-type :mug.ast/bit-xor-op-expr [[_ ln left right]]
+  :number)
+(defmethod compile-type :mug.ast/bit-not-op-expr [[_ ln expr]]
+  :number)
 (defmethod compile-type :mug.ast/if-expr [[_ ln left right]]
   Object)
+(defmethod compile-type :mug.ast/instanceof-op-expr [[_ ln left right]]
+  :boolean)
+(defmethod compile-type :mug.ast/in-op-expr [[_ ln left right]]
+  :boolean)
 
 ;
 ; expressions
@@ -198,7 +210,7 @@
 ; search scopes
 ; asm loads scope object, fn returns qn of scope object
 
-(defn asm-search-scopes [name ci ast mw]
+(defn asm-search-scopes [name ln ci ast mw]
   (let [context ((ast-contexts ast) ci)
         parents ((ast-context-hierarchy ast) ci)]
 ;   (println (str "Seeking var \"" name "\" in current scope (" (ast-context-vars context) ")"))
@@ -221,7 +233,7 @@
 			            (str "SCOPE_" 0), (sig-obj (qn-js-scope 0)))))
 	          qn-js-toplevel)
 	        ; identifier not found at all
-		      (throw (new Exception (str "Identifier not defined in any scope: " name))))
+		      (throw (new Exception (str "Identifier not defined in any scope: " name " (line " ln ")"))))
 			  (if (contains? (ast-context-vars ((ast-contexts ast) parent)) name)
 	        ; found variable in ancestor scope
 			    (do
@@ -577,6 +589,72 @@
     (asm-compile-autobox right ci ast mw)
     (.visitLabel mw false-case)))
 
+(defmethod asm-compile :mug.ast/bit-and-op-expr [[_ ln left right] ci ast mw]
+  (asm-compile left ci ast mw)
+  (asm-as-number (compile-type left) ci ast mw)
+  (.visitInsn mw Opcodes/D2L)
+  (asm-compile right ci ast mw)
+  (asm-as-number (compile-type right) ci ast mw)
+  (.visitInsn mw Opcodes/D2L)
+  (.visitInsn mw Opcodes/LAND)
+  (.visitInsn mw Opcodes/L2D))
+
+(defmethod asm-compile :mug.ast/bit-or-op-expr [[_ ln left right] ci ast mw]
+  (asm-compile left ci ast mw)
+  (asm-as-number (compile-type left) ci ast mw)
+  (.visitInsn mw Opcodes/D2L)
+  (asm-compile right ci ast mw)
+  (asm-as-number (compile-type right) ci ast mw)
+  (.visitInsn mw Opcodes/D2L)
+  (.visitInsn mw Opcodes/LOR)
+  (.visitInsn mw Opcodes/L2D))
+
+(defmethod asm-compile :mug.ast/bit-xor-op-expr [[_ ln left right] ci ast mw]
+  (asm-compile left ci ast mw)
+  (asm-as-number (compile-type left) ci ast mw)
+  (.visitInsn mw Opcodes/D2L)
+  (asm-compile right ci ast mw)
+  (asm-as-number (compile-type right) ci ast mw)
+  (.visitInsn mw Opcodes/D2L)
+  (.visitInsn mw Opcodes/LXOR)
+  (.visitInsn mw Opcodes/L2D))
+
+(defmethod asm-compile :mug.ast/bit-xor-op-expr [[_ ln expr] ci ast mw]
+  (.visitLdcInsn mw (new Long -1))
+  (asm-compile expr ci ast mw)
+  (asm-as-number (compile-type expr) ci ast mw)
+  (.visitInsn mw Opcodes/D2L)
+  (.visitInsn mw Opcodes/LXOR)
+  (.visitInsn mw Opcodes/L2D))
+
+(defmethod asm-compile :mug.ast/instanceof-op-expr [[_ ln left right] ci ast mw]
+  (let [type (compile-type left)
+        type (if (class? type) (str type) type)]
+	  (case type
+	    :number (.visitInsn mw Opcodes/ICONST_0)
+	    :boolean (.visitInsn mw Opcodes/ICONST_0)
+	    "class java.lang.String" (.visitInsn mw Opcodes/ICONST_0)
+      (do
+			  (let [type (compile-type right)
+			        type (if (class? type) (str type) type)]
+				  (case type
+				    :number (throw (new Exception (str "Expecting a function in 'instanceof' check, got number (line " ln ")")))
+				    :boolean (throw (new Exception (str "Expecting a function in 'instanceof' check, got boolean (line " ln ")")))
+				    "class java.lang.String" (throw (new Exception (str "Expecting a function in 'instanceof' check, got string (line " ln ")")))
+				    (do
+				      (asm-compile-autobox right ci ast mw)
+				      (.visitTypeInsn mw Opcodes/CHECKCAST qn-js-object)
+              (asm-compile-autobox left ci ast mw)
+				      (.visitMethodInsn mw Opcodes/INVOKEVIRTUAL, qn-js-object, "hasInstance", (sig-call (sig-obj qn-object) sig-boolean)))))))))
+
+(defmethod asm-compile :mug.ast/in-op-expr [[_ ln expr] ci ast mw]
+  (throw (new Exception "'in' operator not yet implemented.")))
+
+(defmethod asm-compile :mug.ast/void-expr [[_ ln expr] ci ast mw]
+  (asm-compile expr ci ast mw)
+  (asm-compile-pop expr mw)
+  (.visitInsn mw Opcodes/ACONST_NULL))
+
 ;
 ; expressions
 ;
@@ -584,7 +662,7 @@
 (defmethod asm-compile :mug.ast/scope-ref-expr [[_ ln value] ci ast mw]
   (if-let [reg (ref-reg ((ast-contexts ast) ci) value)]
     (.visitVarInsn mw Opcodes/ALOAD reg) 
-    (let [qn-parent (asm-search-scopes value ci ast mw)]
+    (let [qn-parent (asm-search-scopes value ln ci ast mw)]
       (.visitMethodInsn mw Opcodes/INVOKEVIRTUAL, qn-parent, (str "get_" value), (sig-call (sig-obj qn-object))))))
 
 (defmethod asm-compile :mug.ast/static-ref-expr [[_ ln base value] ci ast mw]
@@ -645,7 +723,7 @@
   (.visitInsn mw Opcodes/DUP)
   (if-let [reg (ref-reg ((ast-contexts ast) ci) value)]
     (.visitVarInsn mw Opcodes/ASTORE reg) 
-	  (let [qn-parent (asm-search-scopes value ci ast mw)]
+	  (let [qn-parent (asm-search-scopes value ln ci ast mw)]
 	    (.visitInsn mw Opcodes/SWAP)
 		  (.visitMethodInsn mw Opcodes/INVOKEVIRTUAL, qn-parent, (str "set_" value), (sig-call (sig-obj qn-object) sig-void)))))
 
@@ -811,10 +889,10 @@
     (pop-label nil)))
 
 (defmethod asm-compile :mug.ast/throw-stat [[_ ln expr] ci ast mw]
-  (.visitTypeInsn mw Opcodes/NEW, qn-js-exception)
+  (.visitTypeInsn mw Opcodes/NEW, qn-js-value-exception)
   (.visitInsn mw Opcodes/DUP)
   (asm-compile-autobox expr ci ast mw)
-  (.visitMethodInsn mw Opcodes/INVOKESPECIAL, qn-js-exception, "<init>", (sig-call (sig-obj qn-object) sig-void))
+  (.visitMethodInsn mw Opcodes/INVOKESPECIAL, qn-js-value-exception, "<init>", (sig-call (sig-obj qn-object) sig-void))
   (.visitInsn mw Opcodes/ATHROW))
 
 (defmethod asm-compile :mug.ast/try-stat [[_ ln stats catch-block finally-stats] ci ast mw]
@@ -825,7 +903,7 @@
         end-label (new Label)]
     
     ; catch block
-    (.visitTryCatchBlock mw try-label, catch-label, catch-label, "java/lang/Exception")
+    (.visitTryCatchBlock mw try-label, catch-label, catch-label, qn-exception)
     ; finally block
     (.visitTryCatchBlock mw try-label, finally-label, double-throw-label, nil)
     
@@ -835,28 +913,42 @@
       (asm-compile stat ci ast mw))
     (.visitJumpInsn mw Opcodes/GOTO finally-label)
     
-    ; catch (may be empty)
+    ; catch (body may be empty)
     (.visitLabel mw catch-label)
     (when-let [[value stats] catch-block]
-      ; unwrap js exceptions
-      (.visitInsn mw Opcodes/DUP)
-      (.visitTypeInsn mw Opcodes/INSTANCEOF, qn-js-exception)
-      (let [cast-label (new Label)]
-        (.visitJumpInsn mw Opcodes/IFEQ cast-label)
-        (.visitTypeInsn mw Opcodes/CHECKCAST, qn-js-exception)
-        (.visitFieldInsn mw Opcodes/GETFIELD, qn-js-exception, "value", (sig-obj qn-object))
-        (.visitLabel mw cast-label))
+      (let [exception-label (new Label)
+            end-label (new Label)]
+        ; unwrap js value exceptions
+        (.visitInsn mw Opcodes/DUP)
+        (.visitTypeInsn mw Opcodes/INSTANCEOF, qn-js-value-exception)
+        (.visitJumpInsn mw Opcodes/IFEQ exception-label)
+        (.visitTypeInsn mw Opcodes/CHECKCAST, qn-js-value-exception)
+        (.visitFieldInsn mw Opcodes/GETFIELD, qn-js-value-exception, "value", (sig-obj qn-object))
+        (.visitJumpInsn mw Opcodes/GOTO end-label)
+        ; wrap non-js exceptions
+        (.visitLabel mw exception-label)
+        (.visitInsn mw Opcodes/DUP)
+        (.visitTypeInsn mw Opcodes/INSTANCEOF, qn-js-exception)
+        (.visitJumpInsn mw Opcodes/IFNE end-label)
+        (.visitTypeInsn mw Opcodes/NEW, qn-js-exception)
+        (.visitInsn mw Opcodes/DUP_X1)
+        (.visitInsn mw Opcodes/SWAP)
+        (asm-toplevel ci ast mw)
+        (.visitInsn mw Opcodes/SWAP)
+        (.visitMethodInsn mw Opcodes/INVOKESPECIAL, qn-js-exception, "<init>", (sig-call (sig-obj qn-js-toplevel) (sig-obj qn-exception) sig-void))
+        ; end        
+        (.visitLabel mw end-label))
       ; assign variable
 		  (if-let [reg (ref-reg ((ast-contexts ast) ci) value)]
 		    (.visitVarInsn mw Opcodes/ASTORE reg) 
-			  (let [qn-parent (asm-search-scopes value ci ast mw)]
+			  (let [qn-parent (asm-search-scopes value ln ci ast mw)]
 			    (.visitInsn mw Opcodes/SWAP)
 				  (.visitMethodInsn mw Opcodes/INVOKEVIRTUAL, qn-parent, (str "set_" value), (sig-call (sig-obj qn-object) sig-void))))
       ; body
 	    (doseq [stat stats]
 	      (asm-compile stat ci ast mw)))
 
-    ; finally (may be empty)
+    ; finally (body may be empty)
     (.visitLabel mw finally-label)
     (when finally-stats
 	    (doseq [stat finally-stats]
@@ -887,7 +979,7 @@
 	  (asm-compile-autobox expr ci ast mw)
 	  (if-let [reg (ref-reg ((ast-contexts ast) ci) value)]
 	    (.visitVarInsn mw Opcodes/ASTORE reg) 
-		  (let [qn-parent (asm-search-scopes value ci ast mw)]
+		  (let [qn-parent (asm-search-scopes value ln ci ast mw)]
 		    (.visitInsn mw Opcodes/SWAP)
 	      (.visitMethodInsn mw Opcodes/INVOKEVIRTUAL, qn-parent, (str "set_" value), (sig-call (sig-obj qn-object) sig-void))))))
 
@@ -910,7 +1002,7 @@
       ; store in scope
 		  (if-let [reg (ref-reg ((ast-contexts ast) ci) value)]
 		    (.visitVarInsn mw Opcodes/ASTORE reg) 
-	      (let [qn-parent (asm-search-scopes value ci ast mw)]
+	      (let [qn-parent (asm-search-scopes value ln ci ast mw)]
 	        (.visitInsn mw Opcodes/SWAP)
 		      (.visitMethodInsn mw Opcodes/INVOKEVIRTUAL, qn-parent, (str "set_" value), (sig-call (sig-obj qn-object) sig-void))))
 	

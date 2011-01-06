@@ -29,6 +29,21 @@ public abstract class JSFunction extends JSObject {
 			super.set(key, value);
 	}
 	
+	/* 
+	 * inheritance
+	 */
+	
+	@Override
+	public boolean hasInstance(Object arg) {
+		if (actual_prototype != null && arg instanceof JSObject) {
+			JSObject v = (JSObject) arg;
+			while ((v = v.getProto()) != null)
+				if (actual_prototype.equals(v))
+					return true;
+		}
+		return false;
+	}
+	
 	/*
 	 * callable
 	 */

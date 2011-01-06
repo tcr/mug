@@ -232,8 +232,11 @@
 (defmethod ast-context-vars-walker :mug.ast/closure-context [[_ ln name args stats]]
   (concat (if (nil? name) [] [name]) args (apply concat (map #(ast-context-vars-walker %) stats))))
 ; definitions
-(defmethod ast-context-vars-walker :mug.ast/var-stat [[_ ln vars]]
-  (map first vars))
+(defmethod ast-context-vars-walker :mug.ast/var-stat [node]
+  (let [[_ ln vars] node]
+    (concat ; var names, also arguments object may be used in expression
+      (map first vars)
+      (ast-walker node (fn [node & _] (ast-context-vars-walker node))))))
 (defmethod ast-context-vars-walker :mug.ast/for-in-stat [[_ ln isvar value expr stat]]
   (concat
     (if isvar [value] [])

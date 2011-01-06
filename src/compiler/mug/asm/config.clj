@@ -18,9 +18,10 @@
 (def arg-limit 8)
 
 (def script-default-vars
-  #{"exports" "require" "print" "parseInt" "parseFloat" "isNaN" "isFinite"
+  #{"exports" "require" "print" "console"
+    "parseInt" "parseFloat" "isNaN" "isFinite"
     "Math" "JSON"
-    "Object" "Array" "Number" "String" "Boolean" "Date"
+    "Object" "Array" "Number" "String" "Boolean" "Function" "Date"
     "Error" "SyntaxError"
     "setTimeout" "setInterval" "clearTimeout" "clearInterval"})
 
@@ -45,6 +46,7 @@
 (def qn-js-regexp (str pkg-mug "JSRegExp"))
 (def qn-js-module (str pkg-mug "JSModule"))
 (def qn-js-exception (str pkg-mug "JSException"))
+(def qn-js-value-exception (str pkg-mug "JSValueException"))
 
 (def qn-js-atoms (str pkg-mug "JSAtoms"))
 (defn qn-js-constants [] (str @pkg-compiled "constants"))
@@ -65,6 +67,7 @@
 ;;;[TODO] these should be "sig-void", "sig-double", etc.
 (def qn-object "java/lang/Object")
 (def qn-string "java/lang/String")
+(def qn-exception "java/lang/Exception")
 (def qn-pattern "java/util/regex/Pattern")
 (def sig-void "V")
 (def sig-double "D")

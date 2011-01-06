@@ -11,5 +11,6 @@
 	<classpathentry kind="lib" path="classes"/>
 	<classpathentry kind="lib" path="rhino-js.jar"/>
 	<classpathentry kind="lib" path="json_simple-1.1.jar"/>
+	<classpathentry kind="lib" path="jakarta-oro-2.0.8.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

@@ -109,7 +109,7 @@ public class JSUtils {
 			return new JSNumber(top.getNumberPrototype(), (Double) a);
 		if (a instanceof Boolean)
 			return new JSBoolean(top.getBooleanPrototype(), (Boolean) a);
-		throw new ClassCastException("Could not convert " + a + " to JSObject.");
+		throw new ClassCastException("Could not convert \"" + a + "\" to JSObject.");
 	}
 	
 	/*
