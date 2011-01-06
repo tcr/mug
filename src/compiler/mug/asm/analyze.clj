@@ -73,6 +73,12 @@
   (concat (walker base walker) (walker expr walker)))
 (defmethod ast-walker :mug.ast/dyn-assign-expr [[_ ln base index expr] walker]
   (concat (walker base walker) (walker index walker) (walker expr walker)))
+(defmethod ast-walker :mug.ast/scope-delete-expr [[_ ln value] walker]
+  [])
+(defmethod ast-walker :mug.ast/static-delete-expr [[_ ln base value] walker]
+  (walker base walker))
+(defmethod ast-walker :mug.ast/dyn-delete-expr [[_ ln base index] walker]
+  (walker base walker) (walker index walker))
 (defmethod ast-walker :mug.ast/typeof-expr [[_ ln expr] walker]
   (walker expr walker))
 (defmethod ast-walker :mug.ast/void-expr [[_ ln expr] walker]

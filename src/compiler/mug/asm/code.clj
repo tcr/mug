@@ -132,6 +132,12 @@
 	Object) ;(compile-type expr))
 (defmethod compile-type :mug.ast/dyn-assign-expr [[_ ln base index expr]]
 	Object) ;(compile-type expr))
+(defmethod compile-type :mug.ast/scope-delete-expr [[_ ln value]]
+	:boolean)
+(defmethod compile-type :mug.ast/static-delete-expr [[_ ln base value]]
+	:boolean)
+(defmethod compile-type :mug.ast/dyn-delete-expr [[_ ln base index]]
+	:boolean)
 (defmethod compile-type :mug.ast/typeof-expr [[_ ln expr]]
   String)
 (defmethod compile-type :mug.ast/void-expr [[_ ln expr]]

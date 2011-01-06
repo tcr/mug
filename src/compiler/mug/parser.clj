@@ -91,6 +91,11 @@
     "!" (not-op-expr ln (gen-ast-code place))
     "void" (void-expr ln (gen-ast-code place))
     "typeof" (typeof-expr ln (gen-ast-code place))
+    "delete" (case (first place)
+      "name" (scope-delete-expr ln ((vec place) 2))
+      "dot" (static-delete-expr ln (gen-ast-code ((vec place) 2)) ((vec place) 3))
+      "sub" (dyn-delete-expr ln (gen-ast-code ((vec place) 2)) (gen-ast-code ((vec place) 3)))
+      (println (str "###ERROR: Bad delete operation (line " ln ")")))
     (println (str "###ERROR: Bad unary prefix: " op "(line " ln ")"))))
 (defmethod gen-ast-code "call" [[_ ln func args]]
   (case (first func)
