@@ -134,6 +134,8 @@
 	Object) ;(compile-type expr))
 (defmethod compile-type :mug.ast/typeof-expr [[_ ln expr]]
   String)
+(defmethod compile-type :mug.ast/void-expr [[_ ln expr]]
+  Object)
 (defmethod compile-type :mug.ast/this-expr [[_ ln]]
   Object)
 (defmethod compile-type :mug.ast/if-expr [[_ ln expr then-expr else-expr]]
@@ -650,11 +652,6 @@
 (defmethod asm-compile :mug.ast/in-op-expr [[_ ln expr] ci ast mw]
   (throw (new Exception "'in' operator not yet implemented.")))
 
-(defmethod asm-compile :mug.ast/void-expr [[_ ln expr] ci ast mw]
-  (asm-compile expr ci ast mw)
-  (asm-compile-pop expr mw)
-  (.visitInsn mw Opcodes/ACONST_NULL))
-
 ;
 ; expressions
 ;
@@ -755,6 +752,11 @@
 (defmethod asm-compile :mug.ast/typeof-expr [[_ ln expr] ci ast mw]
   (asm-compile expr ci ast mw)
   (.visitMethodInsn mw Opcodes/INVOKESTATIC, qn-js-utils, "typeof", (sig-call (sig-obj qn-object) (sig-obj qn-string))))
+
+(defmethod asm-compile :mug.ast/void-expr [[_ ln expr] ci ast mw]
+  (asm-compile expr ci ast mw)
+  (asm-compile-pop expr mw)
+  (.visitInsn mw Opcodes/ACONST_NULL))
     
 (defmethod asm-compile :mug.ast/this-expr [[_ ln] ci ast mw]
   (.visitVarInsn mw Opcodes/ALOAD, 1))

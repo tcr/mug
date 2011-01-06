@@ -93,6 +93,7 @@
 (defast ::static-assign-expr ::expr [base value expr])
 (defast ::dyn-assign-expr ::expr [base index expr])
 (defast ::typeof-expr ::expr [expr])
+(defast ::void-expr ::expr [expr])
 (defast ::if-expr ::expr [expr then-expr else-expr])
 
 ; statements

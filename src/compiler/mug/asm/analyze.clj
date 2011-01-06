@@ -16,7 +16,7 @@
 
 (defmulti ast-walker (fn [node walker] (first node)))
 (defmethod ast-walker :default [node walker]
-  (println (str "Warning: No AST walker found for type " (first node) " (contents: " node ")")))
+  (throw (new Exception (str "No AST walker found for type " (first node) " (contents: " node ")"))))
 
 ; contexts
 
@@ -74,6 +74,8 @@
 (defmethod ast-walker :mug.ast/dyn-assign-expr [[_ ln base index expr] walker]
   (concat (walker base walker) (walker index walker) (walker expr walker)))
 (defmethod ast-walker :mug.ast/typeof-expr [[_ ln expr] walker]
+  (walker expr walker))
+(defmethod ast-walker :mug.ast/void-expr [[_ ln expr] walker]
   (walker expr walker))
 (defmethod ast-walker :mug.ast/this-expr [[_ ln] walker]
   [])
