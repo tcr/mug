@@ -3,9 +3,9 @@ package mug.js;
 import java.util.HashMap;
 
 public abstract class JSFunction extends JSObject {	
-	public JSFunction(JSObject proto) {
-		super(proto);
-		set("prototype", new JSObject(proto.getProto())); // Function.prototype.__proto__ == Object.prototype
+	public JSFunction(JSEnvironment env) {
+		super(env, env.getFunctionPrototype());
+		set("prototype", new JSObject(env));
 		actual_prototype.set("constructor", this);
 	}
 	
@@ -49,7 +49,7 @@ public abstract class JSFunction extends JSObject {
 	 */
 	
 	public Object instantiate(int argc, Object l0, Object l1, Object l2, Object l3, Object l4, Object l5, Object l6, Object l7, Object[] rest) throws Exception {
-		JSObject obj = new JSObject(actual_prototype);
+		JSObject obj = new JSObject(env, actual_prototype);
 		Object ret;
 		if ((ret = invoke(obj, argc, l0, l1, l2, l3, l4, l5, l6, l7, rest)) != null)
 			return ret;

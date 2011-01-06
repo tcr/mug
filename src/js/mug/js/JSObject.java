@@ -10,42 +10,40 @@ import org.json.simple.JSONObject;
  */
 
 public class JSObject {
-	// private constructor for prototypes
-	private JSObject() {
+	protected JSEnvironment env;
+	
+	public JSEnvironment getEnvironment() {
+		return env;
 	}
 	
-	public JSObject(JSObject proto) {
+	/**
+	 * Default object constructor. When the JSEnvironment is first created,
+	 * it has no object prototype; thus the prototype of the object prototype
+	 * itself is null.
+	 */
+	
+	public JSObject(JSEnvironment env) {
+		this.env = env;
+		__proto__ = env.getObjectPrototype();
+	}
+	
+	/**
+	 * Construct an object with a specific prototype.
+	 */
+	
+	public JSObject(JSEnvironment env, JSObject proto) {
+		this.env = env;
 		__proto__ = proto;
 	}
+	
+	/**
+	 * JSObject prototype.
+	 */
 	
 	protected JSObject __proto__;
 
 	public JSObject getProto() {
 		return __proto__;
-	}
-	
-	/*
-	 * methods
-	 */
-	
-	public Object valueOf() {
-		Object valueOf = get("valueOf");
-		if (valueOf instanceof JSObject)
-			try {
-				return ((JSObject) valueOf).invoke(this);
-			} catch (Exception e) {
-			}
-		return this;
-	}
-	
-	public String toString() {
-		Object toString = get("toString");
-		if (toString instanceof JSObject)
-			try {
-				return JSUtils.asString(((JSObject) toString).invoke(this));
-			} catch (Exception e) {
-			}
-		return "[object Object]";
 	}
 	
 	/*
@@ -97,80 +95,35 @@ public class JSObject {
 	}
 	
 	/*
+	 * Object methods
+	 */
+	
+	public Object valueOf() {
+		Object valueOf = get("valueOf");
+		if (valueOf instanceof JSObject)
+			try {
+				return ((JSObject) valueOf).invoke(this);
+			} catch (Exception e) {
+			}
+		return this;
+	}
+	
+	public String toString() {
+		Object toString = get("toString");
+		if (toString instanceof JSObject)
+			try {
+				return JSUtils.asString(((JSObject) toString).invoke(this));
+			} catch (Exception e) {
+			}
+		return "[object Object]";
+	}
+	
+	/*
 	 * inheritance
 	 */
 	
 	public boolean hasInstance(Object v) {
 		return false;
-	}
-	
-	/*
-	 * instantiate
-	 */
-
-	public Object instantiate(int argc, Object l0, Object l1, Object l2, Object l3, Object l4, Object l5, Object l6, Object l7, Object[] rest) throws Exception {
-		// objects that can instantiate overwrite this method
-		throw new Exception("Cannot instantiate non-callable object.");
-	}
-	
-	final public Object instantiate() throws Exception {
-		return instantiate(0, null, null, null, null, null, null, null, null, null);
-	}
-	
-	final public Object instantiate(Object l0) throws Exception {
-		return instantiate(1, l0, null, null, null, null, null, null, null, null);
-	}
-	
-	final public Object instantiate(Object l0, Object l1) throws Exception {
-		return instantiate(2, l0, l1, null, null, null, null, null, null, null);
-	}
-	
-	final public Object instantiate(Object l0, Object l1, Object l2) throws Exception {
-		return instantiate(3, l0, l1, l2, null, null, null, null, null, null);
-	}
-	
-	final public Object instantiate(Object l0, Object l1, Object l2, Object l3) throws Exception {
-		return instantiate(4, l0, l1, l2, l3, null, null, null, null, null);
-	}
-	
-	final public Object instantiate(Object l0, Object l1, Object l2, Object l3, Object l4) throws Exception {
-		return instantiate(5, l0, l1, l2, l3, l4, null, null, null, null);
-	}
-	
-	final public Object instantiate(Object l0, Object l1, Object l2, Object l3, Object l4, Object l5) throws Exception {
-		return instantiate(6, l0, l1, l2, l3, l4, l5, null, null, null);
-	}
-	
-	final public Object instantiate(Object l0, Object l1, Object l2, Object l3, Object l4, Object l5, Object l6) throws Exception {
-		return instantiate(7, l0, l1, l2, l3, l4, l5, l6, null, null);
-	}
-	
-	final public Object instantiate(Object l0, Object l1, Object l2, Object l3, Object l4, Object l5, Object l6, Object l7) throws Exception {
-		return instantiate(8, l0, l1, l2, l3, l4, l5, l6, l7, null);
-	}	
-	
-	final public Object instantiate(Object l0, Object l1, Object l2, Object l3, Object l4, Object l5, Object l6, Object l7, Object[] rest) throws Exception {
-		return instantiate(rest.length + 8, l0, l1, l2, l3, l4, l5, l6, l7, rest);
-	}	
-	
-	final public Object instantiate(Object[] args) throws Exception {
-		Object l0 = null, l1 = null, l2 = null, l3 = null, l4 = null, l5 = null, l6 = null, l7 = null;
-		switch (args.length) {
-		case 8: l7 = args[7];
-		case 7: l6 = args[6];
-		case 6: l5 = args[5];
-		case 5: l4 = args[4];
-		case 4: l3 = args[3];
-		case 3: l2 = args[2];
-		case 2: l1 = args[1];
-		case 1: l0 = args[0];
-		}
-		Object[] rest = null;
-		if (args.length > 8) {
-			rest = new Object[Math.max(args.length - 7, 0)];
-			System.arraycopy(args, 8, rest, 0, rest.length);
-		}
-		return instantiate(args.length, l0, l1, l2, l3, l4, l5, l6, l7, rest);
 	}
 	
 	/*
@@ -240,14 +193,74 @@ public class JSObject {
 			System.arraycopy(args, 8, rest, 0, rest.length);
 		}
 		return invoke(ths, args.length, l0, l1, l2, l3, l4, l5, l6, l7, rest);
-	}	
+	}
 	
 	/*
-	 * cyclic prototype
+	 * instantiate
 	 */
+
+	public Object instantiate(int argc, Object l0, Object l1, Object l2, Object l3, Object l4, Object l5, Object l6, Object l7, Object[] rest) throws Exception {
+		// objects that can instantiate overwrite this method
+		throw new Exception("Cannot instantiate non-callable object.");
+	}
 	
-	public static JSObject createObjectPrototype() {
-		JSObject obj = new JSObject();
-		return obj;
+	final public Object instantiate() throws Exception {
+		return instantiate(0, null, null, null, null, null, null, null, null, null);
+	}
+	
+	final public Object instantiate(Object l0) throws Exception {
+		return instantiate(1, l0, null, null, null, null, null, null, null, null);
+	}
+	
+	final public Object instantiate(Object l0, Object l1) throws Exception {
+		return instantiate(2, l0, l1, null, null, null, null, null, null, null);
+	}
+	
+	final public Object instantiate(Object l0, Object l1, Object l2) throws Exception {
+		return instantiate(3, l0, l1, l2, null, null, null, null, null, null);
+	}
+	
+	final public Object instantiate(Object l0, Object l1, Object l2, Object l3) throws Exception {
+		return instantiate(4, l0, l1, l2, l3, null, null, null, null, null);
+	}
+	
+	final public Object instantiate(Object l0, Object l1, Object l2, Object l3, Object l4) throws Exception {
+		return instantiate(5, l0, l1, l2, l3, l4, null, null, null, null);
+	}
+	
+	final public Object instantiate(Object l0, Object l1, Object l2, Object l3, Object l4, Object l5) throws Exception {
+		return instantiate(6, l0, l1, l2, l3, l4, l5, null, null, null);
+	}
+	
+	final public Object instantiate(Object l0, Object l1, Object l2, Object l3, Object l4, Object l5, Object l6) throws Exception {
+		return instantiate(7, l0, l1, l2, l3, l4, l5, l6, null, null);
+	}
+	
+	final public Object instantiate(Object l0, Object l1, Object l2, Object l3, Object l4, Object l5, Object l6, Object l7) throws Exception {
+		return instantiate(8, l0, l1, l2, l3, l4, l5, l6, l7, null);
+	}	
+	
+	final public Object instantiate(Object l0, Object l1, Object l2, Object l3, Object l4, Object l5, Object l6, Object l7, Object[] rest) throws Exception {
+		return instantiate(rest.length + 8, l0, l1, l2, l3, l4, l5, l6, l7, rest);
+	}	
+	
+	final public Object instantiate(Object[] args) throws Exception {
+		Object l0 = null, l1 = null, l2 = null, l3 = null, l4 = null, l5 = null, l6 = null, l7 = null;
+		switch (args.length) {
+		case 8: l7 = args[7];
+		case 7: l6 = args[6];
+		case 6: l5 = args[5];
+		case 5: l4 = args[4];
+		case 4: l3 = args[3];
+		case 3: l2 = args[2];
+		case 2: l1 = args[1];
+		case 1: l0 = args[0];
+		}
+		Object[] rest = null;
+		if (args.length > 8) {
+			rest = new Object[Math.max(args.length - 7, 0)];
+			System.arraycopy(args, 8, rest, 0, rest.length);
+		}
+		return instantiate(args.length, l0, l1, l2, l3, l4, l5, l6, l7, rest);
 	}
 }

@@ -6,8 +6,8 @@ public class JSRegExp extends JSObject {
 	Pattern pattern;
 	boolean global;
 	
-	public JSRegExp(JSObject proto, Pattern pattern, boolean global) {
-		super(proto);
+	public JSRegExp(JSEnvironment env, Pattern pattern, boolean global) {
+		super(env, env.getRegExpPrototype());
 		this.pattern = pattern;
 		this.global = global;
 	}

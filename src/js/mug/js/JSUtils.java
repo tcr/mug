@@ -97,18 +97,18 @@ public class JSUtils {
 	 * Coerces a generic Object to a JSObject. Autoboxes primitives.
 	 */
 	
-	static public JSObject asJSObject(JSEnvironment top, Object a) {
+	static public JSObject asJSObject(JSEnvironment env, Object a) {
 		// js types
 		if (a instanceof JSObject)
 			return (JSObject) a;
 		if (a == null)
 			return null;
 		if (a instanceof String)
-			return new JSString(top.getStringPrototype(), (String) a);
+			return new JSString(env, (String) a);
 		if (a instanceof Double)
-			return new JSNumber(top.getNumberPrototype(), (Double) a);
+			return new JSNumber(env, (Double) a);
 		if (a instanceof Boolean)
-			return new JSBoolean(top.getBooleanPrototype(), (Boolean) a);
+			return new JSBoolean(env, (Boolean) a);
 		throw new ClassCastException("Could not convert \"" + a + "\" to JSObject.");
 	}
 	
@@ -168,8 +168,8 @@ public class JSUtils {
 	 * Creates an arguments object from a Java array. Used by scope-level objects.
 	 */
 	
-	static public JSObject createArgumentsObject(JSEnvironment top, Object[] arr) {
-		JSObject arguments = new JSObject(top.getObjectPrototype());
+	static public JSObject createArgumentsObject(JSEnvironment env, Object[] arr) {
+		JSObject arguments = new JSObject(env);
 		for (int i = 0; i < arr.length; i++)
 			arguments.set(String.valueOf(i), arr[i]);
 		arguments.set("length", arr.length);

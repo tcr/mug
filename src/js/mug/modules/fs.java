@@ -20,8 +20,8 @@ public class fs extends JSModule {
 	final JSEnvironment env = new JSEnvironment();
 	
 	// path prototype extends string prototype
-	final JSObject pathPrototype = new JSObject(env.getStringPrototype()) { {
-		set("read", new JSFunction(env.getFunctionPrototype()) {
+	final JSObject pathPrototype = new JSObject(env, env.getStringPrototype()) { {
+		set("read", new JSFunction(env) {
 			@Override
 			public Object invoke(Object ths, int argc, Object l0, Object l1, Object l2, Object l3, Object l4, Object l5, Object l6, Object l7, Object[] rest) throws Exception
 			{
@@ -31,22 +31,28 @@ public class fs extends JSModule {
 	} };
 	
 	// open method
-	JSFunction _open = new JSFunction (env.getFunctionPrototype()) {
+	JSFunction _open = new JSFunction (env) {
 		@Override
 		public Object invoke(Object ths, int argc, Object l0, Object l1, Object l2, Object l3, Object l4, Object l5, Object l6, Object l7, Object[] rest) throws Exception
 		{
 			// coerce path
-			String path = JSUtils.asString(l0);
+			final String path = JSUtils.asString(l0);
 			// coerce options
 			//[TODO] later
 			
-			// path object extends string object
-			return new JSString(pathPrototype, path);
+			JSObject obj = new JSObject(env);
+			obj.set("valueOf", new JSFunction(env) {
+				@Override
+				public Object invoke(Object ths, int argc, Object l0, Object l1, Object l2, Object l3, Object l4, Object l5, Object l6, Object l7, Object[] rest) throws Exception {
+					return path;
+				}				
+			});
+			return obj;
 		}
 	};
 	
 	// read method
-	JSFunction _read = new JSFunction (env.getFunctionPrototype()) {
+	JSFunction _read = new JSFunction (env) {
 		@Override
 		public Object invoke(Object ths, int argc, Object l0, Object l1, Object l2, Object l3, Object l4, Object l5, Object l6, Object l7, Object[] rest) throws Exception
 		{
@@ -76,7 +82,7 @@ public class fs extends JSModule {
 	};
 	
 	// rename method
-	JSFunction _rename = new JSFunction (env.getFunctionPrototype()) {
+	JSFunction _rename = new JSFunction (env) {
 		@Override
 		public Object invoke(Object ths, int argc, Object l0, Object l1, Object l2, Object l3, Object l4, Object l5, Object l6, Object l7, Object[] rest) throws Exception
 		{
@@ -106,7 +112,7 @@ public class fs extends JSModule {
 	};
 	
 	// renameSync method
-	JSFunction _renameSync = new JSFunction (env.getFunctionPrototype()) {
+	JSFunction _renameSync = new JSFunction(env) {
 		@Override
 		public Object invoke(Object ths, int argc, Object l0, Object l1, Object l2, Object l3, Object l4, Object l5, Object l6, Object l7, Object[] rest) throws Exception
 		{
@@ -119,7 +125,7 @@ public class fs extends JSModule {
 	};
 	
 	// exports library
-	final JSObject exports = new JSObject(env.getObjectPrototype()) { {
+	final JSObject exports = new JSObject(env) { {
 		set("open", _open);
 		set("read", _read);
 	} };

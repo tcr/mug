@@ -5,8 +5,8 @@ import java.util.HashMap;
 import java.util.regex.Pattern;
 
 public class JSArray extends JSObject {
-	public JSArray(JSObject proto, int initialCapacity) {
-		super(proto);
+	public JSArray(JSEnvironment env, int initialCapacity) {
+		super(env, env.getArrayPrototype());
 		list = new ArrayList<Object>(initialCapacity);
 	}
 	

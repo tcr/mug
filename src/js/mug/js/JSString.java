@@ -7,8 +7,8 @@ package mug.js;
 public class JSString extends JSObject {
 	String value;
 	
-	public JSString(JSObject proto, String value) {
-		super(proto);
+	public JSString(JSEnvironment env, String value) {
+		super(env, env.getStringPrototype());
 		this.value = value;
 	}
 	

@@ -20,13 +20,15 @@ public class JSEnvironment {
 	 * prototypes
 	 */
 	
-	final JSObject objectPrototype = JSObject.createObjectPrototype();
+	final JSObject objectPrototype = new JSObject(this);
 	
-	final JSObject functionPrototype = new JSObject(objectPrototype) { {
+	final JSNull nullObject = new JSNull(this);
+	
+	final JSObject functionPrototype = new JSObject(this) { {
 		// needed to reference self
 		JSObject functionPrototype = this;
 
-		set("apply", new JSFunction (functionPrototype) {
+		set("apply", new JSFunction(JSEnvironment.this) {
 			@Override
 			public Object invoke(Object ths, int argc, Object l0, Object l1, Object l2, Object l3, Object l4, Object l5, Object l6, Object l7, Object[] rest) throws Exception
 			{
@@ -35,7 +37,7 @@ public class JSEnvironment {
 			}
 		});
 		
-		set("call", new JSFunction (functionPrototype) {
+		set("call", new JSFunction(JSEnvironment.this) {
 			@Override
 			public Object invoke(Object ths, int argc, Object l0, Object l1, Object l2, Object l3, Object l4, Object l5, Object l6, Object l7, Object[] rest) throws Exception
 			{
@@ -50,7 +52,7 @@ public class JSEnvironment {
 	} };
 	
 	{
-		objectPrototype.set("toString", new JSFunction (functionPrototype) {
+		objectPrototype.set("toString", new JSFunction(JSEnvironment.this) {
 			@Override
 			public Object invoke(Object ths, int argc, Object l0, Object l1, Object l2, Object l3, Object l4, Object l5, Object l6, Object l7, Object[] rest) throws Exception
 			{
@@ -59,7 +61,7 @@ public class JSEnvironment {
 			}
 		});
 
-		objectPrototype.set("hasOwnProperty", new JSFunction (functionPrototype) {
+		objectPrototype.set("hasOwnProperty", new JSFunction(JSEnvironment.this) {
 			@Override
 			public Object invoke(Object ths, int argc, Object l0, Object l1, Object l2, Object l3, Object l4, Object l5, Object l6, Object l7, Object[] rest) throws Exception
 			{
@@ -69,14 +71,14 @@ public class JSEnvironment {
 		});
 	}
 	
-	final JSObject arrayPrototype = new JSObject(objectPrototype) { {
-		set("concat", new JSFunction(functionPrototype) {
+	final JSObject arrayPrototype = new JSObject(this) { {
+		set("concat", new JSFunction(JSEnvironment.this) {
 			@Override
 			public Object invoke(Object ths, int argc, Object l0, Object l1, Object l2, Object l3, Object l4, Object l5, Object l6, Object l7, Object[] rest) throws Exception
 			{
 				// concatenate arrays to new array
 				JSObject thsObj = JSUtils.asJSObject(JSEnvironment.this, ths);
-				JSArray out = new JSArray(arrayPrototype, 0);
+				JSArray out = new JSArray(JSEnvironment.this, 0);
 				Object[] arguments = JSUtils.arguments(argc, l0, l1, l2, l3, l4, l5, l6, l7, rest);
 				for (int j = 0, max = (int) JSUtils.asNumber(thsObj.get("length")); j < max; j++)
 					out.push(thsObj.get(String.valueOf(j)));
@@ -89,7 +91,7 @@ public class JSEnvironment {
 			}
 		});
 		
-		set("push", new JSFunction(functionPrototype) {
+		set("push", new JSFunction(JSEnvironment.this) {
 			@Override
 			public Object invoke(Object ths, int argc, Object l0, Object l1, Object l2, Object l3, Object l4, Object l5, Object l6, Object l7, Object[] rest) throws Exception
 			{
@@ -99,7 +101,7 @@ public class JSEnvironment {
 			}
 		});
 		
-		set("pop", new JSFunction(functionPrototype) {
+		set("pop", new JSFunction(JSEnvironment.this) {
 			@Override
 			public Object invoke(Object ths, int argc, Object l0, Object l1, Object l2, Object l3, Object l4, Object l5, Object l6, Object l7, Object[] rest) throws Exception
 			{
@@ -111,13 +113,13 @@ public class JSEnvironment {
 			}
 		});
 		
-		set("map", new JSFunction(functionPrototype) {
+		set("map", new JSFunction(JSEnvironment.this) {
 			@Override
 			public Object invoke(Object ths, int argc, Object l0, Object l1, Object l2, Object l3, Object l4, Object l5, Object l6, Object l7, Object[] rest) throws Exception
 			{
 				JSObject thsObj = JSUtils.asJSObject(JSEnvironment.this, ths);
 				JSObject func = JSUtils.asJSObject(JSEnvironment.this, l0);
-				JSArray out = new JSArray(arrayPrototype, 0);
+				JSArray out = new JSArray(JSEnvironment.this, 0);
 				int len = (int) JSUtils.asNumber(thsObj.get("length"));
 				for (int i = 0; i < len; i++)
 					out.push(func.invoke(ths, thsObj.get(String.valueOf(i)), i));
@@ -125,7 +127,7 @@ public class JSEnvironment {
 			}
 		});
 		
-		final JSFunction _indexOf = new JSFunction(functionPrototype) {
+		final JSFunction _indexOf = new JSFunction(JSEnvironment.this) {
 			@Override
 			public Object invoke(Object ths, int argc, Object l0, Object l1, Object l2, Object l3, Object l4, Object l5, Object l6, Object l7, Object[] rest) throws Exception
 			{
@@ -139,13 +141,13 @@ public class JSEnvironment {
 		};
 		set("indexOf", _indexOf);
 		
-		final JSFunction _join = new JSFunction(functionPrototype) {
+		final JSFunction _join = new JSFunction(JSEnvironment.this) {
 			@Override
 			public Object invoke(Object ths, int argc, Object l0, Object l1, Object l2, Object l3, Object l4, Object l5, Object l6, Object l7, Object[] rest) throws Exception
 			{
 				JSObject thsObj = JSUtils.asJSObject(JSEnvironment.this, ths);
 				StringBuffer sb = new StringBuffer();
-				String delim = (l0 == null || l0.equals(JSNull.NULL)) ? "" : JSUtils.asString(l0); 
+				String delim = (l0 == null || l0.equals(nullObject)) ? "" : JSUtils.asString(l0); 
 				int len = (int) JSUtils.asNumber(thsObj.get("length"));
 				for (int i = 0; i < len; i++) {
 					if (i > 0)
@@ -157,7 +159,7 @@ public class JSEnvironment {
 		};
 		set("join", _join);
 		
-		set("slice", new JSFunction(functionPrototype) {
+		set("slice", new JSFunction(JSEnvironment.this) {
 			@Override
 			public Object invoke(Object ths, int argc, Object l0, Object l1, Object l2, Object l3, Object l4, Object l5, Object l6, Object l7, Object[] rest) throws Exception
 			{
@@ -167,14 +169,14 @@ public class JSEnvironment {
 				int end = l1 == null ? len : (int) JSUtils.asNumber(l1);
 				if (end < 0)
 					end += len + 1;
-				JSArray out = new JSArray(arrayPrototype, 0);
+				JSArray out = new JSArray(JSEnvironment.this, 0);
 				for (int i = start; i < end; i++)
 					out.push(thsObj.get(String.valueOf(i)));
 				return out;
 			}
 		});
 		
-		set("toString", new JSFunction(functionPrototype) {
+		set("toString", new JSFunction(JSEnvironment.this) {
 			@Override
 			public Object invoke(Object ths, int argc, Object l0, Object l1, Object l2, Object l3, Object l4, Object l5, Object l6, Object l7, Object[] rest) throws Exception
 			{
@@ -182,7 +184,7 @@ public class JSEnvironment {
 			}
 		});
 		
-		set("sort", new JSFunction(functionPrototype) {
+		set("sort", new JSFunction(JSEnvironment.this) {
 			@Override
 			public Object invoke(final Object ths, int argc, Object l0, Object l1, Object l2, Object l3, Object l4, Object l5, Object l6, Object l7, Object[] rest) throws Exception
 			{
@@ -192,11 +194,11 @@ public class JSEnvironment {
 					arr[i] = JSUtils.asString(arr[i]);
 				// sort
 				final JSObject func = l0 != null ? (JSObject) l0 :
-					new JSFunction(functionPrototype) {
+					new JSFunction(JSEnvironment.this) {
 						@Override
 						public Object invoke(final Object ths, int argc, Object l0, Object l1, Object l2, Object l3, Object l4, Object l5, Object l6, Object l7, Object[] rest) throws Exception
 						{
-							return ((JSString) l0).value.compareTo(((JSString) l1).value);
+							return ((String) l0).compareTo((String) l1);
 						}
 					};
 				Arrays.sort(arr, new Comparator<Object>() {
@@ -210,15 +212,15 @@ public class JSEnvironment {
 					}
 				});
 				// return new array
-				JSArray out = new JSArray(getArrayPrototype(), 0);
+				JSArray out = new JSArray(JSEnvironment.this, 0);
 				out.append(arr);
 				return out;
 			}
 		});
 	} };
 	
-	final JSObject stringPrototype = new JSObject(objectPrototype) { {
-		set("valueOf", new JSFunction(functionPrototype) {
+	final JSObject stringPrototype = new JSObject(this) { {
+		set("valueOf", new JSFunction(JSEnvironment.this) {
 			@Override
 			public Object invoke(Object ths, int argc, Object l0, Object l1, Object l2, Object l3, Object l4, Object l5, Object l6, Object l7, Object[] rest) throws Exception
 			{
@@ -228,7 +230,7 @@ public class JSEnvironment {
 			}
 		});
 		
-		set("charAt", new JSFunction (functionPrototype) {
+		set("charAt", new JSFunction(JSEnvironment.this) {
 			@Override
 			public Object invoke(Object ths, int argc, Object l0, Object l1, Object l2, Object l3, Object l4, Object l5, Object l6, Object l7, Object[] rest) throws Exception
 			{
@@ -238,7 +240,7 @@ public class JSEnvironment {
 			}
 		});
 		
-		set("charCodeAt", new JSFunction (functionPrototype) {
+		set("charCodeAt", new JSFunction(JSEnvironment.this) {
 			@Override
 			public Object invoke(Object ths, int argc, Object l0, Object l1, Object l2, Object l3, Object l4, Object l5, Object l6, Object l7, Object[] rest) throws Exception
 			{
@@ -248,7 +250,7 @@ public class JSEnvironment {
 			}
 		});
 		
-		set("replace", new JSFunction (functionPrototype) {
+		set("replace", new JSFunction(JSEnvironment.this) {
 			@Override
 			public Object invoke(Object ths, int argc, Object l0, Object l1, Object l2, Object l3, Object l4, Object l5, Object l6, Object l7, Object[] rest) throws Exception
 			{
@@ -264,7 +266,7 @@ public class JSEnvironment {
 			}
 		});
 		
-		set("substring", new JSFunction (functionPrototype) {
+		set("substring", new JSFunction(JSEnvironment.this) {
 			@Override
 			public Object invoke(Object ths, int argc, Object l0, Object l1, Object l2, Object l3, Object l4, Object l5, Object l6, Object l7, Object[] rest) throws Exception
 			{
@@ -275,7 +277,7 @@ public class JSEnvironment {
 			}
 		});
 		
-		set("substr", new JSFunction (functionPrototype) {
+		set("substr", new JSFunction(JSEnvironment.this) {
 			@Override
 			public Object invoke(Object ths, int argc, Object l0, Object l1, Object l2, Object l3, Object l4, Object l5, Object l6, Object l7, Object[] rest) throws Exception
 			{
@@ -286,7 +288,7 @@ public class JSEnvironment {
 			}
 		});
 		
-		set("indexOf", new JSFunction (functionPrototype) {
+		set("indexOf", new JSFunction(JSEnvironment.this) {
 			@Override
 			public Object invoke(Object ths, int argc, Object l0, Object l1, Object l2, Object l3, Object l4, Object l5, Object l6, Object l7, Object[] rest) throws Exception
 			{
@@ -296,7 +298,7 @@ public class JSEnvironment {
 			}
 		});
 		
-		set("toLowerCase", new JSFunction (functionPrototype) {
+		set("toLowerCase", new JSFunction(JSEnvironment.this) {
 			@Override
 			public Object invoke(Object ths, int argc, Object index, Object l1, Object l2, Object l3, Object l4, Object l5, Object l6, Object l7, Object[] rest) throws Exception
 			{
@@ -304,7 +306,7 @@ public class JSEnvironment {
 			}
 		});
 		
-		set("toUpperCase", new JSFunction (functionPrototype) {
+		set("toUpperCase", new JSFunction(JSEnvironment.this) {
 			@Override
 			public Object invoke(Object ths, int argc, Object index, Object l1, Object l2, Object l3, Object l4, Object l5, Object l6, Object l7, Object[] rest) throws Exception
 			{
@@ -312,7 +314,7 @@ public class JSEnvironment {
 			}
 		});
 		
-		set("split", new JSFunction(functionPrototype) {
+		set("split", new JSFunction(JSEnvironment.this) {
 			@Override
 			public Object invoke(Object ths, int argc, Object l0, Object l1, Object l2, Object l3, Object l4, Object l5, Object l6, Object l7, Object[] rest) throws Exception
 			{
@@ -325,39 +327,39 @@ public class JSEnvironment {
 					for (int i = 0; i < str.length(); i++)
 						result[i] = String.valueOf(str.charAt(i));
 				}
-				JSArray out = new JSArray(arrayPrototype, 0);
+				JSArray out = new JSArray(JSEnvironment.this, 0);
 				for (int i = 0; i < result.length; i++)
 					out.push(result[i]);
 				return out;
 			}
 		});
 		
-		set("match", new JSFunction (functionPrototype) {
+		set("match", new JSFunction(JSEnvironment.this) {
 			@Override
 			public Object invoke(Object ths, int argc, Object l0, Object l1, Object l2, Object l3, Object l4, Object l5, Object l6, Object l7, Object[] rest) throws Exception
 			{
 				//[TODO] if l0 is string, compile
 				Pattern pattern = ((JSRegExp) l0).getPattern();
-				JSArray out = new JSArray(getArrayPrototype(), 0);
+				JSArray out = new JSArray(JSEnvironment.this, 0);
 				Matcher matcher = pattern.matcher(JSUtils.asString(ths));
 				if (!((JSRegExp) l0).isGlobal()) {
 					if (!matcher.find())
-						return JSNull.NULL;
+						return nullObject;
 					for (int i = 0; i < matcher.groupCount() + 1; i++)
 						out.push(matcher.group(i));
 				} else {
 					while (matcher.find())
 						out.push(matcher.group(0));
 					if (out.getLength() == 0)
-						return JSNull.NULL;
+						return nullObject;
 				}
 				return out;
 			}
 		});
 	} };
 	
-	final JSObject numberPrototype = new JSObject(objectPrototype) { {
-		set("valueOf", new JSFunction(functionPrototype) {
+	final JSObject numberPrototype = new JSObject(this) { {
+		set("valueOf", new JSFunction(JSEnvironment.this) {
 			@Override
 			public Object invoke(Object ths, int argc, Object l0, Object l1, Object l2, Object l3, Object l4, Object l5, Object l6, Object l7, Object[] rest) throws Exception
 			{
@@ -367,7 +369,7 @@ public class JSEnvironment {
 			}
 		});
 
-		set("toString", new JSFunction(functionPrototype) {
+		set("toString", new JSFunction(JSEnvironment.this) {
 			@Override
 			public Object invoke(Object ths, int argc, Object l0, Object l1, Object l2, Object l3, Object l4, Object l5, Object l6, Object l7, Object[] rest) throws Exception
 			{
@@ -382,7 +384,7 @@ public class JSEnvironment {
 			}
 		});
 		
-		set("toFixed", new JSFunction(functionPrototype) {
+		set("toFixed", new JSFunction(JSEnvironment.this) {
 			@Override
 			public Object invoke(Object ths, int argc, Object l0, Object l1, Object l2, Object l3, Object l4, Object l5, Object l6, Object l7, Object[] rest) throws Exception
 			{
@@ -395,8 +397,8 @@ public class JSEnvironment {
 		});
 	} };
 	
-	final JSObject booleanPrototype = new JSObject(objectPrototype) { {
-		set("valueOf", new JSFunction(functionPrototype) {
+	final JSObject booleanPrototype = new JSObject(this) { {
+		set("valueOf", new JSFunction(JSEnvironment.this) {
 			@Override
 			public Object invoke(Object ths, int argc, Object l0, Object l1, Object l2, Object l3, Object l4, Object l5, Object l6, Object l7, Object[] rest) throws Exception
 			{
@@ -407,8 +409,8 @@ public class JSEnvironment {
 		});
 	} };
 	
-	final JSObject regexpPrototype = new JSObject(objectPrototype) { {
-		set("test", new JSFunction (functionPrototype) {
+	final JSObject regexpPrototype = new JSObject(this) { {
+		set("test", new JSFunction(JSEnvironment.this) {
 			@Override
 			public Object invoke(Object ths, int argc, Object l0, Object l1, Object l2, Object l3, Object l4, Object l5, Object l6, Object l7, Object[] rest) throws Exception
 			{
@@ -417,31 +419,31 @@ public class JSEnvironment {
 			}
 		});
 		
-		set("exec", new JSFunction (functionPrototype) {
+		set("exec", new JSFunction(JSEnvironment.this) {
 			@Override
 			public Object invoke(Object ths, int argc, Object l0, Object l1, Object l2, Object l3, Object l4, Object l5, Object l6, Object l7, Object[] rest) throws Exception
 			{
 				Pattern pattern = ((JSRegExp) ths).getPattern();
-				JSArray out = new JSArray(getArrayPrototype(), 0);
+				JSArray out = new JSArray(JSEnvironment.this, 0);
 				Matcher matcher = pattern.matcher(JSUtils.asString(l0));
 				if (!((JSRegExp) ths).isGlobal()) {
 					if (!matcher.find())
-						return JSNull.NULL;
+						return nullObject;
 					for (int i = 0; i < matcher.groupCount() + 1; i++)
 						out.push(matcher.group(i));
 				} else {
 					while (matcher.find())
 						out.push(matcher.group(0));
 					if (out.getLength() == 0)
-						return JSNull.NULL;
+						return nullObject;
 				}
 				return out;
 			}
 		});
 	} };
 	
-	final JSObject datePrototype = new JSObject(objectPrototype) { {
-		set("valueOf", new JSFunction(functionPrototype) {
+	final JSObject datePrototype = new JSObject(this) { {
+		set("valueOf", new JSFunction(JSEnvironment.this) {
 			@Override
 			public Object invoke(Object ths, int argc, Object l0, Object l1, Object l2, Object l3, Object l4, Object l5, Object l6, Object l7, Object[] rest) throws Exception
 			{
@@ -449,7 +451,7 @@ public class JSEnvironment {
 			}
 		});
 		
-		set("getDate", new JSFunction(functionPrototype) {
+		set("getDate", new JSFunction(JSEnvironment.this) {
 			@Override
 			public Object invoke(Object ths, int argc, Object l0, Object l1, Object l2, Object l3, Object l4, Object l5, Object l6, Object l7, Object[] rest) throws Exception
 			{
@@ -458,7 +460,7 @@ public class JSEnvironment {
 			}
 		});
 		
-		set("getDay", new JSFunction(functionPrototype) {
+		set("getDay", new JSFunction(JSEnvironment.this) {
 			@Override
 			public Object invoke(Object ths, int argc, Object l0, Object l1, Object l2, Object l3, Object l4, Object l5, Object l6, Object l7, Object[] rest) throws Exception
 			{
@@ -467,7 +469,7 @@ public class JSEnvironment {
 			}
 		});
 		
-		set("getFullYear", new JSFunction(functionPrototype) {
+		set("getFullYear", new JSFunction(JSEnvironment.this) {
 			@Override
 			public Object invoke(Object ths, int argc, Object l0, Object l1, Object l2, Object l3, Object l4, Object l5, Object l6, Object l7, Object[] rest) throws Exception
 			{
@@ -476,7 +478,7 @@ public class JSEnvironment {
 			}
 		});
 		
-		set("getHours", new JSFunction(functionPrototype) {
+		set("getHours", new JSFunction(JSEnvironment.this) {
 			@Override
 			public Object invoke(Object ths, int argc, Object l0, Object l1, Object l2, Object l3, Object l4, Object l5, Object l6, Object l7, Object[] rest) throws Exception
 			{
@@ -485,7 +487,7 @@ public class JSEnvironment {
 			}
 		});
 		
-		set("getMilliseconds", new JSFunction(functionPrototype) {
+		set("getMilliseconds", new JSFunction(JSEnvironment.this) {
 			@Override
 			public Object invoke(Object ths, int argc, Object l0, Object l1, Object l2, Object l3, Object l4, Object l5, Object l6, Object l7, Object[] rest) throws Exception
 			{
@@ -494,7 +496,7 @@ public class JSEnvironment {
 			}
 		});
 		
-		set("getMinutes", new JSFunction(functionPrototype) {
+		set("getMinutes", new JSFunction(JSEnvironment.this) {
 			@Override
 			public Object invoke(Object ths, int argc, Object l0, Object l1, Object l2, Object l3, Object l4, Object l5, Object l6, Object l7, Object[] rest) throws Exception
 			{
@@ -503,7 +505,7 @@ public class JSEnvironment {
 			}
 		});
 		
-		set("getMonth", new JSFunction(functionPrototype) {
+		set("getMonth", new JSFunction(JSEnvironment.this) {
 			@Override
 			public Object invoke(Object ths, int argc, Object l0, Object l1, Object l2, Object l3, Object l4, Object l5, Object l6, Object l7, Object[] rest) throws Exception
 			{
@@ -512,7 +514,7 @@ public class JSEnvironment {
 			}
 		});
 		
-		set("getSeconds", new JSFunction(functionPrototype) {
+		set("getSeconds", new JSFunction(JSEnvironment.this) {
 			@Override
 			public Object invoke(Object ths, int argc, Object l0, Object l1, Object l2, Object l3, Object l4, Object l5, Object l6, Object l7, Object[] rest) throws Exception
 			{
@@ -521,7 +523,7 @@ public class JSEnvironment {
 			}
 		});
 		
-		set("getTime", new JSFunction(functionPrototype) {
+		set("getTime", new JSFunction(JSEnvironment.this) {
 			@Override
 			public Object invoke(Object ths, int argc, Object l0, Object l1, Object l2, Object l3, Object l4, Object l5, Object l6, Object l7, Object[] rest) throws Exception
 			{
@@ -530,7 +532,7 @@ public class JSEnvironment {
 			}
 		});
 		
-		set("getTimezoneOffset", new JSFunction(functionPrototype) {
+		set("getTimezoneOffset", new JSFunction(JSEnvironment.this) {
 			@Override
 			public Object invoke(Object ths, int argc, Object l0, Object l1, Object l2, Object l3, Object l4, Object l5, Object l6, Object l7, Object[] rest) throws Exception
 			{
@@ -539,7 +541,7 @@ public class JSEnvironment {
 			}
 		});
 		
-		set("getDay", new JSFunction(functionPrototype) {
+		set("getDay", new JSFunction(JSEnvironment.this) {
 			@Override
 			public Object invoke(Object ths, int argc, Object l0, Object l1, Object l2, Object l3, Object l4, Object l5, Object l6, Object l7, Object[] rest) throws Exception
 			{
@@ -553,18 +555,47 @@ public class JSEnvironment {
 	 * objects/constructors
 	 */	
 	
-	final JSFunction requireFunction = new JSFunction(functionPrototype) {
+	final JSFunction requireFunction = new JSFunction(JSEnvironment.this) {
+		String[] modulepath;
+		{
+			if (System.getProperty("mug.require.path") == null)
+				modulepath = new String[] { ".", "mug.modules" };
+			else
+				modulepath = System.getProperty("mug.module.path").split(":");
+		}
+		
 		@Override
-		public Object invoke(Object ths, int argc, Object l0, Object l1, Object l2, Object l3, Object l4, Object l5, Object l6, Object l7, Object[] rest)
-				throws Exception {
-			return Modules.getModule(JSUtils.asString(l0)).load();
+		public Object invoke(Object ths, int argc, Object l0, Object l1, Object l2, Object l3, Object l4, Object l5, Object l6, Object l7, Object[] rest) throws Exception {
+			String moduleName = JSUtils.asString(l0).replaceAll("-", "_").replaceAll("\\.", "/");
+			
+			// get originating module
+			StackTraceElement[] elements = (new Throwable()).getStackTrace();
+			String callingPath = elements[elements.length - 1].getClassName().replaceFirst("\\.[a-zA-Z_]+$", "");
+			
+			// iterating through module paths
+			for (String loc : modulepath) {
+				try {
+					if (loc.equals("."))
+						loc = callingPath;
+					String search = loc + "." + moduleName;
+					//System.out.println(search);
+					Class mdClass = Modules.class.getClassLoader().loadClass(search);
+					if (!JSModule.class.isAssignableFrom(mdClass))
+						continue;
+					JSModule module = (JSModule) mdClass.newInstance();
+					return module.load();
+				} catch (ClassNotFoundException e) {
+				}
+			}
+			// exhausted all possibilities
+			throw new ClassNotFoundException("Did not find a module \"" + moduleName + "\" in require path.");
 		}
 	};
 	
-	final JSObject exportsObject = new JSObject(objectPrototype) { };
+	final JSObject exportsObject = new JSObject(this) { };
 	
-	final JSObject consoleObject = new JSObject(objectPrototype) { {
-		set("log", new JSFunction(functionPrototype) {
+	final JSObject consoleObject = new JSObject(this) { {
+		set("log", new JSFunction(JSEnvironment.this) {
 			@Override
 			public Object invoke(Object ths, int argc, Object l0, Object l1, Object l2, Object l3, Object l4, Object l5, Object l6, Object l7, Object[] rest) throws Exception
 			{
@@ -580,7 +611,7 @@ public class JSEnvironment {
 		});
 	} };
 	
-	final JSFunction printFunction = new JSFunction(functionPrototype) {
+	final JSFunction printFunction = new JSFunction(JSEnvironment.this) {
 		@Override
 		public Object invoke(Object ths, int argc, Object l0, Object l1, Object l2, Object l3, Object l4, Object l5, Object l6, Object l7, Object[] rest) throws Exception {
 			Object[] arguments = JSUtils.arguments(argc, l0, l1, l2, l3, l4, l5, l6, l7, rest);
@@ -594,36 +625,36 @@ public class JSEnvironment {
 		}
 	};
 	
-	final JSFunction parseIntFunction = new JSFunction(functionPrototype) {
+	final JSFunction parseIntFunction = new JSFunction(JSEnvironment.this) {
 		@Override
 		public Object invoke(Object ths, int argc, Object l0, Object l1, Object l2, Object l3, Object l4, Object l5, Object l6, Object l7, Object[] rest) throws Exception {
 			return (double) Integer.parseInt(JSUtils.asString(l0));
 		}
 	};
 	
-	final JSFunction parseFloatFunction = new JSFunction(functionPrototype) {
+	final JSFunction parseFloatFunction = new JSFunction(JSEnvironment.this) {
 		@Override
 		public Object invoke(Object ths, int argc, Object l0, Object l1, Object l2, Object l3, Object l4, Object l5, Object l6, Object l7, Object[] rest) throws Exception {
 			return Double.parseDouble(JSUtils.asString(l0));
 		}
 	};
 	
-	final JSFunction isNaNFunction = new JSFunction(functionPrototype) {
+	final JSFunction isNaNFunction = new JSFunction(JSEnvironment.this) {
 		@Override
 		public Object invoke(Object ths, int argc, Object l0, Object l1, Object l2, Object l3, Object l4, Object l5, Object l6, Object l7, Object[] rest) throws Exception {
 			return Double.isNaN(JSUtils.asNumber(l0));
 		}
 	};
 	
-	final JSFunction isFiniteFunction = new JSFunction(functionPrototype) {
+	final JSFunction isFiniteFunction = new JSFunction(JSEnvironment.this) {
 		@Override
 		public Object invoke(Object ths, int argc, Object l0, Object l1, Object l2, Object l3, Object l4, Object l5, Object l6, Object l7, Object[] rest) throws Exception {
 			return !Double.isInfinite(JSUtils.asNumber(l0));
 		}
 	};
 	
-	final JSObject mathObject = new JSObject(objectPrototype) { {
-		set("random", new JSFunction(functionPrototype) {
+	final JSObject mathObject = new JSObject(this) { {
+		set("random", new JSFunction(JSEnvironment.this) {
 			@Override
 			public Object invoke(Object ths, int argc, Object l0, Object l1, Object l2, Object l3, Object l4, Object l5, Object l6, Object l7, Object[] rest) throws Exception
 			{
@@ -631,7 +662,7 @@ public class JSEnvironment {
 			}
 		});
 		
-		set("abs", new JSFunction(functionPrototype) {
+		set("abs", new JSFunction(JSEnvironment.this) {
 			@Override
 			public Object invoke(Object ths, int argc, Object l0, Object l1, Object l2, Object l3, Object l4, Object l5, Object l6, Object l7, Object[] rest) throws Exception
 			{
@@ -639,7 +670,7 @@ public class JSEnvironment {
 			}
 		});
 		
-		set("pow", new JSFunction(functionPrototype) {
+		set("pow", new JSFunction(JSEnvironment.this) {
 			@Override
 			public Object invoke(Object ths, int argc, Object l0, Object l1, Object l2, Object l3, Object l4, Object l5, Object l6, Object l7, Object[] rest) throws Exception
 			{
@@ -647,7 +678,7 @@ public class JSEnvironment {
 			}
 		});
 		
-		set("sqrt", new JSFunction(functionPrototype) {
+		set("sqrt", new JSFunction(JSEnvironment.this) {
 			@Override
 			public Object invoke(Object ths, int argc, Object l0, Object l1, Object l2, Object l3, Object l4, Object l5, Object l6, Object l7, Object[] rest) throws Exception
 			{
@@ -655,7 +686,7 @@ public class JSEnvironment {
 			}
 		});
 		
-		set("max", new JSFunction(functionPrototype) {
+		set("max", new JSFunction(JSEnvironment.this) {
 			@Override
 			public Object invoke(Object ths, int argc, Object l0, Object l1, Object l2, Object l3, Object l4, Object l5, Object l6, Object l7, Object[] rest) throws Exception
 			{
@@ -663,7 +694,7 @@ public class JSEnvironment {
 			}
 		});
 		
-		set("min", new JSFunction(functionPrototype) {
+		set("min", new JSFunction(JSEnvironment.this) {
 			@Override
 			public Object invoke(Object ths, int argc, Object l0, Object l1, Object l2, Object l3, Object l4, Object l5, Object l6, Object l7, Object[] rest) throws Exception
 			{
@@ -671,7 +702,7 @@ public class JSEnvironment {
 			}
 		});
 		
-		set("ceil", new JSFunction(functionPrototype) {
+		set("ceil", new JSFunction(JSEnvironment.this) {
 			@Override
 			public Object invoke(Object ths, int argc, Object l0, Object l1, Object l2, Object l3, Object l4, Object l5, Object l6, Object l7, Object[] rest) throws Exception
 			{
@@ -679,7 +710,7 @@ public class JSEnvironment {
 			}
 		});
 		
-		set("floor", new JSFunction(functionPrototype) {
+		set("floor", new JSFunction(JSEnvironment.this) {
 			@Override
 			public Object invoke(Object ths, int argc, Object l0, Object l1, Object l2, Object l3, Object l4, Object l5, Object l6, Object l7, Object[] rest) throws Exception
 			{
@@ -687,7 +718,7 @@ public class JSEnvironment {
 			}
 		});
 		
-		set("round", new JSFunction(functionPrototype) {
+		set("round", new JSFunction(JSEnvironment.this) {
 			@Override
 			public Object invoke(Object ths, int argc, Object l0, Object l1, Object l2, Object l3, Object l4, Object l5, Object l6, Object l7, Object[] rest) throws Exception
 			{
@@ -696,8 +727,8 @@ public class JSEnvironment {
 		});
 	} };
 	
-	final JSObject jsonObject = new JSObject(objectPrototype) { {
-		set("stringify", new JSFunction(functionPrototype) {
+	final JSObject jsonObject = new JSObject(this) { {
+		set("stringify", new JSFunction(JSEnvironment.this) {
 			@Override
 			public Object invoke(Object ths, int argc, Object l0, Object l1, Object l2, Object l3, Object l4, Object l5, Object l6, Object l7, Object[] rest) throws Exception
 			{
@@ -705,7 +736,7 @@ public class JSEnvironment {
 			}
 		});
 		
-		set("parse", new JSFunction(functionPrototype) {
+		set("parse", new JSFunction(JSEnvironment.this) {
 			@Override
 			public Object invoke(Object ths, int argc, Object l0, Object l1, Object l2, Object l3, Object l4, Object l5, Object l6, Object l7, Object[] rest) throws Exception
 			{
@@ -714,7 +745,7 @@ public class JSEnvironment {
 		});
 	} };
 	
-	final JSFunction objectConstructor = new JSFunction(functionPrototype) {
+	final JSFunction objectConstructor = new JSFunction(JSEnvironment.this) {
 		@Override
 		public Object invoke(Object ths, int argc, Object l0, Object l1, Object l2, Object l3, Object l4, Object l5, Object l6, Object l7, Object[] rest) throws Exception {
 			return JSUtils.asJSObject(JSEnvironment.this, l0);
@@ -725,7 +756,7 @@ public class JSEnvironment {
 		}
 	};
 	
-	final JSFunction functionConstructor = new JSFunction(functionPrototype) {
+	final JSFunction functionConstructor = new JSFunction(JSEnvironment.this) {
 		@Override
 		public Object invoke(Object ths, int argc, Object l0, Object l1, Object l2, Object l3, Object l4, Object l5, Object l6, Object l7, Object[] rest) throws Exception {
 			throw new Exception("Function constructor not implemented.");
@@ -736,7 +767,7 @@ public class JSEnvironment {
 		}
 	};
 	
-	final JSFunction numberConstructor = new JSFunction(functionPrototype) {
+	final JSFunction numberConstructor = new JSFunction(JSEnvironment.this) {
 		@Override
 		public Object invoke(Object ths, int argc, Object l0, Object l1, Object l2, Object l3, Object l4, Object l5, Object l6, Object l7, Object[] rest) throws Exception {
 			return JSUtils.asNumber(l0);
@@ -747,7 +778,7 @@ public class JSEnvironment {
 		}
 	};
 	
-	final JSFunction arrayConstructor = new JSFunction(functionPrototype) {
+	final JSFunction arrayConstructor = new JSFunction(JSEnvironment.this) {
 		public Object instantiate(int argc, Object l0, Object l1, Object l2, Object l3, Object l4, Object l5, Object l6, Object l7, Object[] rest) throws Exception {
 			return invoke(null, argc, l0, l1, l2, l3, l4, l5, l6, l7, rest);
 		}
@@ -759,7 +790,7 @@ public class JSEnvironment {
 			// single-argument constructor
 			if (argc == 1) {
 				int length = (int) JSUtils.asNumber(l0);
-				JSArray arr = new JSArray(arrayPrototype, length);
+				JSArray arr = new JSArray(JSEnvironment.this, length);
 				for (int i = 0; i < length; i++)
 					arr.push(null);
 				return arr;
@@ -767,7 +798,7 @@ public class JSEnvironment {
 			
 			// literal declaration
 			Object[] arguments = JSUtils.arguments(argc, l0, l1, l2, l3, l4, l5, l6, l7, rest);
-			JSArray arr = new JSArray(arrayPrototype, arguments.length);
+			JSArray arr = new JSArray(JSEnvironment.this, arguments.length);
 			for (int i = 0; i < arguments.length; i++)
 				arr.push(arguments[i]);
 			return arr;
@@ -778,7 +809,7 @@ public class JSEnvironment {
 		}
 	};
 	
-	final JSFunction dateConstructor = new JSFunction(functionPrototype) {
+	final JSFunction dateConstructor = new JSFunction(JSEnvironment.this) {
 		@Override
 		public Object invoke(Object ths, int argc, Object l0, Object l1, Object l2, Object l3, Object l4, Object l5, Object l6, Object l7, Object[] rest) throws Exception {
 			long time = 0;
@@ -788,7 +819,7 @@ public class JSEnvironment {
 			
 			Calendar cal = Calendar.getInstance();
 			cal.setTime(new Date(time));
-			return new JSDate(getDatePrototype(), cal);
+			return new JSDate(JSEnvironment.this, cal);
 		}
 		
 		{
@@ -796,7 +827,7 @@ public class JSEnvironment {
 		}
 	};
 	
-	final JSFunction setTimeoutFunction = new JSFunction(functionPrototype) {
+	final JSFunction setTimeoutFunction = new JSFunction(JSEnvironment.this) {
 		@Override
 		public Object invoke(Object ths, int argc, Object l0, Object l1, Object l2, Object l3, Object l4, Object l5, Object l6, Object l7, Object[] rest)
 				throws Exception {
@@ -810,7 +841,7 @@ public class JSEnvironment {
 		}
 	};
 	
-	final JSFunction setIntervalFunction = new JSFunction(functionPrototype) {
+	final JSFunction setIntervalFunction = new JSFunction(JSEnvironment.this) {
 		@Override
 		public Object invoke(Object ths, int argc, Object l0, Object l1, Object l2, Object l3, Object l4, Object l5, Object l6, Object l7, Object[] rest)
 				throws Exception {
@@ -824,7 +855,7 @@ public class JSEnvironment {
 		}
 	};
 	
-	final JSFunction clearTimeoutFunction = new JSFunction(functionPrototype) {
+	final JSFunction clearTimeoutFunction = new JSFunction(JSEnvironment.this) {
 		@Override
 		public Object invoke(Object ths, int argc, Object l0, Object l1, Object l2, Object l3, Object l4, Object l5, Object l6, Object l7, Object[] rest)
 				throws Exception {
@@ -833,7 +864,7 @@ public class JSEnvironment {
 		}
 	};
 	
-	final JSFunction clearIntervalFunction = new JSFunction(functionPrototype) {
+	final JSFunction clearIntervalFunction = new JSFunction(JSEnvironment.this) {
 		@Override
 		public Object invoke(Object ths, int argc, Object l0, Object l1, Object l2, Object l3, Object l4, Object l5, Object l6, Object l7, Object[] rest)
 				throws Exception {
@@ -876,6 +907,10 @@ public class JSEnvironment {
 	
 	public JSObject getDatePrototype() {
 		return datePrototype;
+	}
+	
+	public JSNull getNullObject() {
+		return nullObject;
 	}
 	
 	/*

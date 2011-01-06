@@ -257,7 +257,7 @@
 
 ; asm boxing/unboxing
 
-(defn asm-compile-autobox [expr ci ast mw]
+(defn asm-compile-autobox [expr ci ast mw & [dup-primitive]]
   (if (isa? (first expr) :mug.ast/num-literal)
     (let [[_ ln value] expr]
       ;(println "Num literal optimization.")
@@ -273,11 +273,17 @@
       nil)
     (asm-compile expr ci ast mw)
 	  (case type
-	    :boolean (doto mw
-				(.visitMethodInsn Opcodes/INVOKESPECIAL, "java/lang/Boolean", "<init>", (sig-call sig-boolean sig-void)))
-	    :number (doto mw
-				(.visitMethodInsn Opcodes/INVOKESPECIAL, "java/lang/Double", "<init>", (sig-call sig-double sig-void)))
-      nil))))
+	    :boolean (do
+        (when dup-primitive
+          (.visitInsn mw Opcodes/DUP_X2))
+				(.visitMethodInsn mw Opcodes/INVOKESPECIAL, "java/lang/Boolean", "<init>", (sig-call sig-boolean sig-void)))
+	    :number (do
+        (when dup-primitive
+          (.visitInsn mw Opcodes/DUP2_X2))
+				(.visitMethodInsn mw Opcodes/INVOKESPECIAL, "java/lang/Double", "<init>", (sig-call sig-double sig-void)))
+      (do
+        (when dup-primitive
+          (.visitInsn mw Opcodes/DUP_X2)))))))
 
 ; as-* conversion asm
 
@@ -289,23 +295,20 @@
 	      (.visitTypeInsn mw Opcodes/NEW qn-js-boolean)
 			  (.visitInsn mw Opcodes/DUP)
         (asm-toplevel ci ast mw)
-        (.visitMethodInsn mw Opcodes/INVOKEVIRTUAL, qn-js-toplevel, "getBooleanPrototype", (sig-call (sig-obj qn-js-object)))
         (asm-compile expr ci ast mw)
-        (.visitMethodInsn mw Opcodes/INVOKESPECIAL, qn-js-boolean, "<init>", (sig-call (sig-obj qn-js-object) sig-boolean sig-void)))
+        (.visitMethodInsn mw Opcodes/INVOKESPECIAL, qn-js-boolean, "<init>", (sig-call (sig-obj qn-js-toplevel) sig-boolean sig-void)))
 	    :number (do
 	      (.visitTypeInsn mw Opcodes/NEW qn-js-number)
 			  (.visitInsn mw Opcodes/DUP)
         (asm-toplevel ci ast mw)
-        (.visitMethodInsn mw Opcodes/INVOKEVIRTUAL, qn-js-toplevel, "getNumberPrototype", (sig-call (sig-obj qn-js-object)))
         (asm-compile expr ci ast mw)
-        (.visitMethodInsn mw Opcodes/INVOKESPECIAL, qn-js-number, "<init>", (sig-call (sig-obj qn-js-object) sig-double sig-void)))
+        (.visitMethodInsn mw Opcodes/INVOKESPECIAL, qn-js-number, "<init>", (sig-call (sig-obj qn-js-toplevel) sig-double sig-void)))
 	    "class java.lang.String" (do
 	      (.visitTypeInsn mw Opcodes/NEW qn-js-string)
 			  (.visitInsn mw Opcodes/DUP)
         (asm-toplevel ci ast mw)
-        (.visitMethodInsn mw Opcodes/INVOKEVIRTUAL, qn-js-toplevel, "getStringPrototype", (sig-call (sig-obj qn-js-object)))
         (asm-compile expr ci ast mw)
-        (.visitMethodInsn mw Opcodes/INVOKESPECIAL, qn-js-string, "<init>", (sig-call (sig-obj qn-js-object) (sig-obj qn-string) sig-void)))
+        (.visitMethodInsn mw Opcodes/INVOKESPECIAL, qn-js-string, "<init>", (sig-call (sig-obj qn-js-toplevel) (sig-obj qn-string) sig-void)))
 	    (do
         (asm-toplevel ci ast mw)
 	      (asm-compile expr ci ast mw)
@@ -377,7 +380,8 @@
 ;
 
 (defmethod asm-compile :mug.ast/null-literal [[_ ln] ci ast mw]
-  (.visitFieldInsn mw Opcodes/GETSTATIC, qn-js-null, "NULL", (sig-obj qn-js-null)))
+  (asm-toplevel ci ast mw)
+  (.visitMethodInsn mw Opcodes/INVOKEVIRTUAL, qn-js-toplevel, "getNullObject", (sig-call (sig-obj qn-js-null))))
 
 (defmethod asm-compile :mug.ast/boolean-literal [[_ ln value] ci ast mw]
   (if value (.visitInsn mw Opcodes/ICONST_1) (.visitInsn mw Opcodes/ICONST_0))) 
@@ -398,19 +402,17 @@
 	(.visitTypeInsn mw Opcodes/NEW qn-js-regexp)
 	(.visitInsn mw Opcodes/DUP)
   (asm-toplevel ci ast mw)
-  (.visitMethodInsn mw Opcodes/INVOKEVIRTUAL, qn-js-toplevel, "getRegExpPrototype", (sig-call (sig-obj qn-js-object)))
 	(.visitFieldInsn mw Opcodes/GETSTATIC (qn-js-constants) (ident-regex (index-of (ast-regexps ast) [expr flags])) (sig-obj qn-pattern))
   (.visitLdcInsn mw flags)
 	(.visitMethodInsn mw Opcodes/INVOKESTATIC, qn-js-utils, "isPatternGlobal", (sig-call (sig-obj qn-string) sig-boolean))
-	(.visitMethodInsn mw Opcodes/INVOKESPECIAL, qn-js-regexp, "<init>", (sig-call (sig-obj qn-js-object) (sig-obj qn-pattern) sig-boolean sig-void)))
+	(.visitMethodInsn mw Opcodes/INVOKESPECIAL, qn-js-regexp, "<init>", (sig-call (sig-obj qn-js-toplevel) (sig-obj qn-pattern) sig-boolean sig-void)))
 
 (defmethod asm-compile :mug.ast/array-literal [[_ ln exprs] ci ast mw]
 	(.visitTypeInsn mw Opcodes/NEW qn-js-array)
 	(.visitInsn mw Opcodes/DUP)
   (asm-toplevel ci ast mw)
-  (.visitMethodInsn mw Opcodes/INVOKEVIRTUAL, qn-js-toplevel, "getArrayPrototype", (sig-call (sig-obj qn-js-object)))
   (.visitLdcInsn mw (count exprs))
-	(.visitMethodInsn mw Opcodes/INVOKESPECIAL, qn-js-array, "<init>", (sig-call (sig-obj qn-js-object) sig-integer sig-void))
+	(.visitMethodInsn mw Opcodes/INVOKESPECIAL, qn-js-array, "<init>", (sig-call (sig-obj qn-js-toplevel) sig-integer sig-void))
 	(.visitInsn mw Opcodes/DUP)
   (asm-compile-load-int (count exprs) mw)
   (.visitTypeInsn mw Opcodes/ANEWARRAY, qn-object)
@@ -426,8 +428,7 @@
 	(.visitInsn mw Opcodes/DUP)
   ; object prototype
   (asm-toplevel ci ast mw)
-  (.visitMethodInsn mw Opcodes/INVOKEVIRTUAL, qn-js-toplevel, "getObjectPrototype", (sig-call (sig-obj qn-js-object)))
-	(.visitMethodInsn mw Opcodes/INVOKESPECIAL, qn-js-object, "<init>", (sig-call (sig-obj qn-js-object) sig-void))
+	(.visitMethodInsn mw Opcodes/INVOKESPECIAL, qn-js-object, "<init>", (sig-call (sig-obj qn-js-toplevel) sig-void))
 	(doseq [[k v] props]
     (.visitInsn mw Opcodes/DUP)
     (.visitLdcInsn mw k)
@@ -448,7 +449,6 @@
 		(.visitInsn mw Opcodes/DUP)
     ; function prototype
     (asm-toplevel ci ast mw)
-    (.visitMethodInsn mw Opcodes/INVOKEVIRTUAL, qn-js-toplevel, "getFunctionPrototype", (sig-call (sig-obj qn-js-object)))
     ; load scopes
     (doseq [parent ((ast-context-hierarchy ast) pci)]
       (if (= parent ci)
@@ -712,14 +712,8 @@
 	(.visitMethodInsn mw Opcodes/INVOKEVIRTUAL, qn-js-object, "instantiate", sig-instantiate))
 
 ;TODO
-; so the big problem with these assigns
-; is that they autobox then duplicate
-; when really they should be preserving the type
-; of whatever is put into them, and autoboxing the
-; duplicate. this may be solved by having the
-; set_ functions return their values.
-; anyway, fix this,
-; and adjust (compile-type) accordingly
+; we should be able to compile assignments without autoboxing the resulting
+; value, so that we can gain from type analysis
 
 (defmethod asm-compile :mug.ast/scope-assign-expr [[_ ln value expr] ci ast mw]
   (asm-compile-autobox expr ci ast mw)

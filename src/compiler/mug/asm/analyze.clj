@@ -325,7 +325,7 @@
   (sig-call sig-void))
 (defmethod sig-context-init :mug.ast/closure-context [ci ast] 
   (apply sig-call (concat
-    [(sig-obj qn-js-object)]
+    [(sig-obj qn-js-toplevel)]
     (vec (map #(sig-obj (qn-js-scope %)) ((ast-context-hierarchy ast) ci)))
     [sig-void])))  
 

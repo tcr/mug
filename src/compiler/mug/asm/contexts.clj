@@ -29,7 +29,7 @@
 		(.visitCode mw)
 		(.visitVarInsn mw Opcodes/ALOAD, 0)
     (.visitVarInsn mw Opcodes/ALOAD, 1)
-		(.visitMethodInsn mw Opcodes/INVOKESPECIAL, qn-js-function, "<init>", (sig-call (sig-obj qn-js-object) sig-void))
+		(.visitMethodInsn mw Opcodes/INVOKESPECIAL, qn-js-function, "<init>", (sig-call (sig-obj qn-js-toplevel) sig-void))
  
     (doseq [[i parent] (index ((ast-context-hierarchy ast) ci))]
       (.visitVarInsn mw Opcodes/ALOAD, 0)

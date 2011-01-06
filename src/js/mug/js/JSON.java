@@ -20,13 +20,13 @@ public class JSON {
 			return arg;
 		else if (arg instanceof List) {
 			List list = (List) arg;
-			JSArray a = new JSArray(env.getArrayPrototype(), list.size());
+			JSArray a = new JSArray(env, list.size());
 			for (Object item : ((List) arg).toArray())
 				a.push(toJSValue(env, item));
 			return a;
 		} else if (arg instanceof Map) {
 			Map map = (Map) arg;
-			JSObject obj = new JSObject(env.getObjectPrototype());
+			JSObject obj = new JSObject(env);
 			for (Object key : map.keySet())
 				obj.set((String) key, toJSValue(env, map.get(key)));
 			return obj;

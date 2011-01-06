@@ -63,8 +63,7 @@
   (if (= x 0)
     (qn-js-scriptscope)
     (str @pkg-compiled "scope$" x)))
-
-;;;[TODO] these should be "sig-void", "sig-double", etc.
+	
 (def qn-object "java/lang/Object")
 (def qn-string "java/lang/String")
 (def qn-exception "java/lang/Exception")

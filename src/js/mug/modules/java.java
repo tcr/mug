@@ -20,18 +20,18 @@ import mug.js.JSEnvironment;
 import mug.js.JSUtils;
 
 public class java extends JSModule {
-	final JSEnvironment top = new JSEnvironment();
+	final JSEnvironment envv = new JSEnvironment();
 	
-	JSFunction _import = new JSFunction (top.getFunctionPrototype()) {
+	JSFunction _import = new JSFunction(envv) {		
 		@Override
 		public Object invoke(Object ths, int argc, Object l0, Object l1, Object l2, Object l3, Object l4, Object l5, Object l6, Object l7, Object[] rest) throws Exception
 		{
 			String qn = JSUtils.asString(l0);
-			return new ReflectedJSJavaClass(top, Class.forName(qn));
+			return new ReflectedJSJavaClass(env, Class.forName(qn));
 		}
 	};
 	
-	JSFunction _Proxy = new JSFunction (top.getFunctionPrototype()) {
+	JSFunction _Proxy = new JSFunction(envv) {
 		@Override
 		public Object invoke(Object ths, int argc, Object l0, Object l1, Object l2, Object l3, Object l4, Object l5, Object l6, Object l7, Object[] rest) throws Exception
 		{
@@ -40,20 +40,20 @@ public class java extends JSModule {
 			final JSObject obj = (JSObject) l1;
 			Class javaClass = Class.forName(qn);
 			
-			return new ReflectedJSJavaObject(top.getObjectPrototype(), Proxy.newProxyInstance(javaClass.getClassLoader(),
-					new Class[] { javaClass },
-					new InvocationHandler() {
-						@Override
-						public Object invoke(Object ths, Method method, Object[] args) throws Throwable {
-							JSObject meth = (JSObject) obj.get(method.getName());
-							return coerceJavaType(meth.invoke(ths, args), method.getReturnType());
-						}
-					}));
+			return new ReflectedJSJavaObject(env, Proxy.newProxyInstance(javaClass.getClassLoader(),
+				new Class[] { javaClass },
+				new InvocationHandler() {
+					@Override
+					public Object invoke(Object ths, Method method, Object[] args) throws Throwable {
+						JSObject meth = (JSObject) obj.get(method.getName());
+						return coerceJavaType(meth.invoke(ths, args), method.getReturnType());
+					}
+				}));
 		}
 	};
 	
 	// exports library
-	final JSObject exports = new JSObject(top.getObjectPrototype()) { {
+	final JSObject exports = new JSObject(envv) { {
 		set("import", _import);
 		set("Proxy", _Proxy);
 	} };
@@ -75,14 +75,14 @@ public class java extends JSModule {
 			return javaObject;
 		}
 		
-		public ReflectedJSJavaObject(JSObject proto, Object javaObject) {
-			super(null);
+		public ReflectedJSJavaObject(JSEnvironment env, Object javaObject) {
+			super(env);
 			this.javaObject = javaObject;	
 			
 			for (Method m : javaObject.getClass().getMethods()) {
 				if (!Modifier.isPublic(m.getModifiers()) || Modifier.isStatic(m.getModifiers()))
 					continue;
-				this.set(m.getName(), new ReflectedJSJavaMethod(proto, m.getName()));
+				this.set(m.getName(), new ReflectedJSJavaMethod(env, m.getName()));
 			}
 		}
 		
@@ -115,15 +115,15 @@ public class java extends JSModule {
 			return javaClass;
 		}
 		
-		public ReflectedJSJavaClass(JSEnvironment top, Class javaClass) {
-			super(top.getFunctionPrototype());
-			this.top = top;
+		public ReflectedJSJavaClass(JSEnvironment env, Class javaClass) {
+			super(env);
+			this.top = env;
 			this.javaClass = javaClass;
 			
 			for (Method m : javaClass.getMethods()) {
 				if (!Modifier.isPublic(m.getModifiers()) || !Modifier.isStatic(m.getModifiers()))
 					continue;
-				this.set(m.getName(), new ReflectedJSJavaMethod(top.getFunctionPrototype(), m.getName()));
+				this.set(m.getName(), new ReflectedJSJavaMethod(env, m.getName()));
 			}
 		}
 		
@@ -144,7 +144,7 @@ public class java extends JSModule {
 				if (!isSupportedFunction(args, m.getParameterTypes()))
 					continue;
 				// we can call method
-				return new ReflectedJSJavaObject(top.getObjectPrototype(), m.newInstance(args));
+				return new ReflectedJSJavaObject(env, m.newInstance(args));
 			}
 			return null;
 		}
@@ -173,8 +173,8 @@ public class java extends JSModule {
 	public class ReflectedJSJavaMethod extends JSFunction {
 		public String javaName;
 		
-		public ReflectedJSJavaMethod(JSObject proto, String name) {
-			super(proto);
+		public ReflectedJSJavaMethod(JSEnvironment env, String name) {
+			super(env);
 			this.javaName = name;
 		}
 
@@ -196,7 +196,7 @@ public class java extends JSModule {
 				if (!isSupportedFunction(args, m.getParameterTypes()))
 					continue;
 				// we can call method
-				return coerceJSTypes(top, m.invoke(prnt, args));
+				return coerceJSTypes(env, m.invoke(prnt, args));
 			}
 			
 			StringBuilder primtypes = new StringBuilder();
@@ -231,7 +231,7 @@ public class java extends JSModule {
 	JSJavaObject coerceJSJavaObject(JSEnvironment env, Object arg) {
 		if (arg != null && arg instanceof Class)
 			return new ReflectedJSJavaClass(env, (Class) arg);
-		return new ReflectedJSJavaObject(env.getObjectPrototype(), arg);
+		return new ReflectedJSJavaObject(env, arg);
 	}
 	
 	static Object coerceJavaType(Object arg, Class type) {
@@ -275,7 +275,7 @@ public class java extends JSModule {
 			arg instanceof JSObject)
 			return arg;
 		if (arg.getClass().isArray()) {
-			JSArray newArr = new JSArray(top.getArrayPrototype(), Array.getLength(arg));
+			JSArray newArr = new JSArray(env, Array.getLength(arg));
 			for (int i = 0; i < Array.getLength(arg); i++)
 				newArr.push(Array.get(arg, i));
 			return newArr;
