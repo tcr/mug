@@ -8,7 +8,7 @@ Mug statically compiles JavaScript into JVM .class files.
     $ git clone git://github.com/timcameronryan/mug.git mug
     $ cd mug/test
     $ java -cp ../lib/mug.jar mug.Compiler hello-world.js # compile
-    $ java -cp ../lib/mug-js.jar:bin mug.modules.hello_world # run
+    $ java -cp ../lib/mug-js.jar:bin hello_world # run
     Hello world!
 
 Using Mug
@@ -16,26 +16,30 @@ Using Mug
 
 Compile modules with mug.jar:
 
-	java -cp mug.jar mug.Compiler module.js [module2.js module3.js ...]
+	java -cp mug.jar mug.Compiler module.js [some/path/to/module2.js module3.js ...]
 
+    Mug JavaScript Compiler for JVM
     Options
-      --output, -o <arg>  Output directory               [default bin/]
-      --print, -p         Print AST directory to stdout                
-      --jar, -j <arg>     Output contents as jar file   
+      --output, -o <arg>  Output directory                      [default bin/]
+      --print             Print AST directory to stdout                       
+      --jar, -j <arg>     Output contents as jar file                         
+      --package <arg>     Java package to compile modules into  [default ]    
 	
-Resulting class files are in the namespace mug.modules.[module name]
+Resulting class files are created in the output directory using the given package.
+Modules in folders will be compiled into subpackages of the main folder.
+ 
 Include these and mug-js.jar to run your module:
 
-    java -cp mug-js.jar:bin mug.modules.[module name]
+    java -cp mug-js.jar:bin your.package.module_name
 
 You can also load a compiled module programmatically in Java. It returns
 the "exports" object:
 
     import mug.Modules;
     ...
-    JSObject fs = Modules.getModule("fs").load(); // loads module "mug.modules.fs"
+    JSObject fs = mug.modules.fs.load(); // full module package .load
     String id = JSUtils.asString(fs.get("id")); // JSUtils has functions to coerce types
-    ((JSFunction) fs.get("open")).invoke(null, "somefile.txt"); // use invoke() to call functions
+    ((JSFunction) fs.get("open")).invoke(null, "somefile.txt"); // use invoke(thsObj, args...) to call functions
 
 To interface JavaScript with Java in Mug, require the `java` module.
 

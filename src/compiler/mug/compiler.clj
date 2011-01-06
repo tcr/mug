@@ -54,55 +54,58 @@
   (with-command-line args
     "Mug JavaScript Compiler for JVM"
     [[output o "Output directory" "bin/"]
-     [print? p? "Print AST directory to stdout"]
+     [print? "Print AST directory to stdout"]
      [jar j "Output contents as jar file" nil]
      [package "Java package to compile modules into" ""]
      paths]
-   
-    ; filter files list for nonexisting files, directories
-    (let [paths (apply concat (map (fn [path]
-            (let [file (new File path)]
-				      ; check file exists
-					    (when (not (.exists file))
-					      (throw (new Exception (str "File not found \"" path "\"."))))
-              ; folders or files
-              (if (.isDirectory file)
-                (filter #(not (nil? (re-find #"^(.*)\.js$" %))) (map #(.getPath %) (file-seq file)))
-                [path]))) paths))
-          output (.getPath (doto (File. output) .mkdirs))]
-      
-      ; delete jar
-      (when (and (not print?) jar)
-        (println "###TODO: auto-delete jar..."))
     
-	    ; iterate files
-	    (doseq [path paths]
-		    (let [file (new File path)
-              modulename (replace-str "-" "_" (second (re-find #"^(.*)\.js$" path)))
-		          qn (str (if (empty? package) "" (str (replace-str "." "/" package) "/")) modulename)]		     
-		      ; parse
-		      (println (str "Parsing \"" path "\"...\n"))
-		      (let [ast (parse-js-ast (slurp path))]
-				    (if print?
-	            ; print
-				      (pprint ast)
-	            ; compile
-	            (if (nil? jar)
-	              (do
-                  ; delete all files in this qualified namespace
-                  (let [parent (.getParentFile (File. (str output "/" qn)))]
-                    (when (.exists parent)
-                      (doseq [f (map #(new File (str (.getPath parent) "/" %)) (filter #(re-matches
-                                  (re-pattern (str "\\Q" modulename "\\E" ".*\\.class")) %)
-                                  (.list parent)))]
-                        (try (.delete f) (catch Exception e)))))
-                  
-	                (compile-js ast qn path
-                    (fn [path bytes] (write-file-mkdirs (str output "/" path) bytes))))
-	              (do
-	                (let [stream (open-jar (str output "/" jar))
-	                      writer (fn [path bytes] (write-file-jar stream path bytes))]
-	                  (compile-js ast qn path writer)
-	                  (.close stream))))))))
-     
-      (println (str "Done. Output is in \"" output "/\" directory.\n")))))
+    (if (empty? paths)
+      (println "No arguments specified. Run mug with --help or -h to see options.")
+    
+	    ; filter files list for nonexisting files, directories
+	    (let [paths (apply concat (map (fn [path]
+	            (let [file (new File path)]
+					      ; check file exists
+						    (when (not (.exists file))
+						      (throw (new Exception (str "File not found \"" path "\"."))))
+	              ; folders or files
+	              (if (.isDirectory file)
+	                (filter #(not (nil? (re-find #"^(.*)\.js$" %))) (map #(.getPath %) (file-seq file)))
+	                [path]))) paths))
+	          output (.getPath (doto (File. output) .mkdirs))]
+	      
+	      ; delete jar
+	      (when (and (not print?) jar)
+	        (println "###TODO: auto-delete jar..."))
+	    
+		    ; iterate files
+		    (doseq [path paths]
+			    (let [file (new File path)
+	              modulename (replace-str "-" "_" (second (re-find #"^(.*)\.js$" path)))
+			          qn (str (if (empty? package) "" (str (replace-str "." "/" package) "/")) modulename)]		     
+			      ; parse
+			      (println (str "Parsing \"" path "\"...\n"))
+			      (let [ast (parse-js-ast (slurp path))]
+					    (if print?
+		            ; print
+					      (pprint ast)
+		            ; compile
+		            (if (nil? jar)
+		              (do
+	                  ; delete all files in this qualified namespace
+	                  (let [parent (.getParentFile (File. (str output "/" qn)))]
+	                    (when (.exists parent)
+	                      (doseq [f (map #(new File (str (.getPath parent) "/" %)) (filter #(re-matches
+	                                  (re-pattern (str "\\Q" modulename "\\E" ".*\\.class")) %)
+	                                  (.list parent)))]
+	                        (try (.delete f) (catch Exception e)))))
+	                  
+		                (compile-js ast qn path
+	                    (fn [path bytes] (write-file-mkdirs (str output "/" path) bytes))))
+		              (do
+		                (let [stream (open-jar (str output "/" jar))
+		                      writer (fn [path bytes] (write-file-jar stream path bytes))]
+		                  (compile-js ast qn path writer)
+		                  (.close stream))))))))
+	     
+	      (println (str "Done. Output is in \"" output "/\" directory.\n"))))))

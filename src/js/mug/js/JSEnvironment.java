@@ -8,12 +8,8 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
-import java.util.UUID;
-import java.util.regex.MatchResult;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-
-import mug.Modules;
 
 public class JSEnvironment {
 	/*
@@ -559,9 +555,9 @@ public class JSEnvironment {
 		String[] modulepath;
 		{
 			if (System.getProperty("mug.require.path") == null)
-				modulepath = new String[] { ".", "mug.modules" };
+				modulepath = new String[] { ".", "mug.modules", "" };
 			else
-				modulepath = System.getProperty("mug.module.path").split(":");
+				modulepath = (System.getProperty("mug.module.path") + ":").split(":");
 		}
 		
 		@Override
@@ -575,11 +571,10 @@ public class JSEnvironment {
 			// iterating through module paths
 			for (String loc : modulepath) {
 				try {
-					if (loc.equals("."))
-						loc = callingPath;
-					String search = loc + "." + moduleName;
-					//System.out.println(search);
-					Class mdClass = Modules.class.getClassLoader().loadClass(search);
+					String search = (loc.equals("") ? "" :
+						(loc.equals(".") ? callingPath + "." : loc + ".")) + moduleName;
+					// System.out.println(search);
+					Class mdClass = JSModule.class.getClassLoader().loadClass(search);
 					if (!JSModule.class.isAssignableFrom(mdClass))
 						continue;
 					JSModule module = (JSModule) mdClass.newInstance();
