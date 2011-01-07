@@ -41,6 +41,7 @@
     <target name="mug_js_jar">
         <jar destfile="lib/mug-js.jar" level="9">
             <fileset dir="bin/" includes="mug/modules/*.class"/>
+            <fileset dir="bin/" includes="mug/js/java/*.class"/>
             <fileset dir="bin/" includes="mug/js/*.class"/>
         	<fileset dir="bin/" includes="mug/*.class"/>
             <zipfileset src="json_simple-1.1.jar" excludes="META-INF/*.SF" />

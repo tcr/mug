@@ -81,6 +81,7 @@
 		    ; iterate files
 		    (doseq [path paths]
 			    (let [file (new File path)
+                path (.substring (.getCanonicalPath file) (+ (count (.getCanonicalPath (File. "."))) 1))
 	              modulename (replace-str "-" "_" (second (re-find #"^(.*)\.js$" path)))
 			          qn (str (if (empty? package) "" (str (replace-str "." "/" package) "/")) modulename)]		     
 			      ; parse

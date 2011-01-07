@@ -47,6 +47,7 @@
 (def qn-js-module (str pkg-mug "JSModule"))
 (def qn-js-exception (str pkg-mug "JSException"))
 (def qn-js-value-exception (str pkg-mug "JSValueException"))
+(def qn-js-timers (str pkg-mug "JSTimers"))
 
 (def qn-js-atoms (str pkg-mug "JSAtoms"))
 (defn qn-js-constants [] (str @pkg-compiled "constants"))

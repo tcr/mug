@@ -832,7 +832,7 @@ public class JSEnvironment {
 			Object[] passedArgs = new Object[Math.max(arguments.length - 2, 0)];
 			if (arguments.length > 2)
 				System.arraycopy(arguments, 2, passedArgs, 0, arguments.length - 2);
-			return setTimeout(callback, passedArgs, milliseconds);
+			return JSTimers.setTimeout(callback, passedArgs, milliseconds);
 		}
 	};
 	
@@ -846,7 +846,7 @@ public class JSEnvironment {
 			Object[] passedArgs = new Object[Math.max(arguments.length - 2, 0)];
 			if (arguments.length > 2)
 				System.arraycopy(arguments, 2, passedArgs, 0, arguments.length - 2);
-			return setInterval(callback, passedArgs, milliseconds);
+			return JSTimers.setInterval(callback, passedArgs, milliseconds);
 		}
 	};
 	
@@ -854,7 +854,7 @@ public class JSEnvironment {
 		@Override
 		public Object invoke(Object ths, int argc, Object l0, Object l1, Object l2, Object l3, Object l4, Object l5, Object l6, Object l7, Object[] rest)
 				throws Exception {
-			clearTimeout((long) JSUtils.asNumber(l0));
+			JSTimers.clearTimeout((long) JSUtils.asNumber(l0));
 			return null;
 		}
 	};
@@ -863,7 +863,7 @@ public class JSEnvironment {
 		@Override
 		public Object invoke(Object ths, int argc, Object l0, Object l1, Object l2, Object l3, Object l4, Object l5, Object l6, Object l7, Object[] rest)
 				throws Exception {
-			clearInterval((long) JSUtils.asNumber(l0));
+			JSTimers.clearInterval((long) JSUtils.asNumber(l0));
 			return null;
 		}
 	};
@@ -983,90 +983,4 @@ public class JSEnvironment {
 	Object _clearInterval = clearIntervalFunction;
 	public Object get_clearInterval() { return _clearInterval; }
 	public void clear_clearInterval(Object value) { _clearInterval = value; }
-	
-	/*
-	 * timers
-	 */
-	
-	static class JSCallback {
-		static long idCounter = 0;
-		
-		JSObject fn;
-		boolean repeating;
-		long delay;
-		long id;
-		boolean enabled = true;
-		Object[] args;
-		
-		public JSCallback(JSObject fn, Object[] args, boolean repeating, long delay) {
-			this.fn = fn;
-			this.args = args;
-			this.repeating = repeating;
-			this.delay = delay;
-			this.id = idCounter++;
-		}
-	}
-	
-	HashMap<Long, JSCallback> ids = new HashMap();
-	HashMap<Long, ArrayList<JSCallback>> timeouts = new HashMap();
-	ArrayList<Long> timeoutTimes = new ArrayList();
-	
-	long setTimeout(JSObject fn, Object[] args, long milliseconds) {
-		Long time = System.currentTimeMillis() + milliseconds;
-		timeoutTimes.add(time);
-		Collections.sort(timeoutTimes);
-		if (!timeouts.containsKey(time))
-			timeouts.put(time, new ArrayList());
-		JSCallback callback = new JSCallback(fn, args, false, milliseconds);
-		timeouts.get(time).add(callback);
-		ids.put(callback.id, callback);
-		return callback.id;
-	}
-	
-	void clearTimeout(long id) {
-		if (ids.containsKey(id))
-			ids.get(id).enabled = false;
-	}
-	
-	long setInterval(JSObject fn, Object[] args, long milliseconds) {
-		Long time = System.currentTimeMillis() + milliseconds;
-		timeoutTimes.add(time);
-		Collections.sort(timeoutTimes);
-		if (!timeouts.containsKey(time))
-			timeouts.put(time, new ArrayList<JSCallback>());
-		JSCallback callback = new JSCallback(fn, args, true, milliseconds);
-		timeouts.get(time).add(callback);
-		ids.put(callback.id, callback);
-		return callback.id;	
-	}
-	
-	void clearInterval(long id) {
-		if (ids.containsKey(id))
-			ids.get(id).enabled = false;
-	}
-	
-	public void waitForTimers() throws Exception {
-		// wait for us to run out of timeouts and intervals
-		while (timeoutTimes.size() > 0) {
-			Long time = timeoutTimes.get(0);
-			long delay = timeoutTimes.get(0) - System.currentTimeMillis();
-			if (delay > 0)
-				try {
-					Thread.sleep(delay);
-				} catch (InterruptedException e) {
-				}
-			timeoutTimes.remove(0);
-			
-			// run callback
-			ArrayList<JSCallback> callbacks = timeouts.get(time);
-			for (JSCallback callback : callbacks) {
-				if (callback.enabled)
-					callback.fn.invoke(null, callback.args);
-				ids.remove(callback.id);
-				if (callback.repeating)
-					setInterval(callback.fn, callback.args, callback.delay);
-			}
-			callbacks.remove(0);
-		}
-	}
 }

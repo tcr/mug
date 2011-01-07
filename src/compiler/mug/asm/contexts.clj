@@ -76,10 +76,6 @@
 		(doseq [stat stats]
       (when (not (isa? (first stat) :mug.ast/defn-stat))
 			  (asm-compile stat ci ast mw)))
-  
-    ; wait for timeouts
-    (asm-toplevel ci ast mw)
-    (.visitMethodInsn mw Opcodes/INVOKEVIRTUAL, qn-js-toplevel, "waitForTimers", (sig-call sig-void))
 		
   	; return "exports" object
 		(doto mw
@@ -196,11 +192,17 @@
     (let [mw (.visitMethod cw (+ Opcodes/ACC_PUBLIC Opcodes/ACC_STATIC), "main", "([Ljava/lang/String;)V", nil, (into-array ["java/lang/Exception"]))]
       (doto mw
         (.visitCode)
+        
+        ; run code
         (.visitTypeInsn Opcodes/NEW, (qn-js-script))
         (.visitInsn Opcodes/DUP)
         (.visitMethodInsn Opcodes/INVOKESPECIAL, (qn-js-script), "<init>", "()V")
         (.visitMethodInsn Opcodes/INVOKEVIRTUAL, (qn-js-script), "load", (sig-call (sig-obj qn-js-object)))
         (.visitInsn Opcodes/POP)
+        
+		    ; wait for timeouts
+		    (.visitMethodInsn Opcodes/INVOKESTATIC, qn-js-timers, "yieldForTimers", (sig-call sig-void))
+    
         (.visitInsn Opcodes/RETURN)
         (.visitMaxs 1, 1)
         (.visitEnd)))
