@@ -551,6 +551,18 @@ public class JSEnvironment {
 	 * objects/constructors
 	 */	
 	
+	static class CustomSecurityManager extends SecurityManager {
+		public String getCallerClassName(int callStackDepth) {
+			return getClassContext()[callStackDepth].getName();
+		}
+	}
+
+	private final static CustomSecurityManager securityManager = new CustomSecurityManager();
+
+	public String getCallerClassName(int callStackDepth) {
+		return securityManager.getCallerClassName(callStackDepth);
+	}
+	
 	final JSFunction requireFunction = new JSFunction(JSEnvironment.this) {
 		String[] modulepath;
 		{
@@ -565,8 +577,7 @@ public class JSEnvironment {
 			String moduleName = JSUtils.asString(l0).replaceAll("-", "_").replaceAll("\\.", "/");
 			
 			// get originating module
-			StackTraceElement[] elements = (new Throwable()).getStackTrace();
-			String callingPath = elements[elements.length - 1].getClassName().replaceFirst("\\.[a-zA-Z_]+$", "");
+			String callingPath = getCallerClassName(3).replaceFirst("\\.[a-zA-Z_]+$", "");
 			
 			// iterating through module paths
 			for (String loc : modulepath) {
@@ -967,6 +978,10 @@ public class JSEnvironment {
 	Object _Number = numberConstructor;
 	public Object get_Number() { return _Number; }
 	public void set_Number(Object value) { _Number = value; }
+	
+	Object _Error = null;
+	public Object get_Error() { return _Error; }
+	public void set_Error(Object value) { _Error = value; }
 	
 	Object _setTimeout = setTimeoutFunction;
 	public Object get_setTimeout() { return _setTimeout; }
