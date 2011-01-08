@@ -72,11 +72,8 @@
 	              (if (.isDirectory file)
 	                (filter #(not (nil? (re-find #"^(.*)\.js$" %))) (map #(.getPath %) (file-seq file)))
 	                [path]))) paths))
-	          output (.getPath (doto (File. output) .mkdirs))]
-	      
-	      ; delete jar
-	      (when (and (not print?) jar)
-	        (println "###TODO: auto-delete jar..."))
+	          output (.getPath (doto (File. output) .mkdirs))
+            stream (when jar (open-jar (str output "/" jar)))]
 	    
 		    ; iterate files
 		    (doseq [path paths]
@@ -86,7 +83,8 @@
 			          qn (str (if (empty? package) "" (str (replace-str "." "/" package) "/")) modulename)]		     
 			      ; parse
 			      (println (str "Parsing \"" path "\"...\n"))
-			      (let [ast (parse-js-ast (slurp path))]
+			      (let [script (slurp path)
+                  ast (parse-js-ast script)]
 					    (if print?
 		            ; print
 					      (pprint ast)
@@ -104,9 +102,12 @@
 		                (compile-js ast qn path
 	                    (fn [path bytes] (write-file-mkdirs (str output "/" path) bytes))))
 		              (do
-		                (let [stream (open-jar (str output "/" jar))
-		                      writer (fn [path bytes] (write-file-jar stream path bytes))]
-		                  (compile-js ast qn path writer)
-		                  (.close stream))))))))
+		                (compile-js ast qn path
+                      (fn [path bytes] (write-file-jar stream path bytes)))
+                    (write-file-jar stream (str qn ".js") (.getBytes script))))))))
+      
+        ; close jar streams
+        (when jar
+          (.close stream))
 	     
 	      (println (str "Done. Output is in \"" output "/\" directory.\n"))))))
