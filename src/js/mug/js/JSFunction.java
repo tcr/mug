@@ -2,7 +2,7 @@ package mug.js;
 
 import java.util.HashMap;
 
-public abstract class JSFunction extends JSObject {	
+public abstract class JSFunction extends JSObject implements Runnable {	
 	public JSFunction(JSEnvironment env) {
 		super(env, env.getFunctionPrototype());
 		set("prototype", new JSObject(env));
@@ -58,4 +58,15 @@ public abstract class JSFunction extends JSObject {
 
 	public abstract Object invoke(Object ths, int argc, Object l0, Object l1, Object l2, Object l3, Object l4, Object l5, Object l6, Object l7, Object[] rest)
 			throws Exception;
+	
+	/**
+	 * JSFunctions supports the Runnable interface.
+	 */
+	
+	public void run() {
+		try {
+			invoke(null);
+		} catch (Exception e) {
+		}
+	}
 }
