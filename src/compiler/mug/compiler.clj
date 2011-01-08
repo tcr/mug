@@ -95,7 +95,7 @@
 	                  (let [parent (.getParentFile (File. (str output "/" qn)))]
 	                    (when (.exists parent)
 	                      (doseq [f (map #(new File (str (.getPath parent) "/" %)) (filter #(re-matches
-	                                  (re-pattern (str "\\Q" modulename "\\E" ".*\\.class")) %)
+	                                  (re-pattern (str "\\Q" modulename "\\E" "(\\$.*)?\\.class")) %)
 	                                  (.list parent)))]
 	                        (try (.delete f) (catch Exception e)))))
 	                  
