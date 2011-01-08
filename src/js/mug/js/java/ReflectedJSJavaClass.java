@@ -32,6 +32,11 @@ public class ReflectedJSJavaClass extends JSFunction implements JSJavaObject {
 				continue;
 			this.set(m.getName(), new ReflectedJSJavaMethod(env, m.getName()));
 		}
+		for (Class c : javaClass.getClasses()) {
+			if (!Modifier.isPublic(c.getModifiers()))
+				continue;
+			this.set(c.getSimpleName(), new ReflectedJSJavaClass(env, c));
+		}
 	}
 	
 	@Override
