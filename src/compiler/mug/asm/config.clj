@@ -8,7 +8,7 @@
 ; optimizations
 ;
 
-(def *local-variable-opt* false)
+(def *local-variable-opt* true)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;
