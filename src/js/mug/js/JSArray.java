@@ -34,7 +34,7 @@ public class JSArray extends JSObject {
 	}
 	
 	// used by literal constructor
-	public void load(Object[] arr) {
+	public void load(Object[] arr) throws Exception {
 		for (int i = 0; i < arr.length; i++)
 			set(i, arr[i]);
 	}
@@ -49,7 +49,7 @@ public class JSArray extends JSObject {
 	
 	ArrayList<Object> list;
 	
-	public Object get(String key) {
+	public Object get(String key) throws Exception {
 		// length property
 		if (key.equals("length"))
 			return list.size();
@@ -65,11 +65,11 @@ public class JSArray extends JSObject {
 		return super.get(key);
 	}
 	
-	public Object get(int index) {
+	public Object get(int index) throws Exception {
 		return list.get(index);
 	}
 	
-	public Object get(Object key) {
+	public Object get(Object key) throws Exception {
 		if (key instanceof JSObject)
 			key = ((JSObject) key).valueOf();
 		
@@ -85,7 +85,7 @@ public class JSArray extends JSObject {
 		return get(JSUtils.asString(key));
 	}
 	
-	public void set(String key, Object value) {
+	public void set(String key, Object value) throws Exception {
 		// length property
 		if (key.equals("length")) {
 			double dbl = JSUtils.asNumber(value);
@@ -112,13 +112,13 @@ public class JSArray extends JSObject {
 	}
 	
 	@Override
-	public void set(int index, Object value) {
+	public void set(int index, Object value) throws Exception {
 		while (list.size() <= index)
 			list.add(null);
 		list.set(index, value);
 	}
 	
-	public void set(Object key, Object value) {
+	public void set(Object key, Object value) throws Exception {
 		if (key instanceof JSObject)
 			key = ((JSObject) key).valueOf();
 		

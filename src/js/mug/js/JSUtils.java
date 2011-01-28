@@ -12,7 +12,7 @@ public class JSUtils {
 	 * Coerces an Object to a JS boolean based on JavaScript truthy values.
 	 */
 
-	static public boolean asBoolean(Object a) {
+	static public boolean asBoolean(Object a) throws Exception {
 		if (a instanceof JSObject)
 			a = ((JSObject) a).valueOf();
 		
@@ -41,7 +41,7 @@ public class JSUtils {
 	 * Coerces an Object to a JS Double.
 	 */
 
-	static public double asNumber(Object a) {
+	static public double asNumber(Object a) throws Exception {
 		if (a instanceof JSObject)
 			a = ((JSObject) a).valueOf();
 		
@@ -68,7 +68,7 @@ public class JSUtils {
 	 * Coerces an Object to a JS String.
 	 */
 
-	static public String asString(Object a) {		
+	static public String asString(Object a) throws Exception {		
 		if (a instanceof JSObject)
 			a = ((JSObject) a).valueOf();
 		
@@ -120,7 +120,7 @@ public class JSUtils {
 	 * Converts a JS array or array-like object to a Java array.
 	 */
 	
-	static public Object[] coerceJavaArray(JSObject arr) {
+	static public Object[] coerceJavaArray(JSObject arr) throws Exception {
 		// actual arrays
 		if (arr instanceof JSArray)
 			return ((JSArray) arr).toArray();
@@ -171,8 +171,8 @@ public class JSUtils {
 	static public JSObject createArgumentsObject(JSEnvironment env, Object[] arr) {
 		JSObject arguments = new JSObject(env);
 		for (int i = 0; i < arr.length; i++)
-			arguments.set(String.valueOf(i), arr[i]);
-		arguments.set("length", arr.length);
+			arguments.defineProperty(String.valueOf(i), arr[i]);
+		arguments.defineProperty("length", arr.length);
 		return arguments;
 	}
 	
@@ -202,7 +202,7 @@ public class JSUtils {
 	 * Add operation.
 	 */
 	
-	static public Object add(Object a, Object b) {
+	static public Object add(Object a, Object b) throws Exception {
 		//
 		if (a instanceof String || b instanceof String)
 			return asString(a) + asString(b);

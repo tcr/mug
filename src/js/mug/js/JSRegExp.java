@@ -28,7 +28,8 @@ public class JSRegExp extends JSObject {
 	 * object
 	 */
 	
-	public Object get(String key) {
+	@Override
+	public Object get(String key) throws Exception {
 		if (key.equals("source"))
 			return pattern.pattern();
 		return super.get(key);

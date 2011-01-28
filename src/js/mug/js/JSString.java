@@ -12,7 +12,8 @@ public class JSString extends JSObject {
 		this.value = value;
 	}
 	
-	public Object get(String key) {
+	@Override
+	public Object get(String key) throws Exception {
 		if (key.equals("length"))
 			return value.length();
 		return super.get(key);

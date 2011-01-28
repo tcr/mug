@@ -42,7 +42,14 @@
 (defmethod gen-ast-code "array" [[_ ln elems]]
   (array-literal ln (map #(gen-ast-code %) elems)))
 (defmethod gen-ast-code "object" [[_ ln props]]
-  (obj-literal ln (zipmap (map first props) (map #(gen-ast-code (second %)) props))))
+  (obj-literal ln
+    (map (fn [[k v & [type]]]
+           [(if type (keyword type) :value) ; :get :set :value
+            k
+            (if type
+						  (let [[_ ln name args stats] v]
+						    (closure-context ln name args (map #(gen-ast-code %) stats)))
+              (gen-ast-code v))]) props)))
 (defmethod gen-ast-code "regexp" [[_ ln expr flags]]
   (regexp-literal ln expr flags))
 

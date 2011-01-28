@@ -55,7 +55,7 @@ Why?
 ----
 
 * Faster than Rhino, favoring static compilation rather than a runtime interpreter.
-* Minimal overhead. Standard library `mug-js.jar` is ~100kb.
+* Minimal overhead. Standard library `mug-js.jar` is ~150kb.
 * Mug's goal is that compiled code be as similar to Java as possible, and easily debuggable.
 * It's a neat party trick.
 
@@ -99,7 +99,7 @@ Mug is copyright 2010-2011 Tim Cameron Ryan.
 Released under the BSD license.
 
 **Credits:**
-`parse-js` CL library ported to JavaScript in 2010 by Mihai Bazon, released under the BSD license.
-`ASM Bytecode Manipulation Framework` copyright (c) OW2 Consoritum, released under the BSD license.
-`Rhino` JavaScript interpreter copyright (c) Mozilla Foundation, released under the LGPL license.
+`parse-js` CL library ported to JavaScript in 2010 by Mihai Bazon, released under the BSD license. 
+`ASM Bytecode Manipulation Framework` copyright (c) OW2 Consoritum, released under the BSD license. 
+`Rhino` JavaScript interpreter copyright (c) Mozilla Foundation, released under the LGPL license. 
 `json-simple` JSON parsing library copyright (c) fangyidong, released under Apache 2.0 license. 

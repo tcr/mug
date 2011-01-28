@@ -5,8 +5,9 @@ import java.util.HashMap;
 public abstract class JSFunction extends JSObject implements Runnable {	
 	public JSFunction(JSEnvironment env) {
 		super(env, env.getFunctionPrototype());
-		set("prototype", new JSObject(env));
-		actual_prototype.set("constructor", this);
+		actual_prototype = new JSObject(env);
+		_prototype = actual_prototype;
+		actual_prototype.defineProperty("constructor", this);
 	}
 	
 	/*
@@ -16,15 +17,16 @@ public abstract class JSFunction extends JSObject implements Runnable {
 	protected Object _prototype;
 	protected JSObject actual_prototype;
 
-	public Object get(String key) {
+	@Override
+	public Object get(String key) throws Exception {
 		return (key.equals("prototype") && _prototype != null) ? _prototype : super.get(key);
 	}
 
-	public void set(String key, Object value) {
+	@Override
+	public void set(String key, Object value) throws Exception {
 		if (key.equals("prototype")) {
 			_prototype = value;
-			if (value instanceof JSObject)
-				actual_prototype = (JSObject) value;
+			actual_prototype = value instanceof JSObject ? (JSObject) value : null;
 		} else
 			super.set(key, value);
 	}
@@ -48,6 +50,7 @@ public abstract class JSFunction extends JSObject implements Runnable {
 	 * callable
 	 */
 	
+	@Override
 	public Object instantiate(int argc, Object l0, Object l1, Object l2, Object l3, Object l4, Object l5, Object l6, Object l7, Object[] rest) throws Exception {
 		JSObject obj = new JSObject(env, actual_prototype);
 		Object ret;

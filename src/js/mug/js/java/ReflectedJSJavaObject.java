@@ -18,7 +18,7 @@ public class ReflectedJSJavaObject extends JSObject implements JSJavaObject {
 		return javaObject;
 	}
 	
-	public ReflectedJSJavaObject(JSEnvironment env, Object javaObject) {
+	public ReflectedJSJavaObject(JSEnvironment env, Object javaObject) throws Exception {
 		super(env);
 		this.javaObject = javaObject;	
 		
@@ -30,7 +30,7 @@ public class ReflectedJSJavaObject extends JSObject implements JSJavaObject {
 	}
 	
 	@Override
-	public Object get(String key) {
+	public Object get(String key) throws Exception {
 		try {
 			Field f = javaObject.getClass().getField(key);
 			return f.get(javaObject);
@@ -40,7 +40,7 @@ public class ReflectedJSJavaObject extends JSObject implements JSJavaObject {
 	}
 	
 	@Override
-	public void set(String key, Object value) {
+	public void set(String key, Object value) throws Exception {
 		try {
 			Field f = javaObject.getClass().getField(key);
 			f.set(javaObject, value);

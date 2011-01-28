@@ -42,7 +42,7 @@
 (defmethod ast-walker :mug.ast/array-literal [[_ ln exprs] walker]
   (apply concat (map #(walker % walker) exprs)))
 (defmethod ast-walker :mug.ast/obj-literal [[_ ln props] walker]
-  (apply concat (map #(walker % walker) (vals props))))
+  (apply concat (map #(walker ((vec %) 2) walker) props)))
 (defmethod ast-walker :mug.ast/func-literal [[_ ln closure] walker]
   (walker closure walker))
   

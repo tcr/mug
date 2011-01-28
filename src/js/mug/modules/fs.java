@@ -21,7 +21,7 @@ public class fs extends JSModule {
 	
 	// path prototype extends string prototype
 	final JSObject pathPrototype = new JSObject(env, env.getStringPrototype()) { {
-		set("read", new JSFunction(env) {
+		defineProperty("read", new JSFunction(env) {
 			@Override
 			public Object invoke(Object ths, int argc, Object l0, Object l1, Object l2, Object l3, Object l4, Object l5, Object l6, Object l7, Object[] rest) throws Exception
 			{
@@ -126,8 +126,8 @@ public class fs extends JSModule {
 	
 	// exports library
 	final JSObject exports = new JSObject(env) { {
-		set("open", _open);
-		set("read", _read);
+		defineProperty("open", _open);
+		defineProperty("read", _read);
 	} };
 	
 	@Override

@@ -22,7 +22,7 @@ public class ReflectedJSJavaClass extends JSFunction implements JSJavaObject {
 		return javaClass;
 	}
 	
-	public ReflectedJSJavaClass(JSEnvironment env, Class javaClass) {
+	public ReflectedJSJavaClass(JSEnvironment env, Class javaClass) throws Exception {
 		super(env);
 		this.top = env;
 		this.javaClass = javaClass;
@@ -62,7 +62,7 @@ public class ReflectedJSJavaClass extends JSFunction implements JSJavaObject {
 	}
 	
 	@Override
-	public Object get(String key) {
+	public Object get(String key) throws Exception {
 		try {
 			Field f = javaClass.getField(key);
 			return f.get(javaClass);
@@ -72,7 +72,7 @@ public class ReflectedJSJavaClass extends JSFunction implements JSJavaObject {
 	}
 	
 	@Override
-	public void set(String key, Object value) {
+	public void set(String key, Object value) throws Exception {
 		try {
 			Field f = javaClass.getField(key);
 			f.set(javaClass, value);

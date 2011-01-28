@@ -31,7 +31,7 @@ public class JSJavaUtils {
 	 * Wraps a Java object with a JSObject.
 	 */
 	
-	public static JSJavaObject wrapJavaObject(JSEnvironment env, Object arg) {
+	public static JSJavaObject wrapJavaObject(JSEnvironment env, Object arg) throws Exception {
 		if (arg != null && arg instanceof Class)
 			return new ReflectedJSJavaClass(env, (Class) arg);
 		return new ReflectedJSJavaObject(env, arg);
@@ -75,7 +75,7 @@ public class JSJavaUtils {
 	 * Coerce an arbitrary Java object to an accepted JS type.
 	 */
 	
-	public static Object coerceJSTypes(JSEnvironment env, Object arg) {
+	public static Object coerceJSTypes(JSEnvironment env, Object arg) throws Exception {
 		if (arg instanceof Character)
 			return ((Character) arg).toString();
 		if (arg instanceof Number)

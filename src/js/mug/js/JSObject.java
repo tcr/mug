@@ -1,7 +1,12 @@
 package mug.js;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Set;
+
+
+import mug.js.StringMap.Property;
 
 import org.json.simple.JSONObject;
 
@@ -50,56 +55,98 @@ public class JSObject {
 	 * hash
 	 */
 
-	protected HashMap<String, Object> hash;
+	protected StringMap hash;
+	
+	/*
+	 * [[Get]]
+	 */
+	
+	// static reference
 
-	public Object get(String key) {
-		Object ret = null;
-		if ((hash == null || (ret = hash.get(key)) == null) && __proto__ != null)
+	public Object get(String key) throws Exception {
+		Property prop = null;
+		if ((hash == null || (prop = hash.findProperty(key)) == null) && __proto__ != null)
 			return __proto__.get(key);
-		return ret;
+		return prop.get == null ? prop.value : prop.get.invoke(this);
 	}
 	
-	public Object get(int key) {
+	// array reference
+	
+	public Object get(int key) throws Exception {
 		return get(String.valueOf(key));
 	}
 	
-	public Object get(Object key) {
+	// dynamic reference
+	
+	public Object get(Object key) throws Exception {
 		return get(JSUtils.asString(key));
 	}
+	
+	/*
+	 * [[Put]]
+	 */
+	
+	// static reference
 
-	public void set(String key, Object value) {
+	public void set(String key, Object value) throws Exception {
 		if (hash == null)
-			hash = new HashMap<String, Object>();
-		hash.put(key, value);
+			hash = new StringMap();
+		if (hash.getProperty(key).set == null)
+			hash.getProperty(key).value = value;
+		else
+			hash.getProperty(key).set.invoke(this, value);
 	}
 	
-	public void set(int key, Object value) {
+	// array reference
+	
+	public void set(int key, Object value) throws Exception {
 		set(String.valueOf(key), value);
 	}
 	
-	public void set(Object key, Object value) {
+	// dynamic reference
+	
+	public void set(Object key, Object value) throws Exception {
 		set(JSUtils.asString(key), value);
 	}
+	
+	/*
+	 * for...in helper
+	 */
 	
 	public String[] getKeys() {
 		if (hash == null)
 			return new String[0];
+		
+		ArrayList<String> keys = new ArrayList();
+		Iterator<String> iter = hash.getEnumerableKeys();
+		while (iter.hasNext())
+			keys.add(iter.next());
+		String[] arr = new String[keys.size()];
+		keys.toArray(arr);
+		return arr;
+			
+		/*
 		Set<String> set = hash.keySet();
 		String[] out = new String[set.size()];
 		set.toArray(out);
 		return out;
+		*/
 	}
 	
-	public boolean hasOwnProperty(String prop) {
-		return hash != null && hash.containsKey(prop);
-	}
-	
-	/*
-	 * Object methods
+	/**
+	 * Helper functions
 	 */
 	
-	public Object valueOf() {
-		Object valueOf = get("valueOf");
+	public boolean hasOwnProperty(String prop) {
+		return hash != null && (hash.findProperty(prop) != null);
+	}
+	
+	public Object valueOf() throws Exception {
+		Object valueOf = null;
+		try {
+			valueOf = get("valueOf");
+		} catch (Exception e1) {
+		}
 		if (valueOf instanceof JSObject)
 			try {
 				return ((JSObject) valueOf).invoke(this);
@@ -109,7 +156,11 @@ public class JSObject {
 	}
 	
 	public String toString() {
-		Object toString = get("toString");
+		Object toString = null;
+		try {
+			toString = get("toString");
+		} catch (Exception e1) {
+		}
 		if (toString instanceof JSObject)
 			try {
 				return JSUtils.asString(((JSObject) toString).invoke(this));
@@ -118,14 +169,48 @@ public class JSObject {
 		return "[object Object]";
 	}
 	
-	/*
-	 * inheritance
-	 */
-	
 	public boolean hasInstance(Object v) {
 		return false;
 	}
 	
+	/*
+	 * property definition
+	 */
+	
+	public void defineProperty(String key, Object value) {
+		defineProperty(key, value, true, true, true, null, null);
+	}
+	
+	public void defineProperty(String key, Object value, boolean writable, boolean enumerable, boolean configurable) {
+		defineProperty(key, value, writable, enumerable, configurable, null, null);
+	}
+	
+	public void defineProperty(String key, Object value, boolean writable, boolean enumerable, boolean configurable, JSObject get, JSObject set) {
+		if (hash == null)
+			hash = new StringMap();
+		StringMap.Property p = hash.getProperty(key);
+		p.value = value;
+		p.writable = writable;
+		p.enumerable = enumerable;
+		p.configurable = configurable;
+		p.get = get;
+		p.set = set;
+	}
+	
+	public void defineGetter(String key, JSObject get) {
+		if (hash == null)
+			hash = new StringMap();
+		StringMap.Property p = hash.getProperty(key);
+		p.get = get;
+	}
+	
+	public void defineSetter(String key, JSObject set) {
+		if (hash == null)
+			hash = new StringMap();
+		StringMap.Property p = hash.getProperty(key);
+		p.set = set;
+	}
+
 	/*
 	 * invoke
 	 */

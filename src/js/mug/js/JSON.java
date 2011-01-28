@@ -28,17 +28,17 @@ public class JSON {
 			Map map = (Map) arg;
 			JSObject obj = new JSObject(env);
 			for (Object key : map.keySet())
-				obj.set((String) key, toJSValue(env, map.get(key)));
+				obj.defineProperty((String) key, toJSValue(env, map.get(key)));
 			return obj;
 		}
 		return null;
 	}
 	
-	public static String stringify(Object arg) {
+	public static String stringify(Object arg) throws Exception {
 		return JSONValue.toJSONString(toJSONValue(arg));
 	}
 	
-	static Object toJSONValue(Object arg) {
+	static Object toJSONValue(Object arg) throws Exception {
 		// properly format arrays and objects
 		if (arg instanceof JSArray) {
 			JSONArray json = new JSONArray();

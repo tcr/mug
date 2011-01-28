@@ -49,7 +49,7 @@
 	JSRegExp)
 (defmethod compile-type :mug.ast/array-literal [[_ ln exprs]]
 	JSArray)
-(defmethod compile-type :mug.ast/obj-literal [[_ ln props]]
+(defmethod compile-type :mug.ast/obj-literal [[_ ln props types]]
 	JSObject)
 (defmethod compile-type :mug.ast/func-literal [[_ ln closure]]
   JSFunction)
@@ -429,11 +429,21 @@
   ; object prototype
   (asm-toplevel ci ast mw)
 	(.visitMethodInsn mw Opcodes/INVOKESPECIAL, qn-js-object, "<init>", (sig-call (sig-obj qn-js-toplevel) sig-void))
-	(doseq [[k v] props]
+	(doseq [[type k v] props]
     (.visitInsn mw Opcodes/DUP)
-    (.visitLdcInsn mw k)
-    (asm-compile-autobox v ci ast mw)
-  	(.visitMethodInsn mw Opcodes/INVOKEVIRTUAL, qn-js-object, "set", (sig-call (sig-obj qn-string) (sig-obj qn-object) sig-void))))
+    (case type
+      :value (do
+		    (.visitLdcInsn mw k)
+		    (asm-compile-autobox v ci ast mw)
+		  	(.visitMethodInsn mw Opcodes/INVOKEVIRTUAL, qn-js-object, "set", (sig-call (sig-obj qn-string) (sig-obj qn-object) sig-void)))
+      :get (do
+		    (.visitLdcInsn mw k)
+        (asm-compile [:mug.ast/func-literal ln v] ci ast mw)
+        (.visitMethodInsn mw Opcodes/INVOKEVIRTUAL, qn-js-object, "defineGetter", (sig-call (sig-obj qn-string) (sig-obj qn-js-object) sig-void)))
+      :set (do
+		    (.visitLdcInsn mw k)
+        (asm-compile [:mug.ast/func-literal ln v] ci ast mw)
+        (.visitMethodInsn mw Opcodes/INVOKEVIRTUAL, qn-js-object, "defineSetter", (sig-call (sig-obj qn-string) (sig-obj qn-js-object) sig-void))))))
 
 (defn child-context-index [closure ci ast]
   (let [parents (conj ((ast-context-hierarchy ast) ci) ci)]

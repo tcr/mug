@@ -46,8 +46,8 @@ public class java extends JSModule {
 	
 	// exports library
 	final JSObject exports = new JSObject(envv) { {
-		set("import", _import);
-		set("Proxy", _Proxy);
+		defineProperty("import", _import);
+		defineProperty("Proxy", _Proxy);
 	} };
 
 	@Override
