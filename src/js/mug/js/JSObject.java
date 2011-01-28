@@ -67,7 +67,9 @@ public class JSObject {
 		Property prop = null;
 		if ((hash == null || (prop = hash.findProperty(key)) == null) && __proto__ != null)
 			return __proto__.get(key);
-		return prop.get == null ? prop.value : prop.get.invoke(this);
+		return prop == null ? null :
+			prop.get == null ? prop.value :
+			prop.get.invoke(this);
 	}
 	
 	// array reference
@@ -110,7 +112,20 @@ public class JSObject {
 	}
 	
 	/*
-	 * for...in helper
+	 * [[Delete]]
+	 */
+	
+	public boolean delete(String key) throws Exception {
+		return hash.deletePropertyIfConfigurable(key);
+	}
+	
+	public boolean delete(Object key) throws Exception {
+		return hash.deletePropertyIfConfigurable(JSUtils.asString(key));
+	}
+
+	
+	/*
+	 * Helper functions
 	 */
 	
 	public String[] getKeys() {
@@ -132,10 +147,6 @@ public class JSObject {
 		return out;
 		*/
 	}
-	
-	/**
-	 * Helper functions
-	 */
 	
 	public boolean hasOwnProperty(String prop) {
 		return hash != null && (hash.findProperty(prop) != null);

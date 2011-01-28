@@ -721,6 +721,20 @@
   (asm-invoke-args args ci ast mw)
 	(.visitMethodInsn mw Opcodes/INVOKEVIRTUAL, qn-js-object, "instantiate", sig-instantiate))
 
+(defmethod asm-compile :mug.ast/scope-delete-expr [[_ ln value] ci ast mw]
+  ;[TODO] allow deletion of global variables
+  (.visitInsn mw Opcodes/ICONST_0))
+
+(defmethod asm-compile :mug.ast/static-delete-expr [[_ ln base value] ci ast mw]
+  (asm-compile-js-object base ci ast mw)
+  (.visitLdcInsn mw value)
+  (.visitMethodInsn mw Opcodes/INVOKEVIRTUAL, qn-js-object, "delete", (sig-call (sig-obj qn-string) sig-boolean)))
+
+(defmethod asm-compile :mug.ast/dyn-delete-expr [[_ ln base index] ci ast mw]
+  (asm-compile-js-object base ci ast mw)
+	(asm-compile-autobox index ci ast mw)
+	(.visitMethodInsn mw Opcodes/INVOKEVIRTUAL, qn-js-object, "delete", (sig-call (sig-obj qn-object) sig-boolean)))
+
 ;TODO
 ; we should be able to compile assignments without autoboxing the resulting
 ; value, so that we can gain from type analysis

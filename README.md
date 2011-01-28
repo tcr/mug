@@ -74,24 +74,6 @@ If you're interesting in helping out:
 * Write CommonJS modules
 * Any items on the TODO list
 
-TODO
-----
-
-*ECMAScript Implementation*
-
-* Complete support for `delete`, named labels, operators
-* Complete ECMAScript standard library
-* Normalize DontDelete, DontEnum, ReadOnly object patterns
-* Replace RegExp implementation (no java.util.regex)
-
-*Compiler*
-
-* Compilation/testing should be programmatic (string, file, stream, etc.)
-* Static Java compilation into modules
-* Switch to `GeneratorAdapter` in ASM library (can use Clojure's built-in)
-* Bytecode inlining of JS utilities and conversions
-* Overall polishing of everything
-
 License
 -------
 
