@@ -117,7 +117,7 @@ public class StringMap
     	void queue() {
     		do {
     			idx++;
-    		} while (idx < data.length && data[idx] == null);
+    		} while (idx < data.length && (data[idx] == null || !data[idx].enumerable));
     		if (idx < data.length)
     			p = data[idx];
     	}

@@ -223,37 +223,29 @@
         parents ((ast-context-hierarchy ast) ci)]
 ;   (println (str "Seeking var \"" name "\" in current scope (" (ast-context-vars context) ")"))
 	  (if (contains? (ast-context-vars context) name)
-	    ; variable found in current scope
+	    ; variable found in current (local) scope
 	    (do
 	      (.visitVarInsn mw Opcodes/ALOAD, scope-reg)
 	      (qn-js-scope ci))
-	  (loop [parent (last parents) parents (butlast parents)]
-		  (if (nil? parent)
-		    (if (contains? script-default-vars name)
-	        ; found variable in global scope
-		      (do
-; 	        (println (str " . Found in global scope: " name))
-	          (if (= ci 0) ; script-context scope inherits from globals
-	            (.visitVarInsn mw Opcodes/ALOAD, scope-reg)
-	            (do
-			          (.visitVarInsn mw Opcodes/ALOAD, 0)
-			          (.visitFieldInsn mw Opcodes/GETFIELD, (qn-js-context ci),
-			            (str "SCOPE_" 0), (sig-obj (qn-js-scope 0)))))
-	          qn-js-toplevel)
-	        ; identifier not found at all
-		      (throw (new Exception (str "Identifier not defined in any scope: " name " (line " ln ")"))))
-			  (if (contains? (ast-context-vars ((ast-contexts ast) parent)) name)
-	        ; found variable in ancestor scope
-			    (do
-;  		      (println (str " . Found in higher scope: " name))
-			      (.visitVarInsn mw Opcodes/ALOAD, 0)
-			      (.visitFieldInsn mw Opcodes/GETFIELD, (qn-js-context ci),
-			        (str "SCOPE_" parent), (sig-obj (qn-js-scope parent)))
-	          (qn-js-scope parent))
-	        ; must recur to parent scope
-		      (do
-;           (println (str " . Not found in parent scope " (ast-context-vars ((ast :contexts) parent))))
-	          (recur (last parents) (butlast parents)))))))))
+     
+		  (loop [parent (last parents) parents (butlast parents)]
+			  (if (nil? parent)
+			    ; variable is undeclared
+	        nil
+	        
+				  (if (contains? (ast-context-vars ((ast-contexts ast) parent)) name)
+		        ; found variable in ancestor scope
+				    (do
+	;  		      (println (str " . Found in higher scope: " name))
+				      (.visitVarInsn mw Opcodes/ALOAD, 0)
+				      (.visitFieldInsn mw Opcodes/GETFIELD, (qn-js-context ci),
+				        (str "SCOPE_" parent), (sig-obj (qn-js-scope parent)))
+		          (qn-js-scope parent))
+        
+		        ; recur to parent scope
+			      (do
+	;           (println (str " . Not found in parent scope " (ast-context-vars ((ast :contexts) parent))))
+		          (recur (last parents) (butlast parents)))))))))
 
 ; asm boxing/unboxing
 
@@ -675,8 +667,15 @@
 (defmethod asm-compile :mug.ast/scope-ref-expr [[_ ln value] ci ast mw]
   (if-let [reg (ref-reg ((ast-contexts ast) ci) value)]
     (.visitVarInsn mw Opcodes/ALOAD reg) 
-    (let [qn-parent (asm-search-scopes value ln ci ast mw)]
-      (.visitMethodInsn mw Opcodes/INVOKEVIRTUAL, qn-parent, (str "get_" value), (sig-call (sig-obj qn-object))))))
+    (if-let [qn-parent (asm-search-scopes value ln ci ast mw)]
+      ; scope
+      (.visitMethodInsn mw Opcodes/INVOKEVIRTUAL, qn-parent, (str "get_" value), (sig-call (sig-obj qn-object)))
+      ; global
+      (do
+        (asm-toplevel ci ast mw)
+        (.visitMethodInsn mw Opcodes/INVOKEVIRTUAL qn-js-toplevel, "getGlobalObject", (sig-call (sig-obj qn-js-object)))
+        (.visitLdcInsn mw value)
+        (.visitMethodInsn mw Opcodes/INVOKEVIRTUAL, qn-js-object, "get", (sig-call (sig-obj qn-string) (sig-obj qn-object)))))))
 
 (defmethod asm-compile :mug.ast/static-ref-expr [[_ ln base value] ci ast mw]
   (asm-compile-js-object base ci ast mw)
@@ -723,7 +722,17 @@
 
 (defmethod asm-compile :mug.ast/scope-delete-expr [[_ ln value] ci ast mw]
   ;[TODO] allow deletion of global variables
-  (.visitInsn mw Opcodes/ICONST_0))
+  (if-let [qn-parent (asm-search-scopes value ln ci ast mw)]
+    ; scope
+    (do
+      (.visitInsn mw Opcodes/POP)
+      (.visitInsn mw Opcodes/ICONST_0))
+    ; global
+    (do
+      (asm-toplevel ci ast mw)
+      (.visitMethodInsn mw Opcodes/INVOKEVIRTUAL qn-js-toplevel, "getGlobalObject", (sig-call (sig-obj qn-js-object)))
+      (.visitLdcInsn mw value)
+      (.visitMethodInsn mw Opcodes/INVOKEVIRTUAL, qn-js-object, "delete", (sig-call (sig-obj qn-string) sig-boolean)))))
 
 (defmethod asm-compile :mug.ast/static-delete-expr [[_ ln base value] ci ast mw]
   (asm-compile-js-object base ci ast mw)
@@ -744,9 +753,19 @@
   (.visitInsn mw Opcodes/DUP)
   (if-let [reg (ref-reg ((ast-contexts ast) ci) value)]
     (.visitVarInsn mw Opcodes/ASTORE reg) 
-	  (let [qn-parent (asm-search-scopes value ln ci ast mw)]
-	    (.visitInsn mw Opcodes/SWAP)
-		  (.visitMethodInsn mw Opcodes/INVOKEVIRTUAL, qn-parent, (str "set_" value), (sig-call (sig-obj qn-object) sig-void)))))
+	  (if-let [qn-parent (asm-search-scopes value ln ci ast mw)]
+      ; scope
+	    (do
+        (.visitInsn mw Opcodes/SWAP)
+		    (.visitMethodInsn mw Opcodes/INVOKEVIRTUAL, qn-parent, (str "set_" value), (sig-call (sig-obj qn-object) sig-void)))
+      ; global
+      (do
+        (asm-toplevel ci ast mw)
+        (.visitMethodInsn mw Opcodes/INVOKEVIRTUAL qn-js-toplevel, "getGlobalObject", (sig-call (sig-obj qn-js-object)))
+        (.visitInsn mw Opcodes/SWAP)
+        (.visitLdcInsn mw value)
+        (.visitInsn mw Opcodes/SWAP)
+        (.visitMethodInsn mw Opcodes/INVOKEVIRTUAL, qn-js-object, "set", (sig-call (sig-obj qn-string) (sig-obj qn-object) sig-void))))))
 
 (defmethod asm-compile :mug.ast/static-assign-expr [[_ ln base value expr] ci ast mw]
   (asm-compile-js-object base ci ast mw)
@@ -1027,10 +1046,19 @@
 			(.visitInsn mw, Opcodes/AALOAD)
       ; store in scope
 		  (if-let [reg (ref-reg ((ast-contexts ast) ci) value)]
-		    (.visitVarInsn mw Opcodes/ASTORE reg) 
-	      (let [qn-parent (asm-search-scopes value ln ci ast mw)]
-	        (.visitInsn mw Opcodes/SWAP)
-		      (.visitMethodInsn mw Opcodes/INVOKEVIRTUAL, qn-parent, (str "set_" value), (sig-call (sig-obj qn-object) sig-void))))
+		    (.visitVarInsn mw Opcodes/ASTORE reg)
+        (if isvar
+		      (let [qn-parent (asm-search-scopes value ln ci ast mw)]
+		        (.visitInsn mw Opcodes/SWAP)
+			      (.visitMethodInsn mw Opcodes/INVOKEVIRTUAL, qn-parent, (str "set_" value), (sig-call (sig-obj qn-object) sig-void)))
+		      ; global
+		      (do
+		        (asm-toplevel ci ast mw)
+		        (.visitMethodInsn mw Opcodes/INVOKEVIRTUAL qn-js-toplevel, "getGlobalObject", (sig-call (sig-obj qn-js-object)))
+		        (.visitInsn mw Opcodes/SWAP)
+		        (.visitLdcInsn mw value)
+		        (.visitInsn mw Opcodes/SWAP)
+		        (.visitMethodInsn mw Opcodes/INVOKEVIRTUAL, qn-js-object, "set", (sig-call (sig-obj qn-string) (sig-obj qn-object) sig-void)))))
 	
 			(asm-compile stat ci ast mw)
    

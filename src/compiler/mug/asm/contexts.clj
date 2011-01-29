@@ -58,15 +58,18 @@
       ; create scope and store in register
       (.visitTypeInsn Opcodes/NEW, (qn-js-scriptscope))
       (.visitInsn Opcodes/DUP)
-      (.visitInsn Opcodes/DUP)
       (.visitMethodInsn Opcodes/INVOKESPECIAL, (qn-js-scriptscope), "<init>", "()V")
-			(.visitVarInsn Opcodes/ASTORE, scope-reg)
-      ; "exports" object
-      (.visitMethodInsn Opcodes/INVOKEVIRTUAL, (qn-js-scriptscope), "get_exports", (sig-call (sig-obj qn-object)))
-      (.visitTypeInsn Opcodes/CHECKCAST, qn-js-object)
-      (.visitVarInsn Opcodes/ASTORE, exports-reg))
+			(.visitVarInsn Opcodes/ASTORE, scope-reg))
+
+    ; "exports" object
+    (asm-toplevel ci ast mw)
+    (.visitMethodInsn mw Opcodes/INVOKEVIRTUAL, qn-js-toplevel, "getExports", (sig-call (sig-obj qn-js-object)))
+    (.visitVarInsn mw Opcodes/ASTORE, exports-reg)
   
-    ;[TODO] THIS object
+    ; global "this" object
+    (asm-toplevel ci ast mw)
+    (.visitMethodInsn mw Opcodes/INVOKEVIRTUAL qn-js-toplevel, "getGlobalObject", (sig-call (sig-obj qn-js-object)))
+    (.visitVarInsn mw Opcodes/ASTORE, 1)
 	
     ; compile functions
 		(doseq [stat stats]

@@ -920,82 +920,33 @@ public class JSEnvironment {
 	}
 	
 	/*
-	 * top-level scope accessors
+	 * global object
 	 */
 	
-	Object _require = requireFunction;
-	public Object get_require() { return _require; }
-	public void set_require(Object value) { _require = value; }
+	final JSObject global = new JSObject(JSEnvironment.this) { {
+		 defineProperty("global", this);
+		 defineProperty("require", requireFunction);
+		 defineProperty("exports", exportsObject); 
+		 defineProperty("print", printFunction); 
+		 defineProperty("console", consoleObject); 
+		 defineProperty("parseFloat", parseFloatFunction); 
+		 defineProperty("parseInt", parseIntFunction); 
+		 defineProperty("isNaN", isNaNFunction); 
+		 defineProperty("isFinite", isFiniteFunction); 
+		 defineProperty("Math", mathObject); 
+		 defineProperty("JSON", jsonObject); 
+		 defineProperty("Object", objectConstructor); 
+		 defineProperty("Function", functionConstructor); 
+		 defineProperty("Array", arrayConstructor); 
+		 defineProperty("Number", numberConstructor); 
+		 defineProperty("Error", null); 
+		 defineProperty("setTimeout", setTimeoutFunction); 
+		 defineProperty("setInterval", setIntervalFunction); 
+		 defineProperty("clearTimeout", clearTimeoutFunction); 
+		 defineProperty("clearInterval", clearIntervalFunction);
+	} };
 	
-	Object _exports = exportsObject;
-	public Object get_exports() { return _exports; }
-	public void set_exports(Object value) { _exports = value; }
+	public JSObject getGlobalObject() { return global; }
 	
-	Object _print = printFunction;
-	public Object get_print() { return _print; }
-	public void set_print(Object value) { _print = value; }
-	
-	Object _console = consoleObject;
-	public Object get_console() { return _console; }
-	public void set_console(Object value) { _console = value; }
-	
-	Object _parseFloat = parseFloatFunction;
-	public Object get_parseFloat() { return _parseFloat; }
-	public void set_parseFloat(Object value) { _parseFloat = value; }
-	
-	Object _parseInt = parseIntFunction;
-	public Object get_parseInt() { return _parseInt; }
-	public void set_parseInt(Object value) { _parseInt = value; }
-	
-	Object _isNaN = isNaNFunction;
-	public Object get_isNaN() { return _isNaN; }
-	public void set_isNaN(Object value) { _isNaN = value; }
-	
-	Object _isFinite = isFiniteFunction;
-	public Object get_isFinite() { return _isFinite; }
-	public void set_isFinite(Object value) { _isFinite = value; }
-	
-	Object _Math = mathObject;
-	public Object get_Math() { return _Math; }
-	public void set_Math(Object value) { _Math = value; }
-	
-	Object _JSON = jsonObject;
-	public Object get_JSON() { return _JSON; }
-	public void set_JSON(Object value) { _JSON = value; }
-
-	Object _Object = objectConstructor;
-	public Object get_Object() { return _Object; }
-	public void set_Object(Object value) { _Object = value; }
-
-	Object _Function = functionConstructor;
-	public Object get_Function() { return _Function; }
-	public void set_Function(Object value) { _Function = value; }
-
-	Object _Array = arrayConstructor;
-	public Object get_Array() { return _Array; }
-	public void set_Array(Object value) { _Array = value; }
-	
-	Object _Number = numberConstructor;
-	public Object get_Number() { return _Number; }
-	public void set_Number(Object value) { _Number = value; }
-	
-	Object _Error = null;
-	public Object get_Error() { return _Error; }
-	public void set_Error(Object value) { _Error = value; }
-	
-	Object _setTimeout = setTimeoutFunction;
-	public Object get_setTimeout() { return _setTimeout; }
-	public void set_setTimeout(Object value) { _setTimeout = value; }
-	
-	Object _setInterval = setIntervalFunction;
-	public Object get_setInterval() { return _setInterval; }
-	public void set_setInterval(Object value) { _setInterval = value; }
-	
-	Object _clearTimeout = clearTimeoutFunction;
-	public Object get_clearTimeout() { return _clearTimeout; }
-	public void clear_clearTimeout(Object value) { _clearTimeout = value; }
-	
-	Object _clearInterval = clearIntervalFunction;
-	public Object get_clearInterval() { return _clearInterval; }
-	public void clear_clearInterval(Object value) { _clearInterval = value; }
+	public JSObject getExports() { return exportsObject;  }
 }

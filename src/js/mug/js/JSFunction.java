@@ -5,9 +5,13 @@ import java.util.HashMap;
 public abstract class JSFunction extends JSObject implements Runnable {	
 	public JSFunction(JSEnvironment env) {
 		super(env, env.getFunctionPrototype());
+		
+		// create prototype object
 		actual_prototype = new JSObject(env);
 		_prototype = actual_prototype;
-		actual_prototype.defineProperty("constructor", this);
+		
+		// create constructor
+		actual_prototype.defineProperty("constructor", this, true, false, true);
 	}
 	
 	/*
